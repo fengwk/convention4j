@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>fun.fengwk.convention4j</groupId>
+		<artifactId>convention4j-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>convention4j-spring-boot-starter</artifactId>
+
+	<dependencies>
+		<dependency>
+			<groupId>fun.fengwk.convention4j</groupId>
+			<artifactId>convention4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.auto-validation</groupId>
+			<artifactId>auto-validation-validator</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.common4j</groupId>
+			<artifactId>common4j-idgen</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.common4j</groupId>
+			<artifactId>common4j-i18n</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

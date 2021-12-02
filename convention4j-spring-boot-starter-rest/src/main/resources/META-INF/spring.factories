@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  fun.fengwk.convention.springboot.starter.rest.RestAutoConfiguration
+
+org.springframework.context.ApplicationContextInitializer=\
+  fun.fengwk.convention.springboot.starter.rest.RestEnvironmentInitializer

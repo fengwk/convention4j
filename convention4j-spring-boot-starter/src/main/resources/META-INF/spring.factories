@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  fun.fengwk.convention.springboot.starter.validator.GlobalValidatorAutoConfiguration,\
+  fun.fengwk.convention.springboot.starter.snowflake.SnowflakeIdAutoConfiguration,\
+  fun.fengwk.convention.springboot.starter.i18n.I18nAutoConfiguration,\
+  fun.fengwk.convention.springboot.starter.code.ErrorCodeAutoConfiguration

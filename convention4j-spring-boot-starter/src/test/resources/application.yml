@@ -1,0 +1,14 @@
+convention:
+
+  snowflake-id:
+    initial-timestamp: 0
+    worker-id: 0
+
+  i18n:
+    base-name: string
+    locale: zh_CN
+
+  error-code:
+    i18n: 
+      base-name: error-code
+      locale: ${convention.i18n.locale}
