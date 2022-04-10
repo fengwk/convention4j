@@ -23,13 +23,13 @@ public class I18nAutoConfigurationTest {
     @Test
     public void test1() {
         StringManager stringManager = stringManagerFactory.getStringManager(I18nAutoConfigurationTest.class);
-        assert stringManager.getString("message").equals("你好");
+        assert stringManager.getString("message").equals("你好") || stringManager.getString("message").equals("hello");
     }
 
     @Test
     public void test2() {
         StringManager stringManager = GlobalStringManagerFactory.getStringManager(I18nAutoConfigurationTest.class);
-        assert stringManager.getString("message").equals("你好");
+        assert stringManager.getString("message").equals("你好") || stringManager.getString("message").equals("hello");
     }
     
 }

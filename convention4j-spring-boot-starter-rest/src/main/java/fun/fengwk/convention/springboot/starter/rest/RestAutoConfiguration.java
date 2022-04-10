@@ -15,7 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @ComponentScan
 @AutoConfigureBefore(ErrorMvcAutoConfiguration.class)// 预先初始化ErrorController
-@Configuration(proxyBeanMethods = false)
+@Configuration
 public class RestAutoConfiguration implements WebMvcConfigurer {
 
     /**

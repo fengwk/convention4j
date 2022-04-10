@@ -27,7 +27,7 @@ public class ErrorCodeAutoConfigurationTest {
         ErrorCode errorCode1 = errorCodeFactory.create(TEST_ERROR_CODE);
         ErrorCode errorCode2 = errorCodeFactory.create(TEST_ERROR_CODE, "test error");
         assert errorCode1.getCode().equals(TEST_ERROR_CODE);
-        assert errorCode1.getMessage().equals("测试错误");
+        assert errorCode1.getMessage().equals("测试错误") || errorCode1.getMessage().equals("test error");
         assert errorCode2.getCode().equals(TEST_ERROR_CODE);
         assert errorCode2.getMessage().equals("test error");
     }
@@ -37,7 +37,7 @@ public class ErrorCodeAutoConfigurationTest {
         ErrorCode errorCode1 = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
         ErrorCode errorCode2 = GlobalErrorCodeFactory.create(TEST_ERROR_CODE, "test error");
         assert errorCode1.getCode().equals(TEST_ERROR_CODE);
-        assert errorCode1.getMessage().equals("测试错误");
+        assert errorCode1.getMessage().equals("测试错误") || errorCode1.getMessage().equals("test error");
         assert errorCode2.getCode().equals(TEST_ERROR_CODE);
         assert errorCode2.getMessage().equals("test error");
     }

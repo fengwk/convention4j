@@ -1,5 +1,7 @@
 package fun.fengwk.convention.api.code;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Objects;
 
 /**
@@ -52,7 +54,7 @@ public interface ErrorCode extends Code {
     /**
      * 获取当前异常码码值，在使用异常码模式开发的过程中应该确保不同类型的错误具有不同的码值。
      * 
-     * @return
+     * @return not null
      */
     @Override
     String getCode();
@@ -63,7 +65,14 @@ public interface ErrorCode extends Code {
      * @return
      */
     String getMessage();
-    
+
+    /**
+     * 获取当前错误码包含的错误信息。
+     *
+     * @return not null
+     */
+    ImmutableMap<String, ?> getErrors();
+
     /**
      * 检查当前错错误产生来源，详见{@link ErrorCode}文档。
      * 
@@ -91,9 +100,9 @@ public interface ErrorCode extends Code {
     default ThrowableErrorCode asThrowable(Throwable cause) {
         return new ThrowableErrorCode(this, cause);
     }
-    
+
     /**
-     * 使用“错误产生来源_四位数字编号”方式编码code。
+     * 通用错误码：使用“错误产生来源_四位数字编号”方式编码code。
      * 
      * @param source not null
      * @param num not null
@@ -113,7 +122,7 @@ public interface ErrorCode extends Code {
     }
 
     /**
-     * 使用“错误产生来源_业务域_四位数字编号”方式编码code。
+     * 业务错误码：使用“错误产生来源_业务域_四位数字编号”方式编码code。
      *
      * @param source not null
      * @param domain not null
@@ -136,5 +145,42 @@ public interface ErrorCode extends Code {
 
         return source + SEPARATOR + domain + SEPARATOR + num;
     }
-    
+
+    /**
+     * 返沪长度为2或3的String数组。
+     * 长度为2：source+num。
+     * 长度为3：source+domain+num。
+     *
+     * @param errorCode
+     * @return
+     */
+    static String[] decodeCode(String errorCode) {
+        if (!validateErrorCodeFormat(errorCode)) {
+            throw new IllegalArgumentException("error code format error.");
+        }
+
+        return errorCode.split(SEPARATOR);
+    }
+
+    /**
+     * 校验错误码格式。
+     *
+     * @param code
+     * @return
+     */
+    static boolean validateErrorCodeFormat(String code) {
+        if (code == null || code.length() < 3) {
+            return false;
+        }
+
+        if (!code.contains(SEPARATOR)) {
+            return false;
+        }
+
+        char c0 = code.charAt(0);
+        char c1 = code.charAt(1);
+        return (c0 == SOURCE_A.charAt(0) || c0 == SOURCE_B.charAt(0) || c0 == SOURCE_C.charAt(0))
+                && c1 == SEPARATOR.charAt(0);
+    }
+
 }

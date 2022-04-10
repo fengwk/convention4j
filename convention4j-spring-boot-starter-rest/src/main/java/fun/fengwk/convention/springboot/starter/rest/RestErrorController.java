@@ -15,11 +15,7 @@ import javax.annotation.PostConstruct;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
-import static fun.fengwk.convention.api.code.ErrorCodes.FORBIDDEN;
-import static fun.fengwk.convention.api.code.ErrorCodes.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention.api.code.ErrorCodes.ILLEGAL_STATE;
-import static fun.fengwk.convention.api.code.ErrorCodes.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention.api.code.ErrorCodes.UNAUTHORIZED;
+import static fun.fengwk.convention.api.code.CommonCodeTable.*;
 
 /**
  * @see org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController
@@ -47,15 +43,15 @@ public class RestErrorController implements ErrorController {
         HttpStatus status = getStatus(request);
         Result<Void> result;
         if (status == HttpStatus.NOT_FOUND) {
-            result = Results.of(codeFactory.create(RESOURCE_NOT_FOUND));
+            result = Results.of(codeFactory.create(A_RESOURCE_NOT_FOUND));
         } else if (status == HttpStatus.UNAUTHORIZED) {
-            result = Results.of(codeFactory.create(UNAUTHORIZED));
+            result = Results.of(codeFactory.create(A_UNAUTHORIZED));
         } else if (status == HttpStatus.FORBIDDEN) {
-            result = Results.of(codeFactory.create(FORBIDDEN));
+            result = Results.of(codeFactory.create(A_FORBIDDEN));
         } else if (status.is4xxClientError()) {
-            result = Results.of(codeFactory.create(ILLEGAL_ARGUMENT));
+            result = Results.of(codeFactory.create(A_ILLEGAL_ARGUMENT));
         } else {
-            result = Results.of(codeFactory.create(ILLEGAL_STATE));
+            result = Results.of(codeFactory.create(B_ILLEGAL_STATE));
         }
         return new ResponseEntity<>(result, status);
     }
@@ -71,6 +67,11 @@ public class RestErrorController implements ErrorController {
         catch (Exception ex) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
+    }
+
+    @Override
+    public String getErrorPath() {
+        return null;
     }
 
 }

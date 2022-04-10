@@ -16,9 +16,9 @@ public class PageImpl<T> implements Page<T> {
     private int pageNumber;
     private int pageSize;
     private List<T> results;
-    private int totalCount;
+    private long totalCount;
     
-    public PageImpl(int pageNumber, int pageSize, List<T> results, int totalCount) {
+    public PageImpl(int pageNumber, int pageSize, List<T> results, long totalCount) {
         if (pageNumber < 1) {
             throw new IllegalArgumentException("PageNumber must be greater than or equal to 1");
         }
@@ -61,8 +61,8 @@ public class PageImpl<T> implements Page<T> {
     }
 
     @Override
-    public int getTotalPages() {
-        return totalCount % pageSize == 0 ? totalCount / pageSize : totalCount / pageSize + 1;
+    public long getTotalPages() {
+        return totalCount % (long) pageSize == 0 ? totalCount / (long) pageSize : totalCount / (long) pageSize + 1;
     }
 
     @Override

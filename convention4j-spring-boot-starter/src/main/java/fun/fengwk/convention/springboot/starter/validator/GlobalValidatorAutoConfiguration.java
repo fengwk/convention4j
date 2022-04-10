@@ -19,7 +19,7 @@ import javax.validation.Validator;
 @ConditionalOnBean(Validator.class)
 @ConditionalOnClass({ Validator.class, GlobalValidator.class })
 @AutoConfigureAfter(ValidationAutoConfiguration.class)
-@Configuration(proxyBeanMethods = false)
+@Configuration
 public class GlobalValidatorAutoConfiguration implements InitializingBean {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalValidatorAutoConfiguration.class);

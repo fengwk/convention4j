@@ -1,7 +1,8 @@
 package fun.fengwk.convention.springboot.starter.code;
 
-import fun.fengwk.convention.springboot.starter.i18n.I18nProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.Locale;
 
 /**
  * 
@@ -13,14 +14,31 @@ public class ErrorCodeProperties {
     /**
      * 本地化
      */
-    private I18nProperties i18n;
+    private I18n i18n;
 
-    public I18nProperties getI18n() {
+    public I18n getI18n() {
         return i18n;
     }
 
-    public void setI18n(I18nProperties i18n) {
+    public void setI18n(I18n i18n) {
         this.i18n = i18n;
+    }
+
+    public static class I18n {
+
+        /**
+         * 语言类型
+         */
+        private Locale locale = Locale.getDefault();
+
+        public Locale getLocale() {
+            return locale;
+        }
+
+        public void setLocale(Locale locale) {
+            this.locale = locale;
+        }
+
     }
 
 }

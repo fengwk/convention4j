@@ -1,5 +1,7 @@
 package fun.fengwk.convention.api.code;
 
+import com.google.common.collect.ImmutableMap;
+
 /**
  * {@link ThrowableErrorCode}是一种异常类型的错误码，允许使用者像处理异常一样处理错误码。
  *
@@ -9,7 +11,7 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
 
     private static final long serialVersionUID = 1L;
     
-    private final String code;
+    private final ErrorCode errorCode;
     
     /**
      * 
@@ -17,7 +19,7 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
      */
     public ThrowableErrorCode(ErrorCode errorCode) {
         super(errorCode.getMessage());
-        this.code = errorCode.getCode();
+        this.errorCode = errorCode;
     }
     
     /**
@@ -27,18 +29,23 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
      */
     public ThrowableErrorCode(ErrorCode errorCode, Throwable cause) {
         super(errorCode.getMessage(), cause);
-        this.code = errorCode.getCode();
+        this.errorCode = errorCode;
     }
     
     @Override
     public String getCode() {
-        return code;
+        return errorCode.getCode();
+    }
+
+    @Override
+    public ImmutableMap<String, ?> getErrors() {
+        return errorCode.getErrors();
     }
 
     @Override
     public String toString() {
         String s = getClass().getName();
-        return String.format("%s: <%s, %s>", s, code, getMessage());
+        return String.format("%s: <%s, %s>", s, errorCode.getCode(), getMessage());
     }
 
 }

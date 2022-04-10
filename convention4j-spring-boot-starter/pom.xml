@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>fun.fengwk.convention4j</groupId>
 		<artifactId>convention4j-parent</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>convention4j-spring-boot-starter</artifactId>
@@ -21,6 +21,16 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.common4j</groupId>
+			<artifactId>common4j-i18n</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
 			<groupId>fun.fengwk.auto-validation</groupId>
 			<artifactId>auto-validation-validator</artifactId>
 			<optional>true</optional>
@@ -31,8 +41,8 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-i18n</artifactId>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-redis</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -41,13 +51,8 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
+			<groupId>fun.fengwk.convention4j</groupId>
+			<artifactId>convention4j-spring-boot-test-starter</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

@@ -1,7 +1,8 @@
 package fun.fengwk.convention.api.result;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * REST或RPC调用时的返回结果。
@@ -44,6 +45,6 @@ public interface Result<T> extends Serializable {
      * 
      * @return
      */
-    Map<String, String> getErrors();
+    ImmutableMap<String, ?> getErrors();
 
 }

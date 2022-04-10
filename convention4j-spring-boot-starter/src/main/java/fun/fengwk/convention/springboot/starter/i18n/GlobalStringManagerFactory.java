@@ -57,11 +57,11 @@ public class GlobalStringManagerFactory {
      * @param keyPrefix
      * @param <T>
      * @return
-     * @see StringManagerFactory#getStringManagerProxy(Class, String)
+     * @see StringManagerFactory#getStringManagerProxy(Class, String, ClassLoader)
      */
-    public static <T> T getStringManagerProxy(Class<T> proxyClass, String keyPrefix) {
+    public static <T> T getStringManagerProxy(Class<T> proxyClass, String keyPrefix, ClassLoader classLoader) {
         checkState();
-        return instance.getStringManagerProxy(proxyClass, keyPrefix);
+        return instance.getStringManagerProxy(proxyClass, keyPrefix, classLoader);
     }
 
     /**
@@ -70,11 +70,11 @@ public class GlobalStringManagerFactory {
      * @param keyPrefixClass
      * @param <T>
      * @return
-     * @see StringManagerFactory#getStringManagerProxy(Class, Class)
+     * @see StringManagerFactory#getStringManagerProxy(Class, Class, ClassLoader)
      */
-    public static <T> T getStringManagerProxy(Class<T> proxyClass, Class<?> keyPrefixClass) {
+    public static <T> T getStringManagerProxy(Class<T> proxyClass, Class<?> keyPrefixClass, ClassLoader classLoader) {
         checkState();
-        return instance.getStringManagerProxy(proxyClass, keyPrefixClass);
+        return instance.getStringManagerProxy(proxyClass, keyPrefixClass, classLoader);
     }
 
     /**
@@ -82,11 +82,11 @@ public class GlobalStringManagerFactory {
      * @param proxyClass
      * @param <T>
      * @return
-     * @see StringManagerFactory#getStringManagerProxy(Class)
+     * @see StringManagerFactory#getStringManagerProxy(Class, ClassLoader)
      */
-    public static <T> T getStringManagerProxy(Class<T> proxyClass) {
+    public static <T> T getStringManagerProxy(Class<T> proxyClass, ClassLoader classLoader) {
         checkState();
-        return instance.getStringManagerProxy(proxyClass);
+        return instance.getStringManagerProxy(proxyClass, classLoader);
     }
 
     private static void checkState() {

@@ -21,7 +21,7 @@ public class Pages {
      * @param totalCount
      * @return
      */
-    public static <E> Page<E> page(Pageable pageable, List<E> results, int totalCount) {
+    public static <E> Page<E> page(Pageable pageable, List<E> results, long totalCount) {
         return new PageImpl<>(pageable.getPageNumber(), pageable.getPageSize(), results, totalCount);
     }
     

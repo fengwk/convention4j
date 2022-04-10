@@ -1,6 +1,7 @@
 package fun.fengwk.convention.api.result;
 
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Objects;
 
 /**
@@ -15,9 +16,9 @@ public class ResultImpl<T> implements Result<T> {
     private final String code;
     private final String message;
     private final T data;
-    private final Map<String, String> errors;
+    private final ImmutableMap<String, ?> errors;
     
-    public ResultImpl(boolean success, String code, String message, T data, Map<String, String> errors) {
+    public ResultImpl(boolean success, String code, String message, T data, ImmutableMap<String, ?> errors) {
         this.success = success;
         this.code = code;
         this.message = message;
@@ -46,7 +47,7 @@ public class ResultImpl<T> implements Result<T> {
     }
 
     @Override
-    public Map<String, String> getErrors() {
+    public ImmutableMap<String, ?> getErrors() {
         return errors;
     }
 

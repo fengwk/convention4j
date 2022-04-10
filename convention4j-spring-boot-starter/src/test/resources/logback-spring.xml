@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="fun/fengwk/convention/springboot/starter/logback/base.xml"/>
+</configuration>

@@ -1,9 +1,8 @@
 package fun.fengwk.convention.api.result;
 
+import com.google.common.collect.ImmutableMap;
 import fun.fengwk.convention.api.code.ErrorCode;
 import fun.fengwk.convention.api.code.SuccessCode;
-
-import java.util.Map;
 
 /**
  * 用于构建{@link Result}的工厂方法集。
@@ -81,7 +80,7 @@ public class Results {
      * @param errors
      * @return
      */
-    public static <T> Result<T> error(String code, String message, Map<String, String> errors) {
+    public static <T> Result<T> error(String code, String message, ImmutableMap<String, Object> errors) {
         return new ResultImpl<>(false, code, message, null, errors);
     }
     
@@ -104,7 +103,7 @@ public class Results {
      * @param errors
      * @return
      */
-    public static <T> Result<T> of(ErrorCode errorCode, Map<String, String> errors) {
+    public static <T> Result<T> of(ErrorCode errorCode, ImmutableMap<String, ?> errors) {
         return new ResultImpl<>(false, errorCode.getCode(), errorCode.getMessage(), null, errors);
     }
 

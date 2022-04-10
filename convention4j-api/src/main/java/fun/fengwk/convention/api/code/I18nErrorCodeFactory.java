@@ -1,30 +1,48 @@
 package fun.fengwk.convention.api.code;
 
+import com.google.common.collect.ImmutableMap;
+import fun.fengwk.commons.i18n.AggregateResourceBundle;
 import fun.fengwk.commons.i18n.StringManager;
+import fun.fengwk.commons.i18n.StringManagerFactory;
 
+import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.ResourceBundle;
 
 /**
  * 具备本地化能力的编码生产工厂。
  * 
  * @author fengwk
  */
-public class I18nErrorCodeFactory implements ErrorCodeFactory {
+public class I18nErrorCodeFactory extends ErrorCodeFactory {
+
+    private static final String BASE_NAME = "error-code";
 
     private final StringManager stringManager;
 
-    public I18nErrorCodeFactory(StringManager stringManager) {
-        this.stringManager = Objects.requireNonNull(stringManager);
+    /**
+     *
+     * @param locale not null
+     * @param classLoader not null
+     * @throws IOException
+     */
+    public I18nErrorCodeFactory(Locale locale, ClassLoader classLoader) throws IOException {
+        Objects.requireNonNull(locale);
+        Objects.requireNonNull(classLoader);
+        ResourceBundle resourceBundle = ResourceBundle.getBundle(BASE_NAME, locale, classLoader, AggregateResourceBundle.CONTROL);
+        StringManagerFactory stringManagerFactory = new StringManagerFactory(resourceBundle);
+        this.stringManager = stringManagerFactory.getStringManager();
     }
 
     @Override
-    public ErrorCode create(String code) {
-        return new ImmutableErrorCode(code, stringManager.getString(code));
+    protected ErrorCode doCreate(String errorCode, ImmutableMap<String, ?> errors) {
+        return new ImmutableErrorCode(errorCode, stringManager.getString(errorCode, errors), errors);
     }
 
     @Override
-    public ErrorCode create(String code, String message) {
-        return new ImmutableErrorCode(code, message);
+    protected ErrorCode doCreate(String errorCode, String message, ImmutableMap<String, ?> errors) {
+        return new ImmutableErrorCode(errorCode, message, errors);
     }
 
 }

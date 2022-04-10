@@ -51,7 +51,7 @@ public interface Page<T> extends Serializable {
      * 
      * @return
      */
-    int getTotalPages();
+    long getTotalPages();
 
     /**
      * 获取结果集列表，如果没有结果则返回空列表。

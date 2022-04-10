@@ -1,5 +1,7 @@
 package fun.fengwk.convention.springboot.starter.rest;
 
+import com.google.common.collect.ImmutableMap;
+import fun.fengwk.convention.api.code.CodeTable;
 import fun.fengwk.convention.api.code.ErrorCode;
 import fun.fengwk.convention.api.code.ErrorCodeFactory;
 import fun.fengwk.convention.api.code.ThrowableErrorCode;
@@ -33,9 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static fun.fengwk.convention.api.code.ErrorCodes.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention.api.code.ErrorCodes.ILLEGAL_STATE;
-import static fun.fengwk.convention.api.code.ErrorCodes.RESOURCE_NOT_FOUND;
+import static fun.fengwk.convention.api.code.CommonCodeTable.*;
 
 /**
  * rest协议的异常处理程序。
@@ -63,7 +63,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { NoHandlerFoundException.class })
     public Result<Void> handleNoHandlerFoundException(HttpServletRequest request, NoHandlerFoundException e) {
         warn(request, e);
-        return Results.of(toErrorCode(RESOURCE_NOT_FOUND, e));
+        return Results.of(toErrorCode(A_RESOURCE_NOT_FOUND, e));
     }
     
     // 在检验参数注解不通过时抛出该异常
@@ -71,11 +71,11 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { ConstraintViolationException.class })
     public Result<Void> handleConstraintViolationException(HttpServletRequest request, ConstraintViolationException e) {
         warn(request, e);
-        Map<String, String> errors = convertToErrors(e);
+        ImmutableMap<String, String> errors = convertToErrors(e);
         if (errors.isEmpty()) {
-            return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+            return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
         } else {
-            return Results.of(codeFactory.create(ILLEGAL_ARGUMENT, tryGetFirstError(errors)), errors);
+            return Results.of(codeFactory.create(A_ILLEGAL_ARGUMENT, tryGetFirstError(errors)), errors);
         }
     }
     
@@ -84,11 +84,11 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { MethodArgumentNotValidException.class })
     public Result<Void> handleMethodArgumentNotValidException(HttpServletRequest request, MethodArgumentNotValidException e) {
         warn(request, e);
-        Map<String, String> errors = convertToErrors(e);
+        ImmutableMap<String, String> errors = convertToErrors(e);
         if (errors.isEmpty()) {
-            return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+            return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
         } else {
-            return Results.of(codeFactory.create(ILLEGAL_ARGUMENT, tryGetFirstError(errors)), errors);
+            return Results.of(codeFactory.create(A_ILLEGAL_ARGUMENT, tryGetFirstError(errors)), errors);
         }
     }
     
@@ -97,7 +97,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { BindException.class })
     public Result<Void> handleBindException(HttpServletRequest request, BindException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
     
     // 缺少请求入参产生的异常
@@ -105,7 +105,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { MissingServletRequestParameterException.class })
     public Result<Void> handleMissingServletRequestParameterException(HttpServletRequest request, MissingServletRequestParameterException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
 
     // 当传入参数与方法参数类型不匹配时抛出该异常
@@ -113,7 +113,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { MethodArgumentTypeMismatchException.class })
     public Result<Void> handleMethodArgumentTypeMismatchException(HttpServletRequest request, MethodArgumentTypeMismatchException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
     
     // 文件上传异常
@@ -121,7 +121,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { MultipartException.class })
     public Result<Void> handleMultipartException(HttpServletRequest request, MultipartException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
     
     // 使用了不支持的类型
@@ -129,7 +129,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { HttpMediaTypeNotSupportedException.class })
     public Result<Void> handleHttpMediaTypeNotSupportedException(HttpServletRequest request, HttpMediaTypeNotSupportedException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
     
     // 不支持传入的HTTP请求方法
@@ -137,7 +137,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { HttpRequestMethodNotSupportedException.class })
     public Result<Void> handleHttpRequestMethodNotSupportedException(HttpServletRequest request, HttpRequestMethodNotSupportedException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
 
     // 参数绑定异常
@@ -145,7 +145,7 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { ServletRequestBindingException.class })
     public Result<Void> handleServletRequestBindingException(HttpServletRequest request, ServletRequestBindingException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
 
     // 异常码抛出捕获
@@ -166,14 +166,14 @@ public class RestGlobalExceptionHandler {
     @ExceptionHandler(value = { IllegalArgumentException.class })
     public Result<Void> handleIllegalArgumentException(HttpServletRequest request, IllegalArgumentException e) {
         warn(request, e);
-        return Results.of(toErrorCode(ILLEGAL_ARGUMENT, e));
+        return Results.of(toErrorCode(A_ILLEGAL_ARGUMENT, e));
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = { Throwable.class })
     public Result<Void> handleThrowable(HttpServletRequest request, Throwable e) {
         error(request, e);
-        return Results.of(toErrorCode(ILLEGAL_STATE, e));
+        return Results.of(toErrorCode(B_ILLEGAL_STATE, e));
     }
     
     private void warn(HttpServletRequest request, Throwable e) {
@@ -189,7 +189,7 @@ public class RestGlobalExceptionHandler {
                 + (request.getQueryString() == null || request.getQueryString().isEmpty() ? "" : "?" + request.getQueryString());
     }
 
-    private ErrorCode toErrorCode(String errCode, Throwable e) {
+    private ErrorCode toErrorCode(CodeTable errCode, Throwable e) {
         String msg = e.getLocalizedMessage();
         ErrorCode errorCode;
         if (msg == null || msg.trim().isEmpty()) {
@@ -200,22 +200,23 @@ public class RestGlobalExceptionHandler {
         return errorCode;
     }
     
-    private Map<String, String> convertToErrors(ConstraintViolationException e) {
+    private ImmutableMap<String, String> convertToErrors(ConstraintViolationException e) {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         Map<String, String> errors = new HashMap<>();
         if (e.getConstraintViolations() != null) {
             for (ConstraintViolation<?> cv : e.getConstraintViolations()) {
-                errors.put(getProperty(cv.getPropertyPath()), cv.getMessage());
+                builder.put(getProperty(cv.getPropertyPath()), cv.getMessage());
             }
         }
-        return errors;
+        return builder.build();
     }
     
-    private Map<String, String> convertToErrors(MethodArgumentNotValidException e) {
-        Map<String, String> errors = new HashMap<>();
+    private ImmutableMap<String, String> convertToErrors(MethodArgumentNotValidException e) {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         for (FieldError fe : e.getBindingResult().getFieldErrors()) {
-            errors.put(fe.getObjectName() + "." + fe.getField(), fe.getDefaultMessage());
+            builder.put(fe.getObjectName() + "." + fe.getField(), fe.getDefaultMessage());
         }
-        return errors;
+        return builder.build();
     }
     
     private String getProperty(Path path) {

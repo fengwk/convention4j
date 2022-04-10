@@ -1,5 +1,6 @@
 package fun.fengwk.convention.api.gson;
 
+import com.google.common.collect.*;
 import com.google.gson.GsonBuilder;
 import fun.fengwk.convention.api.result.Result;
 
@@ -25,6 +26,12 @@ public class DefaultGsonBuilderFactory {
         builder.registerTypeAdapter(Date.class, new DateTypeAdapter());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateTypeAdapter());
         builder.registerTypeAdapter(Result.class, new ResultTypeAdapter());
+        builder.registerTypeAdapter(ImmutableCollection.class, new ImmutableListDeserializer());
+        builder.registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer());
+        builder.registerTypeAdapter(ImmutableSet.class, new ImmutableSetJsonDeserializer());
+        builder.registerTypeAdapter(ImmutableSortedSet.class, new ImmutableSetJsonDeserializer());
+        builder.registerTypeAdapter(ImmutableMap.class, new ImmutableMapJsonDeserializer());
+        builder.registerTypeAdapter(ImmutableSortedMap.class, new ImmutableMapJsonDeserializer());
         return builder;
     }
     

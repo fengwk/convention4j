@@ -1,19 +1,13 @@
 package fun.fengwk.convention.api.gson;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import fun.fengwk.convention.api.result.Result;
 import fun.fengwk.convention.api.result.ResultImpl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Map;
 
 /**
  * 
@@ -66,7 +60,7 @@ public class ResultTypeAdapter implements GsonTypeAdapter<Result<?>> {
             String code = deserializeCode(jsonObject.get(PROPERTY_CODE));
             String message = deserializeMessage(jsonObject.get(PROPERTY_MESSAGE));
             Object data = deserializeData(jsonObject.get(PROPERTY_DATA), typeOfT, context);
-            Map<String, String> errors = deserializeErrors(jsonObject.get(PROPERTY_ERRORS), context);
+            ImmutableMap<String, ?> errors = deserializeErrors(jsonObject.get(PROPERTY_ERRORS), context);
             return new ResultImpl<>(success, code, message, data, errors);
         } else {
             throw new JsonParseException(String.format("Json[%s] shoud be null or object", json));
@@ -98,7 +92,7 @@ public class ResultTypeAdapter implements GsonTypeAdapter<Result<?>> {
         if (type instanceof ParameterizedType) {
             ParameterizedType pType = (ParameterizedType) type;
             Type[] types = pType.getActualTypeArguments();
-            if (pType == null || types.length != 1) {
+            if (types.length != 1) {
                 throw new JsonParseException(String.format("Unknown type %s", type));
             }
             data = context.deserialize(jsonEle, types[0]);
@@ -113,12 +107,12 @@ public class ResultTypeAdapter implements GsonTypeAdapter<Result<?>> {
         return data;
     }
     
-    private Map<String, String> deserializeErrors(JsonElement jsonEle, JsonDeserializationContext context) {
+    private ImmutableMap<String, ?> deserializeErrors(JsonElement jsonEle, JsonDeserializationContext context) {
         if (jsonEle == null || jsonEle.isJsonNull()) {
             return null;
         }
         
-        return context.deserialize(jsonEle, new TypeToken<Map<String, String>>() {}.getType());
+        return context.deserialize(jsonEle, new TypeToken<ImmutableMap<String, ?>>() {}.getType());
     }
 
 }

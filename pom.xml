@@ -13,7 +13,7 @@
 	<groupId>fun.fengwk.convention4j</groupId>
 	<artifactId>convention4j-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>Convention For Java</description>
@@ -49,26 +49,32 @@
 
 	<modules>
 		<module>convention4j-api</module>
+		<module>convention4j-spring-boot-test-starter</module>
 		<module>convention4j-spring-boot-starter</module>
 		<module>convention4j-spring-boot-starter-rest</module>
-	</modules>
+    </modules>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<maven.compiler.source>8</maven.compiler.source>
-		<maven.compiler.target>8</maven.compiler.target>
-		<auto-mapper.version>0.0.12</auto-mapper.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
+		<auto-mapper.version>0.0.16</auto-mapper.version>
 		<auto-validation.version>0.0.10</auto-validation.version>
-		<common4j.version>0.0.1</common4j.version>
-		<spring-boot.version>2.5.4</spring-boot.version>
-		<mybatis-spring-boot-starter.version>2.1.4</mybatis-spring-boot-starter.version>
-		<mysql-connector-java.version>8.0.26</mysql-connector-java.version>
+		<common4j.version>0.0.2-SNAPSHOT</common4j.version>
+		<spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
+		<spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
+		<spring-cloud-alibaba-dependencies.version>2.2.7.RELEASE</spring-cloud-alibaba-dependencies.version>
+		<mybatis-spring-boot-starter.version>2.2.2</mybatis-spring-boot-starter.version>
+		<mysql-connector-java.version>5.1.49</mysql-connector-java.version>
 		<resteasy-jaxrs.version>4.0.0.Beta5</resteasy-jaxrs.version>
 		<jwt4j.version>0.0.4</jwt4j.version>
-		<redisson.version>3.16.0</redisson.version>
+		<redisson.version>3.17.0</redisson.version>
+		<h2.version>1.4.200</h2.version>
+		<embedded-redis.version>0.6</embedded-redis.version>
 		<junit.version>4.13.2</junit.version>
-		<lombok.version>1.18.20</lombok.version>
+		<lombok.version>1.18.22</lombok.version>
 	</properties>
 
 	<dependencyManagement>
@@ -76,6 +82,11 @@
 			<dependency>
 				<groupId>fun.fengwk.convention4j</groupId>
 				<artifactId>convention4j-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>fun.fengwk.convention4j</groupId>
+				<artifactId>convention4j-spring-boot-test-starter</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -110,9 +121,23 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud-dependencies.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-parent</artifactId>
-				<version>${spring-boot.version}</version>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot-dependencies.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.alibaba.cloud</groupId>
+				<artifactId>spring-cloud-alibaba-dependencies</artifactId>
+				<version>${spring-cloud-alibaba-dependencies.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -147,6 +172,16 @@
 				<version>${redisson.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>com.h2database</groupId>
+				<artifactId>h2</artifactId>
+				<version>${h2.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.kstyrc</groupId>
+				<artifactId>embedded-redis</artifactId>
+				<version>${embedded-redis.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
 				<version>${junit.version}</version>
@@ -158,7 +193,7 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+
 	<profiles>
         <profile>
             <id>sonatype-oss-release</id>

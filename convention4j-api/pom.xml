@@ -6,21 +6,30 @@
 	<parent>
 		<groupId>fun.fengwk.convention4j</groupId>
 		<artifactId>convention4j-parent</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>convention4j-api</artifactId>
 
 	<dependencies>
 		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-i18n</artifactId>
-			<optional>true</optional>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.common4j</groupId>
+			<artifactId>common4j-i18n</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>
