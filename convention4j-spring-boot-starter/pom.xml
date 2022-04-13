@@ -26,18 +26,8 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-i18n</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>fun.fengwk.auto-validation</groupId>
 			<artifactId>auto-validation-validator</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-idgen</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -52,7 +42,7 @@
 		</dependency>
 		<dependency>
 			<groupId>fun.fengwk.convention4j</groupId>
-			<artifactId>convention4j-spring-boot-test-starter</artifactId>
+			<artifactId>convention4j-spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

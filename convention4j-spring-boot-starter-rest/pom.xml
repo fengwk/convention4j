@@ -51,10 +51,6 @@
 			<artifactId>gson</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-i18n</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>fun.fengwk.jwt4j</groupId>
 			<artifactId>jwt4j</artifactId>
 		</dependency>
@@ -65,7 +61,7 @@
 		</dependency>
 		<dependency>
 			<groupId>fun.fengwk.convention4j</groupId>
-			<artifactId>convention4j-spring-boot-test-starter</artifactId>
+			<artifactId>convention4j-spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

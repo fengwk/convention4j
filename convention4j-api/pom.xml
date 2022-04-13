@@ -13,6 +13,14 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>fun.fengwk.convention4j</groupId>
+			<artifactId>convention4j-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ognl</groupId>
+			<artifactId>ognl</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 		</dependency>
@@ -22,9 +30,9 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>fun.fengwk.common4j</groupId>
-			<artifactId>common4j-i18n</artifactId>
-			<optional>true</optional>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

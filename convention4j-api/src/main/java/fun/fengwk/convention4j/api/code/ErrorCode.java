@@ -1,0 +1,206 @@
+package fun.fengwk.convention4j.api.code;
+
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Objects;
+import java.util.function.Function;
+
+/**
+ * 错误码。
+ * 
+ * <p>
+ * 描述：
+ * 在业务系统中使用错误码来替代复杂的异常类继承结构可以保持业务代码的简洁以及错误信息的高内聚，
+ * 同时错误码相比于异常能进行更轻量的进程间传递。
+ * </p>
+ * 
+ * <p>
+ * code编码规约，参考<a href="https://blog.csdn.net/alitech2017/article/details/107042035/">错误码如何设计才合理？</a>：
+ * 错误产生来源_[业务域_]四位数字编号
+ * 
+ * <p>
+ * 错误产生来源：
+ * <ul>
+ * <li>A：表示当前错误来自于调用者，例如调用者传递了错误的入参</li>
+ * <li>B：表示当前错误来自于当前系统，例如当前系统发生OOM</li>
+ * <li>C：表示当前错误来自于依赖系统，例如发生RPC调用错误</li>
+ * </ul>
+ * 例如使用A_0001表示调用参数异常，使用B_0001表示系统状态异常。
+ * </p>
+ * 
+ * @author fengwk
+ */
+public interface ErrorCode extends Code {
+
+    /**
+     * 错误码表示分隔符。
+     */
+    String SEPARATOR = "_";
+
+    /**
+     * 表示当前错误来自于调用者。
+     */
+    String SOURCE_A = "A";
+    
+    /**
+     * 表示当前错误来自于当前系统。
+     */
+    String SOURCE_B = "B";
+    
+    /**
+     * 表示当前错误来自于依赖系统。
+     */
+    String SOURCE_C = "C";
+    
+    /**
+     * 获取当前异常码码值，在使用异常码模式开发的过程中应该确保不同类型的错误具有不同的码值。
+     * 
+     * @return not null
+     */
+    @Override
+    String getCode();
+    
+    /**
+     * 获取错误码信息，该信息应该简洁明了地阐述当前错误原因。
+     * 
+     * @return
+     */
+    String getMessage();
+
+    /**
+     * 获取当前错误码包含的错误信息。
+     *
+     * @return not null
+     */
+    ImmutableMap<String, ?> getErrors();
+
+    /**
+     * 检查当前错错误产生来源，详见{@link ErrorCode}文档。
+     * 
+     * @return
+     */
+    default boolean sourceOf(String source) {
+        return getCode().startsWith(source);
+    }
+
+    /**
+     * 获取当前错误码的{@link ThrowableErrorCode}视图。
+     *
+     * @return
+     */
+    default ThrowableErrorCode asThrowable() {
+        return new ThrowableErrorCode(this);
+    }
+
+    /**
+     * 获取当前错误码的{@link ThrowableErrorCode}视图。
+     *
+     * @param cause 造成原因，允许用null来表示不存在或未知。
+     * @return
+     */
+    default ThrowableErrorCode asThrowable(Throwable cause) {
+        return new ThrowableErrorCode(this, cause);
+    }
+
+    /**
+     * 将指定异常转为{@link ThrowableErrorCode}视图。
+     *
+     * @param err 异常。
+     * @param asThrowableFunc 如果异常无法自动转为ThrowableErrorCode，则需要调用asThrowableFunc函数进行转换。
+     * @param <T>
+     * @return
+     */
+    static <T extends Throwable> ThrowableErrorCode asThrowable(
+            T err, Function<T, ThrowableErrorCode> asThrowableFunc) {
+        if (err instanceof ThrowableErrorCode) {
+            return (ThrowableErrorCode) err;
+        } else if (err instanceof ErrorCode) {
+            return ((ErrorCode) err).asThrowable(err);
+        } else {
+            return asThrowableFunc.apply(err);
+        }
+    }
+
+    /**
+     * 通用错误码：使用“错误产生来源_四位数字编号”方式编码code。
+     * 
+     * @param source not null
+     * @param num not null
+     * @return
+     */
+    static String encodeCode(String source, String num) {
+        Objects.requireNonNull(source, "Source cannot be null");
+        Objects.requireNonNull(num, "Num cannot be null");
+        if (source.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("Source format error");
+        }
+        if (num.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("Num format error");
+        }
+
+        return source + SEPARATOR + num;
+    }
+
+    /**
+     * 业务错误码：使用“错误产生来源_业务域_四位数字编号”方式编码code。
+     *
+     * @param source not null
+     * @param domain not null
+     * @param num not null
+     * @return
+     */
+    static String encodeCode(String source, String domain, String num) {
+        Objects.requireNonNull(source, "Source cannot be null");
+        Objects.requireNonNull(domain, "Domain cannot be null");
+        Objects.requireNonNull(num, "Num cannot be null");
+        if (source.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("Source format error");
+        }
+        if (domain.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("Domain format error");
+        }
+        if (num.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("Num format error");
+        }
+
+        return source + SEPARATOR + domain + SEPARATOR + num;
+    }
+
+    /**
+     * 返沪长度为2或3的String数组。
+     * 长度为2：source+num。
+     * 长度为3：source+domain+num。
+     *
+     * @param errorCode
+     * @return
+     */
+    static String[] decodeCode(String errorCode) {
+        if (!validateErrorCodeFormat(errorCode)) {
+            throw new IllegalArgumentException("error code format error.");
+        }
+
+        return errorCode.split(SEPARATOR);
+    }
+
+    /**
+     * 校验错误码格式。
+     *
+     * @param code
+     * @return
+     */
+    static boolean validateErrorCodeFormat(String code) {
+        if (code == null || code.length() < 3) {
+            return false;
+        }
+
+        if (!code.contains(SEPARATOR)) {
+            return false;
+        }
+
+        char c0 = code.charAt(0);
+        char c1 = code.charAt(1);
+        return (c0 == SOURCE_A.charAt(0) || c0 == SOURCE_B.charAt(0) || c0 == SOURCE_C.charAt(0))
+                && c1 == SEPARATOR.charAt(0);
+    }
+
+}
