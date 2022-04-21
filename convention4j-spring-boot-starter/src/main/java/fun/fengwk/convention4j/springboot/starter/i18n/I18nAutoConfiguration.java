@@ -26,7 +26,7 @@ import java.util.ResourceBundle;
 @Configuration
 public class I18nAutoConfiguration {
     
-    private static final Logger LOG = LoggerFactory.getLogger(I18nAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(I18nAutoConfiguration.class);
     
     @Primary
     @Bean
@@ -42,7 +42,7 @@ public class I18nAutoConfiguration {
 
         GlobalStringManagerFactory.setInstance(stringManagerFactory);
 
-        LOG.info("StringManagerFactory autoconfiguration successfully, baseName: {}, locale: {} ", 
+        log.info("StringManagerFactory autoconfiguration successfully, baseName: {}, locale: {} ", 
                 properties.getBaseName(), properties.getLocale());
         
         return stringManagerFactory;

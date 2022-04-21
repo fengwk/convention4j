@@ -1,9 +1,10 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 /**
  * {@link ThrowableErrorCode}是一种异常类型的错误码，允许使用者像处理异常一样处理错误码。
+ * 建议在抛出错误码异常前记录错误日志。
  *
  * @author fengwk
  */
@@ -38,7 +39,7 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
     }
 
     @Override
-    public ImmutableMap<String, ?> getErrors() {
+    public Map<String, ?> getErrors() {
         return errorCode.getErrors();
     }
 

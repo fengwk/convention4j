@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RedisWorkerIdClient.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisWorkerIdClient.class);
 
     private static final String LUA_GET_IDLE_WORKER_ID;
     private static final String LUA_KEEPALIVE_WORKER_ID;
@@ -237,7 +237,7 @@ public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
             } catch (InterruptedException e) {
                 isInterrupted = true;
             } catch (Throwable err) {
-                LOG.error("", err);
+                log.error("", err);
                 // 释放时间片，避免不断产生异常导致的CPU 100%
                 Thread.yield();
             }
@@ -273,7 +273,7 @@ public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
                         // CAS失败则跳出重试
                         break;
                     }
-                    LOG.info("acquired worker id '{}' succeeded", acquiredWorkerId);
+                    log.info("acquired worker id '{}' succeeded", acquiredWorkerId);
                     signalAllAcquired();
                 } else {
                     // 没有获取到空闲的workerId，则等待一会再重试
@@ -287,7 +287,7 @@ public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
                 try {
                     Long expiredTime = keepaliveWorkerId(ws.workerId);
                     if (expiredTime != null) {
-                        LOG.debug("keepalive worker id succeeded");
+                        log.debug("keepalive worker id succeeded");
                         // 续约成功，等待一会再次续约
                         Thread.sleep(KEEPALIVE_INTERVAL);
                         break;
@@ -309,20 +309,20 @@ public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
                 }
                 // 如果CAS成功了，输出状态转移日志
                 if (cas) {
-                    LOG.warn("keepalive worker id '{}' failed, restart acquire worker id", ws.workerId);
+                    log.warn("keepalive worker id '{}' failed, restart acquire worker id", ws.workerId);
                 }
                 break;
 
             case STATE_CLOSING:
                 if (workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(null, STATE_TERMINAL))) {
-                    LOG.info("{} closed", RedisWorkerIdClient.class.getSimpleName());
+                    log.info("{} closed", RedisWorkerIdClient.class.getSimpleName());
                 }
                 break;
 
             case STATE_CLOSING_AND_RELEASE_RESOURCE:
                 if (workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(null, STATE_TERMINAL))) {
                     scriptExecutor.close();
-                    LOG.info("{} closed and close pool", RedisWorkerIdClient.class.getSimpleName());
+                    log.info("{} closed and close pool", RedisWorkerIdClient.class.getSimpleName());
                 }
                 break;
 

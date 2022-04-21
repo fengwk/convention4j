@@ -16,7 +16,7 @@ import java.util.ResourceBundle;
  */
 public class StringManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StringManager.class);
+    private static final Logger log = LoggerFactory.getLogger(StringManager.class);
 
     private final ResourceBundle resourceBundle;
     private final String keyPrefix;

@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
-
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 /**
  * 错误码。
@@ -15,17 +15,16 @@ import java.util.function.Function;
  * </p>
  * 
  * <p>
- * code编码规约，参考<a href="https://blog.csdn.net/alitech2017/article/details/107042035/">错误码如何设计才合理？</a>：
- * 错误产生来源_[业务域_]四位数字编号
- * 
+ * code编码规约：域_四位数字编号<br/>
+ * 域：由简短的描述组成，必须符合格式^[a-zA-Z]+$
+ * </p>
+ *
  * <p>
- * 错误产生来源：
+ * 示例：
  * <ul>
- * <li>A：表示当前错误来自于调用者，例如调用者传递了错误的入参</li>
- * <li>B：表示当前错误来自于当前系统，例如当前系统发生OOM</li>
- * <li>C：表示当前错误来自于依赖系统，例如发生RPC调用错误</li>
+ * <li>C_0001：表示调用参数异常</li>
+ * <li>C_0002：表示系统状态异常</li>
  * </ul>
- * 例如使用A_0001表示调用参数异常，使用B_0001表示系统状态异常。
  * </p>
  * 
  * @author fengwk
@@ -38,20 +37,15 @@ public interface ErrorCode extends Code {
     String SEPARATOR = "_";
 
     /**
-     * 表示当前错误来自于调用者。
+     * 域的模式。
      */
-    String SOURCE_A = "A";
-    
+    Pattern REGEX_DOMAIN = Pattern.compile("^[a-zA-Z]+$");
+
     /**
-     * 表示当前错误来自于当前系统。
+     * 四位数字编号的模式。
      */
-    String SOURCE_B = "B";
-    
-    /**
-     * 表示当前错误来自于依赖系统。
-     */
-    String SOURCE_C = "C";
-    
+    Pattern REGEX_NUM = Pattern.compile("^[0-9]{4}$");
+
     /**
      * 获取当前异常码码值，在使用异常码模式开发的过程中应该确保不同类型的错误具有不同的码值。
      * 
@@ -72,16 +66,7 @@ public interface ErrorCode extends Code {
      *
      * @return not null
      */
-    ImmutableMap<String, ?> getErrors();
-
-    /**
-     * 检查当前错错误产生来源，详见{@link ErrorCode}文档。
-     * 
-     * @return
-     */
-    default boolean sourceOf(String source) {
-        return getCode().startsWith(source);
-    }
+    Map<String, ?> getErrors();
 
     /**
      * 获取当前错误码的{@link ThrowableErrorCode}视图。
@@ -122,85 +107,70 @@ public interface ErrorCode extends Code {
     }
 
     /**
-     * 通用错误码：使用“错误产生来源_四位数字编号”方式编码code。
-     * 
-     * @param source not null
-     * @param num not null
-     * @return
-     */
-    static String encodeCode(String source, String num) {
-        Objects.requireNonNull(source, "Source cannot be null");
-        Objects.requireNonNull(num, "Num cannot be null");
-        if (source.contains(SEPARATOR)) {
-            throw new IllegalArgumentException("Source format error");
-        }
-        if (num.contains(SEPARATOR)) {
-            throw new IllegalArgumentException("Num format error");
-        }
-
-        return source + SEPARATOR + num;
-    }
-
-    /**
-     * 业务错误码：使用“错误产生来源_业务域_四位数字编号”方式编码code。
+     * 业务错误码：使用“域_四位数字编号”方式编码code。
      *
-     * @param source not null
      * @param domain not null
      * @param num not null
      * @return
      */
-    static String encodeCode(String source, String domain, String num) {
-        Objects.requireNonNull(source, "Source cannot be null");
+    static String encodeCode(String domain, String num) {
         Objects.requireNonNull(domain, "Domain cannot be null");
         Objects.requireNonNull(num, "Num cannot be null");
-        if (source.contains(SEPARATOR)) {
-            throw new IllegalArgumentException("Source format error");
+
+        if (!REGEX_DOMAIN.matcher(domain).matches()) {
+            throw new IllegalArgumentException("domain '" + domain + "' format error");
         }
-        if (domain.contains(SEPARATOR)) {
-            throw new IllegalArgumentException("Domain format error");
-        }
-        if (num.contains(SEPARATOR)) {
-            throw new IllegalArgumentException("Num format error");
+        if (!REGEX_NUM.matcher(num).matches()) {
+            throw new IllegalArgumentException("num '" + num + "' format error");
         }
 
-        return source + SEPARATOR + domain + SEPARATOR + num;
+        return domain + SEPARATOR + num;
     }
 
     /**
-     * 返沪长度为2或3的String数组。
-     * 长度为2：source+num。
-     * 长度为3：source+domain+num。
+     * 返回长度为2的String数组，索引0为domain，索引1为num。
      *
      * @param errorCode
      * @return
+     * @throws IllegalArgumentException 如果errorCode格式错误将抛出该异常。
      */
     static String[] decodeCode(String errorCode) {
-        if (!validateErrorCodeFormat(errorCode)) {
-            throw new IllegalArgumentException("error code format error.");
+        int idx;
+        String domain, num;
+        if (errorCode != null && errorCode.length() >= 6
+                && (idx = errorCode.indexOf(SEPARATOR)) != -1
+                && REGEX_DOMAIN.matcher(domain = errorCode.substring(0, idx)).matches()
+                && REGEX_NUM.matcher(num = errorCode.substring(idx + 1)).matches()) {
+            return new String[] { domain, num };
+        } else {
+            throw new IllegalArgumentException("errorCode '" + errorCode + "' format error");
         }
-
-        return errorCode.split(SEPARATOR);
     }
 
     /**
      * 校验错误码格式。
      *
-     * @param code
+     * @param errorCode
      * @return
      */
-    static boolean validateErrorCodeFormat(String code) {
-        if (code == null || code.length() < 3) {
+    static boolean validateErrorCodeFormat(String errorCode) {
+        if (errorCode == null || errorCode.length() < 6) {
             return false;
         }
 
-        if (!code.contains(SEPARATOR)) {
+        int idx = errorCode.indexOf(SEPARATOR);
+        if (idx == -1) {
             return false;
         }
 
-        char c0 = code.charAt(0);
-        char c1 = code.charAt(1);
-        return (c0 == SOURCE_A.charAt(0) || c0 == SOURCE_B.charAt(0) || c0 == SOURCE_C.charAt(0))
-                && c1 == SEPARATOR.charAt(0);
+        if (!REGEX_DOMAIN.matcher(errorCode.substring(0, idx)).matches()) {
+            return false;
+        }
+        if (!REGEX_NUM.matcher(errorCode.substring(idx + 1)).matches()) {
+            return false;
+        }
+
+        return true;
     }
 
 }

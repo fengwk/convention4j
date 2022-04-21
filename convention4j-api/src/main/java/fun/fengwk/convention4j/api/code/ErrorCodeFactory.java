@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * 编码生产工厂。
@@ -16,7 +17,7 @@ public abstract class ErrorCodeFactory {
      * @param errors
      * @return
      */
-    protected abstract ErrorCode doCreate(String errorCode, ImmutableMap<String, ?> errors);
+    protected abstract ErrorCode doCreate(String errorCode, Map<String, ?> errors);
 
     /**
      * 指定错误编码、指定错误信息、指定错误内容实际创建错误码。
@@ -26,7 +27,7 @@ public abstract class ErrorCodeFactory {
      * @param errors not null
      * @return
      */
-    protected abstract ErrorCode doCreate(String errorCode, String message, ImmutableMap<String, ?> errors);
+    protected abstract ErrorCode doCreate(String errorCode, String message, Map<String, ?> errors);
 
     /**
      * 指定错误编码生产错误码。
@@ -35,7 +36,7 @@ public abstract class ErrorCodeFactory {
      * @return
      */
     public ErrorCode create(String errorCode) {
-        return create(errorCode, ImmutableMap.of());
+        return create(errorCode, Collections.emptyMap());
     }
 
     /**
@@ -45,7 +46,7 @@ public abstract class ErrorCodeFactory {
      * @param errors not null
      * @return
      */
-    public ErrorCode create(String errorCode, ImmutableMap<String, ?> errors) {
+    public ErrorCode create(String errorCode, Map<String, ?> errors) {
         if (!ErrorCode.validateErrorCodeFormat(errorCode)) {
             throw new IllegalArgumentException("error code format error.");
         }
@@ -61,7 +62,7 @@ public abstract class ErrorCodeFactory {
      * @return
      */
     public ErrorCode create(String errorCode, String message) {
-        return create(errorCode, message, ImmutableMap.of());
+        return create(errorCode, message, Collections.emptyMap());
     }
 
     /**
@@ -72,7 +73,7 @@ public abstract class ErrorCodeFactory {
      * @param errors not null
      * @return
      */
-    public ErrorCode create(String errorCode, String message, ImmutableMap<String, ?> errors) {
+    public ErrorCode create(String errorCode, String message, Map<String, ?> errors) {
         if (!ErrorCode.validateErrorCodeFormat(errorCode)) {
             throw new IllegalArgumentException("error code format error.");
         }
@@ -97,7 +98,7 @@ public abstract class ErrorCodeFactory {
      * @param errors not null
      * @return
      */
-    public ErrorCode create(CodeTable errorCodeTable, ImmutableMap<String, ?> errors) {
+    public ErrorCode create(CodeTable errorCodeTable, Map<String, ?> errors) {
         return create(errorCodeTable.getCode(), errors);
     }
 
@@ -120,7 +121,7 @@ public abstract class ErrorCodeFactory {
      * @param errors not null
      * @return
      */
-    public ErrorCode create(CodeTable errorCodeTable, String message, ImmutableMap<String, ?> errors) {
+    public ErrorCode create(CodeTable errorCodeTable, String message, Map<String, ?> errors) {
         return create(errorCodeTable.getCode(), message, errors);
     }
 

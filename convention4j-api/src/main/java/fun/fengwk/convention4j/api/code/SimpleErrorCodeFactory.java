@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 /**
  * 
@@ -9,12 +9,12 @@ import com.google.common.collect.ImmutableMap;
 public class SimpleErrorCodeFactory extends ErrorCodeFactory {
 
     @Override
-    protected ErrorCode doCreate(String errorCode, ImmutableMap<String, ?> errors) {
+    protected ErrorCode doCreate(String errorCode, Map<String, ?> errors) {
         return new ImmutableErrorCode(errorCode, null, errors);
     }
 
     @Override
-    protected ErrorCode doCreate(String errorCode, String message, ImmutableMap<String, ?> errors) {
+    protected ErrorCode doCreate(String errorCode, String message, Map<String, ?> errors) {
         return new ImmutableErrorCode(errorCode, message, errors);
     }
 

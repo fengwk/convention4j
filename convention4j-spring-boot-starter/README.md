@@ -155,7 +155,7 @@ StringManager stringManager = GlobalStringManagerFactory.getStringManager(Test.c
 convention:
   error-code:  
     i18n:
-      # 指定当前语言环境
+      # 指定当前语言环境，若不指定则有操作系统当前语言环境决定
       locale: zh_CN
 ```
 
@@ -181,7 +181,7 @@ public class Test {
 ErrorCode errorCode = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
 ```
 
-# 日志
+# 日志规约
 
 在resource目录下创建`logback-spring.xml`，添加以下配置：
 
@@ -192,3 +192,27 @@ ErrorCode errorCode = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
 </configuration>
 ```
 
+# EventBus
+
+使用Guava的EventBus功能可以很好地实现JVM进程内的发布订阅功能。
+
+引入依赖：
+
+```xml
+<dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+</dependency>
+```
+
+使用示例：
+
+```java
+@Component
+public class Test {
+    
+    @Autowired
+    private EventBus eventBus;
+
+}
+```

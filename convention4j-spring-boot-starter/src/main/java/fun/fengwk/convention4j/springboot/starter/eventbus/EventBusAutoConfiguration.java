@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class EventBusAutoConfiguration {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EventBusAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(EventBusAutoConfiguration.class);
 
     @ConditionalOnMissingBean(DeadEventListener.class)
     @Bean
@@ -27,7 +27,7 @@ public class EventBusAutoConfiguration {
     public EventBus eventBus(DeadEventListener deadEventListener) {
         EventBus eventBus = new EventBus();
         eventBus.register(deadEventListener);
-        LOG.info("{} autoconfiguration successfully, deadEventListener: {}",
+        log.info("{} autoconfiguration successfully, deadEventListener: {}",
                 EventBusAutoConfiguration.class.getSimpleName(), deadEventListener);
         return eventBus;
     }

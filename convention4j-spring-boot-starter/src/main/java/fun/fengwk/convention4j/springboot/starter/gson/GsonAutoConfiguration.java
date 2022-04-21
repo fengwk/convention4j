@@ -15,12 +15,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GsonAutoConfiguration {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GsonAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(GsonAutoConfiguration.class);
 
     @Bean
     public Gson gson() {
         Gson gson = GlobalGson.getInstance();
-        LOG.info("{} autoconfiguration successfully", GsonAutoConfiguration.class.getSimpleName());
+        log.info("{} autoconfiguration successfully", GsonAutoConfiguration.class.getSimpleName());
         return gson;
     }
 

@@ -52,7 +52,7 @@
 		<module>convention4j-api</module>
 		<module>convention4j-spring-boot-starter-test</module>
 		<module>convention4j-spring-boot-starter</module>
-		<module>convention4j-spring-boot-starter-rest</module>
+		<module>convention4j-spring-boot-starter-web</module>
     </modules>
 
 	<properties>
@@ -102,7 +102,7 @@
 			</dependency>
 			<dependency>
 				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-spring-boot-starter-rest</artifactId>
+				<artifactId>convention4j-spring-boot-starter-web</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

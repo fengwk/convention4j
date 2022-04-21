@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultDeadEventListener implements DeadEventListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultDeadEventListener.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultDeadEventListener.class);
 
     @Override
     public void onEvent(DeadEvent deadEvent) {
-        LOG.warn("discover dead event '{}'", deadEvent);
+        log.warn("discover dead event '{}'", deadEvent);
     }
 }

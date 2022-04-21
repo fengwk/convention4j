@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.snowflake;
 
-import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
+import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

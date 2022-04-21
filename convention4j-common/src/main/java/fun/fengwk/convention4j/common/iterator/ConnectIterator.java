@@ -1,6 +1,10 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * 该迭代器用于连接多个迭代器。

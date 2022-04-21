@@ -22,7 +22,7 @@ import javax.validation.Validator;
 @Configuration
 public class GlobalValidatorAutoConfiguration implements InitializingBean {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GlobalValidatorAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalValidatorAutoConfiguration.class);
 
     private final Validator validator;
     
@@ -33,7 +33,7 @@ public class GlobalValidatorAutoConfiguration implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         GlobalValidator.setInstance(validator);
-        LOG.info("{} setInstance {}", GlobalValidator.class.getSimpleName(), validator.getClass().getSimpleName());
+        log.info("{} setInstance {}", GlobalValidator.class.getSimpleName(), validator.getClass().getSimpleName());
     }
 
 }

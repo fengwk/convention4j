@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 public class JedisPoolScriptExecutor implements RedisScriptExecutor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JedisPoolScriptExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(JedisPoolScriptExecutor.class);
 
     private final Pool<Jedis> pool;
 
@@ -34,14 +34,14 @@ public class JedisPoolScriptExecutor implements RedisScriptExecutor {
     public <T> T execute(String script, List<String> keys, List<String> args, Class<T> returnType) throws Exception {
         try (Jedis jedis = pool.getResource()) {
             Long begin = null;
-            if (LOG.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 begin = System.currentTimeMillis();
             }
 
             Object res = jedis.eval(script, keys, args);
 
             if (begin != null) {
-                LOG.debug("eval cost {} ms", System.currentTimeMillis() - begin);
+                log.debug("eval cost {} ms", System.currentTimeMillis() - begin);
             }
 
             return returnType.cast(res);

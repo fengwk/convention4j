@@ -37,7 +37,7 @@ public interface OrderedObject {
     }
     
     /**
-     * 将指定集合按{@link OrderedObject}非降序排序。
+     * 将指定集合按{@link OrderedObject}非降序排序，优先级越高在返回列表里的索引越小。
      * 
      * @param <E>
      * @param collection

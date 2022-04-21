@@ -27,10 +27,9 @@ import java.util.Locale;
 @Configuration
 public class ErrorCodeAutoConfiguration {
     
-    private static final Logger LOG = LoggerFactory.getLogger(ErrorCodeAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(ErrorCodeAutoConfiguration.class);
 
     @ConditionalOnClass(StringManagerFactory.class)
-    @ConditionalOnProperty(prefix = "convention.error-code", name = "i18n.locale")
     @ConditionalOnMissingBean
     @Bean
     public ErrorCodeFactory i18nErrorCodeFactory(ErrorCodeProperties codeProperties, ResourceLoader resourceLoader) throws IOException {
@@ -44,7 +43,7 @@ public class ErrorCodeAutoConfiguration {
 
         GlobalErrorCodeFactory.setInstance(errorCodeFactory);
 
-        LOG.info("{} autoconfiguration successfully, i18n.locale: {} ",
+        log.info("{} autoconfiguration successfully, i18n.locale: {} ",
                 I18nErrorCodeFactory.class.getSimpleName(), locale);
         
         return errorCodeFactory;
@@ -57,7 +56,7 @@ public class ErrorCodeAutoConfiguration {
 
         GlobalErrorCodeFactory.setInstance(errorCodeFactory);
 
-        LOG.info("{} autoconfiguration successfully", SimpleErrorCodeFactory.class.getSimpleName());
+        log.info("{} autoconfiguration successfully", SimpleErrorCodeFactory.class.getSimpleName());
 
         return errorCodeFactory;
     }

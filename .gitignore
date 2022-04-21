@@ -96,3 +96,5 @@ buildNumber.properties
 
 *.log
 *.gz
+
+.factorypath

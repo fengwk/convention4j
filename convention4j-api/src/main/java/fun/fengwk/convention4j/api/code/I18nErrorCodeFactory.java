@@ -1,12 +1,12 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
 import fun.fengwk.convention4j.common.i18n.AggregateResourceBundle;
 import fun.fengwk.convention4j.common.i18n.StringManager;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
@@ -36,12 +36,12 @@ public class I18nErrorCodeFactory extends ErrorCodeFactory {
     }
 
     @Override
-    protected ErrorCode doCreate(String errorCode, ImmutableMap<String, ?> errors) {
+    protected ErrorCode doCreate(String errorCode, Map<String, ?> errors) {
         return new ImmutableErrorCode(errorCode, stringManager.getString(errorCode, errors), errors);
     }
 
     @Override
-    protected ErrorCode doCreate(String errorCode, String message, ImmutableMap<String, ?> errors) {
+    protected ErrorCode doCreate(String errorCode, String message, Map<String, ?> errors) {
         return new ImmutableErrorCode(errorCode, message, errors);
     }
 

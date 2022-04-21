@@ -17,7 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = TestApplication.class)
 public class ErrorCodeAutoConfigurationTest {
 
-    private static final String TEST_ERROR_CODE = ErrorCode.encodeCode(ErrorCode.SOURCE_A, "TEST", "0001");
+    private static final String TEST_ERROR_CODE = ErrorCode.encodeCode("TEST", "0001");
     
     @Autowired
     private ErrorCodeFactory errorCodeFactory;

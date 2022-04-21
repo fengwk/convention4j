@@ -1,12 +1,11 @@
 package fun.fengwk.convention4j.api.gson;
 
-import com.google.common.collect.*;
 import com.google.gson.GsonBuilder;
-import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.OrderedObject;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * 
@@ -14,24 +13,24 @@ import java.util.Date;
  */
 public class DefaultGsonBuilderFactory {
 
+    private static final List<GsonBuilderConfigurator> CONFIGURATORS;
+
+    static {
+        List<GsonBuilderConfigurator> configurators = new ArrayList<>();
+        ServiceLoader<GsonBuilderConfigurator> sl = ServiceLoader.load(GsonBuilderConfigurator.class);
+        for (GsonBuilderConfigurator configurator : sl) {
+            configurators.add(configurator);
+        }
+        CONFIGURATORS = OrderedObject.sort(configurators);
+    }
+
     private DefaultGsonBuilderFactory() {}
     
     public static GsonBuilder create() {
         GsonBuilder builder = new GsonBuilder();
-        builder.disableHtmlEscaping();// 关闭html转义
-        builder.registerTypeAdapter(Long.class, new LongTypeAdapter());
-        builder.registerTypeAdapter(long.class, new LongTypeAdapter());
-        builder.registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter());
-        builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter());
-        builder.registerTypeAdapter(Date.class, new DateTypeAdapter());
-        builder.registerTypeAdapter(java.sql.Date.class, new SqlDateTypeAdapter());
-        builder.registerTypeAdapter(Result.class, new ResultTypeAdapter());
-        builder.registerTypeAdapter(ImmutableCollection.class, new ImmutableListDeserializer());
-        builder.registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer());
-        builder.registerTypeAdapter(ImmutableSet.class, new ImmutableSetJsonDeserializer());
-        builder.registerTypeAdapter(ImmutableSortedSet.class, new ImmutableSetJsonDeserializer());
-        builder.registerTypeAdapter(ImmutableMap.class, new ImmutableMapJsonDeserializer());
-        builder.registerTypeAdapter(ImmutableSortedMap.class, new ImmutableMapJsonDeserializer());
+        for (GsonBuilderConfigurator configurator : CONFIGURATORS) {
+            configurator.config(builder);
+        }
         return builder;
     }
     

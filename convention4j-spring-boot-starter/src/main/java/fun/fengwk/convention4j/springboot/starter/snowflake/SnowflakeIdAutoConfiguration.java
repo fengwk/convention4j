@@ -31,14 +31,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 public class SnowflakeIdAutoConfiguration {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SnowflakeIdAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(SnowflakeIdAutoConfiguration.class);
 
     @ConditionalOnProperty(prefix = "convention.snowflake-id", name = "worker-id")
     @ConditionalOnMissingBean(WorkerIdClient.class)
     @Bean
     public WorkerIdClient fixedWorkerIdClient(SnowflakeIdProperties snowflakeIdProperties) {
         WorkerIdClient workerIdClient = new FixedWorkerIdClient(snowflakeIdProperties.getWorkerId());
-        LOG.info("{} created", FixedWorkerIdClient.class.getSimpleName());
+        log.info("{} created", FixedWorkerIdClient.class.getSimpleName());
         return workerIdClient;
     }
 
@@ -47,7 +47,7 @@ public class SnowflakeIdAutoConfiguration {
     @Bean
     public WorkerIdClient redisWorkerIdClient(StringRedisTemplate redisTemplate) {
         WorkerIdClient workerIdClient = new RedisWorkerIdClient(new RedisTemplateScriptExecutor(redisTemplate));
-        LOG.info("{} created", RedisWorkerIdClient.class.getSimpleName());
+        log.info("{} created", RedisWorkerIdClient.class.getSimpleName());
         return workerIdClient;
     }
 
@@ -62,7 +62,7 @@ public class SnowflakeIdAutoConfiguration {
 
         GlobalSnowflakeIdGenerator.setInstance(namespaceIdGenerator);
 
-        LOG.info("NamespaceSnowflakesIdGenerator autoconfiguration successfully, workerId: {}, initialTimestamp: {} ", 
+        log.info("NamespaceSnowflakesIdGenerator autoconfiguration successfully, workerId: {}, initialTimestamp: {} ", 
                 snowflakeIdProperties.getWorkerId(), snowflakeIdProperties.getInitialTimestamp());
 
         return namespaceIdGenerator;

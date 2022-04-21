@@ -14,7 +14,7 @@ public class ErrorCodeProperties {
     /**
      * 本地化
      */
-    private I18n i18n;
+    private I18n i18n = new I18n();
 
     public I18n getI18n() {
         return i18n;

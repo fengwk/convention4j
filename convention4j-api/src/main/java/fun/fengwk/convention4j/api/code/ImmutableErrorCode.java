@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.api.code;
 
-import com.google.common.collect.ImmutableMap;
-
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -14,9 +13,9 @@ public class ImmutableErrorCode implements ErrorCode {
     
     private final String code;
     private final String message;
-    private final ImmutableMap<String, ?> errors;
+    private final Map<String, ?> errors;
     
-    public ImmutableErrorCode(String code, String message, ImmutableMap<String, ?> errors) {
+    public ImmutableErrorCode(String code, String message, Map<String, ?> errors) {
         this.code = Objects.requireNonNull(code);
         this.message = message;
         this.errors = Objects.requireNonNull(errors);
@@ -33,7 +32,7 @@ public class ImmutableErrorCode implements ErrorCode {
     }
 
     @Override
-    public ImmutableMap<String, ?> getErrors() {
+    public Map<String, ?> getErrors() {
         return errors;
     }
 
