@@ -17,7 +17,7 @@ public class EventBusAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(EventBusAutoConfiguration.class);
 
-    @ConditionalOnMissingBean(DeadEventListener.class)
+    @ConditionalOnMissingBean
     @Bean
     public DeadEventListener deadEventListener() {
         return new DefaultDeadEventListener();
@@ -28,7 +28,7 @@ public class EventBusAutoConfiguration {
         EventBus eventBus = new EventBus();
         eventBus.register(deadEventListener);
         log.info("{} autoconfiguration successfully, deadEventListener: {}",
-                EventBusAutoConfiguration.class.getSimpleName(), deadEventListener);
+                EventBus.class.getSimpleName(), deadEventListener);
         return eventBus;
     }
 

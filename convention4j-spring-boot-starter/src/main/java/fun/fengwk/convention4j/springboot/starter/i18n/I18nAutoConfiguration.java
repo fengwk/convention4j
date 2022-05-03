@@ -2,14 +2,13 @@ package fun.fengwk.convention4j.springboot.starter.i18n;
 
 import fun.fengwk.convention4j.common.i18n.AggregateResourceBundle;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.ClassUtils;
 
@@ -20,15 +19,14 @@ import java.util.ResourceBundle;
  * 
  * @author fengwk
  */
+@Slf4j
 @EnableConfigurationProperties(I18nProperties.class)
 @ConditionalOnClass(StringManagerFactory.class)
-@ConditionalOnProperty(prefix = "convention.i18n", name = { "base-name", "locale" })
+@ConditionalOnProperty(prefix = "convention.i18n", name = "base-name")
 @Configuration
 public class I18nAutoConfiguration {
     
-    private static final Logger log = LoggerFactory.getLogger(I18nAutoConfiguration.class);
-    
-    @Primary
+    @ConditionalOnMissingBean
     @Bean
     public StringManagerFactory stringManagerFactory(I18nProperties properties, ResourceLoader resourceLoader) throws IOException {
         ClassLoader classLoader = resourceLoader.getClassLoader();
@@ -42,9 +40,9 @@ public class I18nAutoConfiguration {
 
         GlobalStringManagerFactory.setInstance(stringManagerFactory);
 
-        log.info("StringManagerFactory autoconfiguration successfully, baseName: {}, locale: {} ", 
-                properties.getBaseName(), properties.getLocale());
-        
+        log.info("{} autoconfiguration successfully, baseName: {}, locale: {}",
+                StringManagerFactory.class.getSimpleName(), properties.getBaseName(), properties.getLocale());
+
         return stringManagerFactory;
     }
     

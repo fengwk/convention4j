@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;
@@ -37,6 +38,7 @@ public class ClassUtils {
      * 
      * @return
      */
+    @Nullable
     public static ClassLoader getDefaultClassLoader() {
         ClassLoader cl = null;
         try {
@@ -70,6 +72,7 @@ public class ClassUtils {
      * @param includeAncestors
      * @return
      */
+    @Nullable
     public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass, boolean includeAncestors) {
         if (includeAncestors) {
             return findAnnotationIncludeAncestors(annotatedElement.getAnnotations(), annotationClass);
@@ -103,9 +106,10 @@ public class ClassUtils {
      * @param type
      * @return
      */
+    @Nullable
     public static Type boxedIfPrimitiveType(Type type) {
         if (type instanceof Class) {
-            Class<?> packClass = BOXED_MAP.get((Class<?>) type);
+            Class<?> packClass = BOXED_MAP.get(type);
             if (packClass != null) {
                 return packClass;
             }

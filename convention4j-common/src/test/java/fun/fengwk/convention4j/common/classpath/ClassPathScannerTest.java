@@ -14,8 +14,8 @@ public class ClassPathScannerTest {
     @Test
     public void test() throws IOException {
         ClassPathScanner cps = new ClassPathScanner();
-        List<Resource> urls = cps.scan("**/*.class");
-        assert !urls.isEmpty();
+        List<Resource> resources = cps.scan("**/*.class");
+        assert !resources.isEmpty();
     }
     
 }

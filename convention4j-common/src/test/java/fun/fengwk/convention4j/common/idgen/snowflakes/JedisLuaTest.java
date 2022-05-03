@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.commons.idgen.snowflakes;
+//package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.commons.idgen.snowflakes;
 //
 //import org.junit.Test;
 //import redis.clients.jedis.Jedis;
@@ -20,7 +20,7 @@ package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.com
 //
 //    @Test
 //    public void test1() throws IOException {
-//        System.out.println(getLua("redis_getIdleWorkerId.lua"));
+//        System.out.println(getLua("redis_applyIdleWorkerId.lua"));
 //    }
 //
 //    @Test
@@ -30,7 +30,7 @@ package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.com
 //        try (Pool<Jedis> pool = getPool()) {
 //            try (Jedis jedis = pool.getResource()) {
 //                Object res = jedis.eval(
-//                        getLua("redis_getIdleWorkerId.lua"),
+//                        getLua("redis_applyIdleWorkerId.lua"),
 //                        Collections.singletonList(WORKER_HASH_KEY),
 //                        Arrays.asList(clientId, lockTime));
 //                System.out.println("clientId: " + clientId);
@@ -44,7 +44,7 @@ package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.com
 //        try (Pool<Jedis> pool = getPool()) {
 //            try (Jedis jedis = pool.getResource()) {
 //                Object res = jedis.eval(
-//                        getLua("redis_keepaliveWorkerId.lua"),
+//                        getLua("redis_renewWorkerId.lua"),
 //                        Collections.singletonList(WORKER_HASH_KEY),
 //                        Arrays.asList("5e9c6361e853481e88a3762ab94a3349", "60", "0"));
 //                System.out.println(res);
@@ -58,7 +58,7 @@ package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.com
 //        jedisPoolConfig.setMaxIdle(1);
 //        jedisPoolConfig.setMinIdle(1);
 //
-//        Set<String> sentinels = new HashSet<String>();
+//        Set<String> sentinels = new HashSet<>();
 //        sentinels.add("redis.fengwk.fun:26379");
 //        sentinels.add("redis.fengwk.fun:26380");
 //        sentinels.add("redis.fengwk.fun:26381");

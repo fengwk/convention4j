@@ -1,14 +1,13 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.api.code.I18nErrorCodeFactory;
-import fun.fengwk.convention4j.api.code.SimpleErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.I18nErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.SimpleErrorCodeFactory;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

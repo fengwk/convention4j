@@ -1,25 +1,37 @@
-# Convention4j Spring Boot Starter
+# Convention For Java Spring Boot Starter
 
-当前模块用于支持基础规约组件的自动装配。
+Convention For Java Spring Boot Starter为SpringBoot项目提供支持，并且将规约组件与SpringBoot框架进行集成。
 
-# 自动检验
+# 快速开始
 
-集成Spring校验器到`GlobalValidator`中，校验器详细使用方法见[auto-validation](https://github.com/fengwk/auto-validation)。
+## Auto Validation
 
-引入依赖：
+集成Spring校验器到`GlobalValidator`中，使用时要先引入依赖：
+
+```xml
+<dependency>
+	  <groupId>fun.fengwk.auto-validation</groupId>
+	  <artifactId>auto-validation-validator</artifactId>
+</dependency>
+```
+
+如果需要支持`@AutoValidation`则需额外引入依赖：
 
 ```xml
 <dependency>
     <groupId>fun.fengwk.auto-validation</groupId>
-    <artifactId>auto-validation-validator</artifactId>
+    <artifactId>auto-validation-processor</artifactId>
+    <version>0.0.12</version>
 </dependency>
 ```
 
-# 雪花ID
+更多使用方法详细使用方法见[auto-validation](https://github.com/fengwk/auto-validation)。
 
-集成使用雪花算法并且保持命名空间隔离的ID生成器到Spring容器中。
+## 雪花ID
 
-引入依赖：
+集成使用雪花ID算法的`NamespaceIdGenerator<Long>`ID生成器到Spring容器中。
+
+1、需要引入依赖：
 
 ```xml
 <dependency>
@@ -28,10 +40,9 @@
 </dependency>
 ```
 
-使用示例：
+2、使用示例：
 
 ```java
-@Component
 public class Test {
     @Autowired
     private NamespaceIdGenerator<Long> idGenerator;
@@ -43,17 +54,15 @@ public class Test {
 }
 ```
 
-全局引用：
+3、使用全局引用：
 
 ```java
 long id = GlobalSnowflakeIdGenerator.next(Test.class);
 ```
 
-## 固定workerId
+### 固定workerId
 
-使用雪花算法必须先指定当前节点的workerId，一种方式是使用配置形式指定固定的workerId。
-
-配置`application.yml`：
+使用雪花算法必须先指定当前节点的workerId，一种方式是使用配置形式指定固定的workerId，需要配置`application.yml`：
 
 ```yaml
 convention:
@@ -64,11 +73,11 @@ convention:
     worker-id: 0
 ```
 
-## 动态workerId
+### 动态workerId
 
 手动指定workerId比较繁琐，并且在一些场景下可能并不使用，因此规约另提供了一种动态获取workerId的方式，该方式需要依赖Redis服务。
 
-引入Redis相关依赖：
+1、引入Redis相关依赖：
 
 ```xml
 <dependency>
@@ -81,7 +90,7 @@ convention:
 </dependency>
 ```
 
-配置`application.yml`：
+2、配置`application.yml`：
 
 ```yaml
 convention:
@@ -101,28 +110,28 @@ spring:
         - redis.fengwk.fun:26381
 ```
 
-# i18n
+## i18n
 
-将`StringManager`加入Spring容器，提供国际化支持。
+将StringManagerFactory继承到Spring容器，提供国际化支持。
 
-配置`application.yml`：
+1、配置`application.yml`：
 
 ```yaml
 convention:
   i18n:
-    # 文件名前缀
+    # 文件名前缀，如不指定i18n自动配置将无法生效
     base-name: string
-    # 当前当前语言环境
+    # 指定当前语言环境，如不指定将使用系统默认的语言环境
     locale: zh_CN
 ```
 
-在resources下创建`string_zh_CN.properties`文件：
+2、在resources下创建`string_zh_CN.properties`文件：
 
-```properties
+```yaml
 Test.message=你好
 ```
 
-使用示例：
+3、使用示例：
 
 ```java
 @Component
@@ -139,27 +148,25 @@ public class Test {
 }
 ```
 
-全局引用：
+4、全局引用：
 
 ```java
 StringManager stringManager = GlobalStringManagerFactory.getStringManager(Test.class);
 ```
 
-更多使用示例见[i18n](https://github.com/fengwk/commons/tree/main/commons-i18n)。
+## 错误码
 
-# 错误码
-
-配置`application.yml`：
+1、配置`application.yml`：
 
 ```yaml
 convention:
   error-code:  
     i18n:
-      # 指定当前语言环境，若不指定则有操作系统当前语言环境决定
+      # 指定当前语言环境，如不指定将使用系统默认的语言环境
       locale: zh_CN
 ```
 
-使用示例：
+2、使用示例：
 
 ```java
 @Component
@@ -175,15 +182,15 @@ public class Test {
 }
 ```
 
-全局引用：
+3、全局引用：
 
 ```java
 ErrorCode errorCode = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
 ```
 
-# 日志规约
+## 日志规约
 
-在resource目录下创建`logback-spring.xml`，添加以下配置：
+在resource根目录下创建`logback-spring.xml`，添加以下配置：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -192,11 +199,11 @@ ErrorCode errorCode = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
 </configuration>
 ```
 
-# EventBus
+## EventBus
 
 使用Guava的EventBus功能可以很好地实现JVM进程内的发布订阅功能。
 
-引入依赖：
+1、引入依赖：
 
 ```xml
 <dependency>
@@ -205,7 +212,7 @@ ErrorCode errorCode = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
 </dependency>
 ```
 
-使用示例：
+2、使用示例：
 
 ```java
 @Component
@@ -213,6 +220,6 @@ public class Test {
     
     @Autowired
     private EventBus eventBus;
-
+    
 }
 ```

@@ -10,6 +10,8 @@ public class GlobalStringManagerFactory {
 
     private static volatile StringManagerFactory instance;
 
+    private GlobalStringManagerFactory() {}
+
     /**
      * 设置全局StringManagerFactory实例。
      *

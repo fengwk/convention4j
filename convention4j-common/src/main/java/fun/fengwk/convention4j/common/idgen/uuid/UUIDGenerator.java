@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.common.idgen.uuid;
 
-import fun.fengwk.convention4j.common.idgen.IdGenerator;
+import fun.fengwk.convention4j.common.idgen.AbstractIdGenerator;
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 
 import java.util.UUID;
 
@@ -9,12 +10,12 @@ import java.util.UUID;
  * 
  * @author fengwk
  */
-public class UUIDGenerator implements IdGenerator<String> {
+public class UUIDGenerator extends AbstractIdGenerator<String> {
 
     private static final char TRIM = '-';
-    
+
     @Override
-    public String next() {
+    protected String doNext() {
         String uuid = UUID.randomUUID().toString();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < uuid.length(); i++) {
@@ -26,7 +27,27 @@ public class UUIDGenerator implements IdGenerator<String> {
     }
 
     @Override
-    public void close(boolean releaseResource) throws Exception {
+    protected void doInit() throws LifeCycleException {
+        // nothing to do
+    }
+
+    @Override
+    protected void doStart() throws LifeCycleException {
+        // nothing to do
+    }
+
+    @Override
+    protected void doStop() throws LifeCycleException {
+        // nothing to do
+    }
+
+    @Override
+    protected void doClose() throws LifeCycleException {
+        // nothing to do
+    }
+
+    @Override
+    protected void doFail() throws LifeCycleException {
         // nothing to do
     }
 

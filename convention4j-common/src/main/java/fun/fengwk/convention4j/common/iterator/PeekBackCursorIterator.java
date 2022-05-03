@@ -7,4 +7,5 @@ package fun.fengwk.convention4j.common.iterator;
  */
 public interface PeekBackCursorIterator<E, C extends Comparable<C>>
         extends CursorIterator<E, C>, PeekBackIterator<E> {
+
 }

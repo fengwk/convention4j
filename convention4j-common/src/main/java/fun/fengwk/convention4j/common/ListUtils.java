@@ -37,7 +37,7 @@ public class ListUtils {
      * 获取列表的第一个元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @return
      */
     public static <E> E getFirst(List<E> list) {
@@ -48,7 +48,7 @@ public class ListUtils {
      * 获取列表的最后一个元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @return
      */
     public static <E> E getLast(List<E> list) {
@@ -59,7 +59,7 @@ public class ListUtils {
      * 在列表的第一个位置插入元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @param element
      */
     public static <E> void addFirst(List<E> list, E element) {
@@ -70,7 +70,7 @@ public class ListUtils {
      * 在列表的最后一个位置插入元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @param element
      */
     public static <E> void addLast(List<E> list, E element) {
@@ -81,7 +81,7 @@ public class ListUtils {
      * 向列表的第一个位置设置元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @param element
      * @return
      */
@@ -93,7 +93,7 @@ public class ListUtils {
      * 向列表的最后一个位置设置元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @param element
      * @return
      */
@@ -105,7 +105,7 @@ public class ListUtils {
      * 移除列表的第一个元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @return
      */
     public static <E> E removeFirst(List<E> list) {
@@ -116,7 +116,7 @@ public class ListUtils {
      * 移除列表的最后一个元素。
      *
      * @param <E>
-     * @param list
+     * @param list not null
      * @return
      */
     public static <E> E removeLast(List<E> list) {

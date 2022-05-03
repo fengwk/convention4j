@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.api.code.CodeTable;
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.CodeTable;
+import fun.fengwk.convention4j.common.code.ErrorCode;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;

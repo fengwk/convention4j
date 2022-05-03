@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -63,6 +64,9 @@ public class IpUtils {
      */
     @SuppressWarnings("restriction")
     public static boolean isIPv4(String addr) {
+        if (addr == null || addr.isEmpty()) {
+            return false;
+        }
         return sun.net.util.IPAddressUtil.isIPv4LiteralAddress(addr);
     }
     
@@ -74,6 +78,9 @@ public class IpUtils {
      */
     @SuppressWarnings("restriction")
     public static boolean isIPv6(String addr) {
+        if (addr == null || addr.isEmpty()) {
+            return false;
+        }
         return sun.net.util.IPAddressUtil.isIPv6LiteralAddress(addr);
     }
     
@@ -84,7 +91,7 @@ public class IpUtils {
      * @return
      */
     public static boolean isIPv4(InetAddress inetAddr) {
-        return inetAddr.getAddress().length == 4;
+        return inetAddr != null && inetAddr.getAddress().length == 4;
     }
 
     /**
@@ -94,7 +101,7 @@ public class IpUtils {
      * @return
      */
     public static boolean isIPv6(InetAddress inetAddr) {
-        return inetAddr.getAddress().length == 16;
+        return inetAddr != null && inetAddr.getAddress().length == 16;
     }
     
     /**
@@ -103,6 +110,7 @@ public class IpUtils {
      * @return
      * @throws SocketException 连接本地网卡设备发生IO异常。
      */
+    @Nullable
     public static InetAddress getLocalIPv4() throws SocketException {
         if (LOCAL_IPV4 == null) {
             synchronized (IpUtils.class) {
@@ -120,6 +128,7 @@ public class IpUtils {
      * @return
      * @throws SocketException 连接本地网卡设备发生IO异常。
      */
+    @Nullable
     public static InetAddress getLocalIPv6() throws SocketException {
         if (LOCAL_IPV6 == null) {
             synchronized (IpUtils.class) {
@@ -139,7 +148,6 @@ public class IpUtils {
                 Enumeration<InetAddress> inetAddressEnum = networkInterface.getInetAddresses();
                 while (inetAddressEnum.hasMoreElements()) {
                     InetAddress inetAddress = inetAddressEnum.nextElement();
-                    System.out.println(inetAddress);
                     if (inetAddress.getClass() == inetClass) {
                         return inetAddress;
                     }
@@ -155,13 +163,15 @@ public class IpUtils {
         return networkInterface.isUp() 
                 && !displayName.contains(TAP) 
                 && !displayName.contains(VIRTUAL) 
-                && (displayName.startsWith(ETH) || displayName.startsWith(WLAN) || displayName.startsWith(BOND) || displayName.startsWith(NET) || name.startsWith(ETH) || name.startsWith(WLAN) || name.startsWith(BOND) || name.startsWith(NET));
+                && (displayName.startsWith(ETH) || displayName.startsWith(WLAN) || displayName.startsWith(BOND)
+                                || displayName.startsWith(NET) || name.startsWith(ETH) || name.startsWith(WLAN)
+                                || name.startsWith(BOND) || name.startsWith(NET));
     }
     
     /**
      * 将字节数组形式的ipv4地址转为int表示的ipv4地址。
      * 
-     * @param ipv4
+     * @param ipv4 not null
      * @return
      */
     public static int ipv4ToInt(byte[] ipv4) {

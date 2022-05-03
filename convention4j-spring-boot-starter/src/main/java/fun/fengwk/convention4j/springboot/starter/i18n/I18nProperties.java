@@ -19,7 +19,7 @@ public class I18nProperties {
     /**
      * 语言类型
      */
-    private Locale locale;
+    private Locale locale = Locale.getDefault();
     
     public String getBaseName() {
         return baseName;

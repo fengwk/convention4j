@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  *
  * @author fengwk
  */
-@Import(RedisServerConfig.class)
+@Import(RedisServerTestConfig.class)
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

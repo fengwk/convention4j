@@ -1,0 +1,41 @@
+-- 该脚本将请求redis节点获取一个[0..1024)区间内空闲的workerId，并且锁定该workerId lockTime秒
+-- 如果区间内已经不存在空间的workerId，那么脚本将返回nil值，应用程序必须对nil值进行判断，并做出相应的降级处理
+-- 输入参数：KEYS[1]=workerHashKey，clientId=ARGV[1]，lockTime = ARGV[2]，from=ARGV[3]，to=ARGV[4]
+local workerHashKey = KEYS[1]
+local clientId = ARGV[1]
+local lockTime = ARGV[2]
+local from = ARGV[3]
+local to = ARGV[4]
+-- time命令可以获取redis的时间戳，例如[1649229618, 894286]
+-- 使用time命令是为了防止应用服务器时间漂移，当然仍然无法避免redis主从切换导致的时间漂移
+local nowSecondsStr = redis.call('time')[1]
+-- 尝试从[0..1024)区间中找到空闲的workerId，有两种方式识别workerId是否空闲：
+-- 1、如果hash中不存在指定workerId为key的value
+-- 2、如果hash中指定workerId为key对于value已过期
+local idleWorkerId = nil
+for workerId = from, to, 1 do
+    -- workerInfo：锁定该workerId的clientId+超时时间
+    -- 此处有坑：redis get hget如果为空返回值是boolean类型，因此不能判nil，要判false
+    local workerInfo = redis.call('hget', workerHashKey, workerId)
+    if workerInfo == false then
+        idleWorkerId = workerId
+        break
+    end
+    -- 如果当前时间已经大于的当前workerId的过期时间，那么可以替代该workerId
+    -- string.sub时要注意，lua中索引是从1开始计算的
+    local workerExpiredTime = tonumber(string.sub(workerInfo, string.len(clientId) + 1, -1))
+    if tonumber(nowSecondsStr) > workerExpiredTime then
+        idleWorkerId = workerId
+        break
+    end
+end
+
+if idleWorkerId == nil then
+    -- 如果没有找到空闲的workerId直接返回nil，需要应用程序进行降级处理
+    return nil
+else
+    -- 找到空闲的workerId，锁定该workerId lockTime秒
+    local expiredTime = tonumber(nowSecondsStr) + lockTime
+    redis.call('hset', workerHashKey, idleWorkerId, clientId .. tostring(expiredTime))
+    return idleWorkerId
+end

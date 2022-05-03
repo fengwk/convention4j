@@ -49,10 +49,11 @@
 
 	<modules>
 		<module>convention4j-common</module>
-		<module>convention4j-api</module>
 		<module>convention4j-spring-boot-starter-test</module>
 		<module>convention4j-spring-boot-starter</module>
 		<module>convention4j-spring-boot-starter-web</module>
+        <module>convention4j-example</module>
+
     </modules>
 
 	<properties>
@@ -61,8 +62,8 @@
 		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
 		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-		<auto-mapper.version>0.0.16</auto-mapper.version>
-		<auto-validation.version>0.0.11</auto-validation.version>
+		<auto-mapper.version>0.0.24</auto-mapper.version>
+		<auto-validation.version>0.0.12</auto-validation.version>
 		<spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
 		<spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
 		<spring-cloud-alibaba-dependencies.version>2.2.7.RELEASE</spring-cloud-alibaba-dependencies.version>
@@ -74,8 +75,10 @@
 		<h2.version>1.4.200</h2.version>
 		<embedded-redis.version>0.6</embedded-redis.version>
 		<ognl.version>3.2.21</ognl.version>
+		<jsr305.version>3.0.2</jsr305.version>
 		<junit.version>4.13.2</junit.version>
 		<lombok.version>1.18.22</lombok.version>
+		<auto-service.version>1.0.1</auto-service.version>
 	</properties>
 
 	<dependencyManagement>
@@ -83,11 +86,6 @@
 			<dependency>
 				<groupId>fun.fengwk.convention4j</groupId>
 				<artifactId>convention4j-common</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-api</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -103,6 +101,11 @@
 			<dependency>
 				<groupId>fun.fengwk.convention4j</groupId>
 				<artifactId>convention4j-spring-boot-starter-web</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>fun.fengwk.convention4j</groupId>
+				<artifactId>convention4j-example</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -186,6 +189,11 @@
 				<version>${ognl.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>com.google.code.findbugs</groupId>
+				<artifactId>jsr305</artifactId>
+				<version>${jsr305.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
 				<version>${junit.version}</version>
@@ -194,6 +202,11 @@
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<version>${lombok.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.auto.service</groupId>
+				<artifactId>auto-service</artifactId>
+				<version>${auto-service.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

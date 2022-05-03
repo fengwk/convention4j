@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  *
  * @author fengwk
  */
-@Import(SnowflakeIdConfig.class)
+@Import(SnowflakeIdTestConfig.class)
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

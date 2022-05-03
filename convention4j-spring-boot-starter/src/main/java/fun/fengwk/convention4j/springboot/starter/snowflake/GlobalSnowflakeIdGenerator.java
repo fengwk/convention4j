@@ -9,6 +9,8 @@ public class GlobalSnowflakeIdGenerator {
 
     private static volatile NamespaceIdGenerator<Long> instance;
 
+    private GlobalSnowflakeIdGenerator() {}
+
     /**
      * 设置全局SnowflakeIdGenerator实例。
      *
@@ -24,13 +26,6 @@ public class GlobalSnowflakeIdGenerator {
 
     public static long next(Class<?> namespace) {
         return instance.next(namespace);
-    }
-
-    private static void checkState() {
-        if (instance == null) {
-            throw new IllegalStateException(
-                    String.format("%s has not been initialized", GlobalSnowflakeIdGenerator.class.getSimpleName()));
-        }
     }
 
 }

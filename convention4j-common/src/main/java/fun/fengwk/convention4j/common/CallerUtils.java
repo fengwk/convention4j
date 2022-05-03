@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
@@ -19,6 +20,7 @@ public class CallerUtils {
      * @param offset 偏移量，当前调用者为0，再上层调用者为1，以此类推。
      * @return 返回当前函数的调用者对象，如果无法通过传入的类加载器查找到调用类则返回null。
      */
+    @Nullable
     public static Class<?> getCallerClass(ClassLoader cl, int offset) {
         StackTraceElement[] elements = new Throwable().getStackTrace();
         StackTraceElement callerElement = elements[1 + offset];
@@ -35,6 +37,7 @@ public class CallerUtils {
      * @param offset 偏移量，当前调用者为0，再上层调用者为1，以此类推。
      * @return 返回当前函数的调用者对象，如果无法通过默认的类加载器查找到调用类则返回null。
      */
+    @Nullable
     public static Class<?> getCallerClass(int offset) {
         return getCallerClass(ClassUtils.getDefaultClassLoader(), offset + 1);
     }
@@ -47,9 +50,9 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法则返回null。
      */
+    @Nullable
     public static Method getCallerMethod(ClassLoader cl, int offset, Class<?>... parameterTypes) {
-        StackTraceElement[] elements = new Throwable().getStackTrace();
-        StackTraceElement callerElement = elements[1 + offset];
+        StackTraceElement callerElement = getCallerElement(offset);
         Class<?> callerClass;
         try {
             callerClass = Class.forName(callerElement.getClassName(), false, cl);
@@ -71,6 +74,7 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过默认的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个方法则返回null。
      */
+    @Nullable
     public static Method getCallerMethod(int offset, Class<?>... parameterTypes) {
         return getCallerMethod(ClassUtils.getDefaultClassLoader(), offset + 1, parameterTypes);
     }
@@ -83,9 +87,9 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个构造器则返回null。
      */
-    public static Constructor<?> getCallerConstructor(ClassLoader cl, int offset, Class<?>... parameterTypes) {
-        StackTraceElement[] elements = new Throwable().getStackTrace();
-        StackTraceElement callerElement = elements[1 + offset];
+    @Nullable
+    public static <T> Constructor<T> getCallerConstructor(ClassLoader cl, int offset, Class<?>... parameterTypes) {
+        StackTraceElement callerElement = getCallerElement(offset);
         Class<?> callerClass;
         try {
             callerClass = Class.forName(callerElement.getClassName(), false, cl);
@@ -94,7 +98,9 @@ public class CallerUtils {
         }
         
         try {
-            return callerClass.getDeclaredConstructor(parameterTypes);
+            @SuppressWarnings("unchecked")
+            Constructor<T> constructor = (Constructor<T>) callerClass.getDeclaredConstructor(parameterTypes);
+            return constructor;
         } catch (NoSuchMethodException | SecurityException e) {
             return null;
         }
@@ -107,8 +113,20 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个构造器则返回null。
      */
-    public static Constructor<?> getCallerConstructor(int offset, Class<?>... parameterTypes) {
+    @Nullable
+    public static <T> Constructor<T> getCallerConstructor(int offset, Class<?>... parameterTypes) {
         return getCallerConstructor(ClassUtils.getDefaultClassLoader(), offset + 1, parameterTypes);
+    }
+
+    /**
+     * StackTraceElement的使用者必须直接调用该方法，否则会导致层次计算错误。
+     *
+     * @param offset
+     * @return
+     */
+    private static StackTraceElement getCallerElement(int offset) {
+        StackTraceElement[] elements = new Throwable().getStackTrace();
+        return elements[2 + offset];
     }
 
 }

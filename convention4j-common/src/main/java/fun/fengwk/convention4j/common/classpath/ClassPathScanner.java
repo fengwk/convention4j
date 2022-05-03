@@ -14,8 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * 
- * 
+ *
  * @author fengwk
  */
 public class ClassPathScanner {
@@ -41,11 +40,15 @@ public class ClassPathScanner {
     /**
      * 扫描classpath中符合指定ANT模式的资源
      * 
-     * @param antPattern ant分格的路径匹配模式
+     * @param antPattern not null，ant风格的路径匹配模式
      * @return
      * @throws IOException
      */
     public List<Resource> scan(String antPattern) throws IOException {
+        if (antPattern == null) {
+            throw new NullPointerException("antPattern cannot be null");
+        }
+
         AntPattern pathMatcher = new AntPattern(antPattern);
         List<Resource> collector = new ArrayList<>();
         

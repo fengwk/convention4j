@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
+
 /**
  * @author fengwk
  */
@@ -26,6 +28,7 @@ public class ConvertUtils {
      * @param b
      * @return
      */
+    @Nullable
     public static Integer bool2int(Boolean b) {
         return b == null ? null : bool2int((boolean) b);
     }
@@ -46,6 +49,7 @@ public class ConvertUtils {
      * @param i
      * @return
      */
+    @Nullable
     public static Boolean int2bool(Integer i) {
         return i == null ? null : int2bool((int) i);
     }

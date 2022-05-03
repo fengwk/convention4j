@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
 import com.google.gson.Gson;
-import fun.fengwk.convention4j.api.gson.GlobalGson;
+import fun.fengwk.convention4j.common.gson.GlobalGson;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;

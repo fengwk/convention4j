@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.ErrorCode;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;

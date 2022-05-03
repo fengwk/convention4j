@@ -1,5 +1,8 @@
 package fun.fengwk.convention4j.common.iterator;
 
+import fun.fengwk.convention4j.common.Order;
+import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -76,7 +79,12 @@ class CursorIteratorImpl<E, C extends Comparable<C>> implements CursorIterator<E
     @Override
     public boolean hasNext() {
         if (hasNextQuery && bufferQueue.isEmpty()) {
-            List<E> result = cursorQueryFunc.query(cursor, bufferSize);
+            List<E> result;
+            try {
+                result = cursorQueryFunc.query(cursor, bufferSize);
+            } catch (Throwable err) {
+                throw new RuntimeExecutionException(err);
+            }
             if (result.size() < bufferSize) {
                 hasNextQuery = false;
             }
@@ -85,19 +93,6 @@ class CursorIteratorImpl<E, C extends Comparable<C>> implements CursorIterator<E
         return !bufferQueue.isEmpty();
     }
 
-    /**
-     * 获取下一迭代元素。
-     *
-     * @return
-     * @throws NoSuchElementException 如果不存在下一元素则抛出该异常。
-     * @throws IllegalStateException 以下情况将抛出该异常：
-     * <ul>
-     * <li>如果发现空元素。</li>
-     * <li>如果从元素映射为游标的过程中发生错误。</li>
-     * <li>如果发现顺序错误的游标。</li>
-     * <li>如果游标不唯一。</li>
-     * </ul>
-     */
     @Override
     public E next() {
         if (!hasNext()) {

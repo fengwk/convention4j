@@ -28,8 +28,10 @@ class FileScanDelegate extends ScanDelegate {
         
         if (currentFile.isDirectory()) {
             File[] children = currentFile.listFiles();
-            for (File child : children) {
-                doScan(antPattern, collector, appendPath(currentClasspath, child.getName()), child);
+            if (children != null) {
+                for (File child : children) {
+                    doScan(antPattern, collector, appendPath(currentClasspath, child.getName()), child);
+                }
             }
         }
     }

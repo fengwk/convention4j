@@ -10,8 +10,8 @@ public class RefTest {
 
     @Test
     public void test1() {
-        assert Ref.empty().value == null;
-        assert Ref.of(1).value == 1;
+        assert Ref.empty().getValue() == null;
+        assert Ref.of(1).getValue() == 1;
     }
     
 }

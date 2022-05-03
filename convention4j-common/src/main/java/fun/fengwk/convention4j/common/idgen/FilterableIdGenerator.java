@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.idgen;
 
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
+
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -8,8 +10,8 @@ import java.util.function.Predicate;
  * 
  * @author fengwk
  */
-public class FilterableIdGenerator<ID> implements IdGenerator<ID> {
-    
+public class FilterableIdGenerator<ID> extends AbstractIdGenerator<ID> {
+
     private final IdGenerator<ID> idGenerator;
     private final Predicate<ID> filter;
 
@@ -23,9 +25,9 @@ public class FilterableIdGenerator<ID> implements IdGenerator<ID> {
         this.idGenerator = Objects.requireNonNull(idGenerator);
         this.filter = Objects.requireNonNull(filter);
     }
-    
+
     @Override
-    public ID next() {
+    protected ID doNext() {
         ID id;
         do {
             id = idGenerator.next();
@@ -34,8 +36,28 @@ public class FilterableIdGenerator<ID> implements IdGenerator<ID> {
     }
 
     @Override
-    public void close(boolean releaseResource) throws Exception {
-        idGenerator.close(releaseResource);
+    protected void doInit() throws LifeCycleException {
+        idGenerator.init();
+    }
+
+    @Override
+    protected void doStart() throws LifeCycleException {
+        idGenerator.start();
+    }
+
+    @Override
+    protected void doStop() throws LifeCycleException {
+        idGenerator.stop();
+    }
+
+    @Override
+    protected void doClose() throws LifeCycleException {
+        idGenerator.close();
+    }
+
+    @Override
+    protected void doFail() throws LifeCycleException {
+        // nothing to do
     }
 
 }

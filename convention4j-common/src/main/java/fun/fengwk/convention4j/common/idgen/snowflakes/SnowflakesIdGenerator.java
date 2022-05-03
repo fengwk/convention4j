@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.common.idgen.snowflakes;
 
-import fun.fengwk.convention4j.common.idgen.IdGenerator;
+import fun.fengwk.convention4j.common.idgen.AbstractIdGenerator;
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 
 import java.util.Objects;
 
@@ -12,7 +13,7 @@ import java.util.Objects;
  * 
  * @author fengwk
  */
-public class SnowflakesIdGenerator implements IdGenerator<Long> {
+public class SnowflakesIdGenerator extends AbstractIdGenerator<Long> {
 
     /** 符号位掩膜 **/
     private static final long SIGN_MASK = -1L >>> 1;
@@ -56,7 +57,7 @@ public class SnowflakesIdGenerator implements IdGenerator<Long> {
     }
 
     @Override
-    public synchronized Long next() {
+    protected synchronized Long doNext() {
         long cms = System.currentTimeMillis();
         if (cms > lastTimestamp) {
             lastTimestamp = cms;
@@ -71,7 +72,7 @@ public class SnowflakesIdGenerator implements IdGenerator<Long> {
         }
         return compound(lastTimestamp, sequence);
     }
-    
+
     public long compound(long lt, long ns) {
         long offset = lt - initialTimestamp;
         if (offset > MAX_TIMESTAMP) {
@@ -88,10 +89,28 @@ public class SnowflakesIdGenerator implements IdGenerator<Long> {
     }
 
     @Override
-    public void close(boolean releaseResource) throws Exception {
-        if (releaseResource) {
-            workerIdClient.close();
-        }
+    protected void doInit() throws LifeCycleException {
+        workerIdClient.init();
+    }
+
+    @Override
+    protected void doStart() throws LifeCycleException {
+        workerIdClient.start();
+    }
+
+    @Override
+    protected void doStop() throws LifeCycleException {
+        workerIdClient.stop();
+    }
+
+    @Override
+    protected void doClose() throws LifeCycleException {
+        workerIdClient.close();
+    }
+
+    @Override
+    protected void doFail() throws LifeCycleException {
+        // nothing to do
     }
 
 }

@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.api.result.Results;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.common.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
@@ -15,11 +15,11 @@ import javax.annotation.PostConstruct;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.FORBIDDEN;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.UNAUTHORIZED;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.FORBIDDEN;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.RESOURCE_NOT_FOUND;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNAUTHORIZED;
 
 /**
  * @see org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController

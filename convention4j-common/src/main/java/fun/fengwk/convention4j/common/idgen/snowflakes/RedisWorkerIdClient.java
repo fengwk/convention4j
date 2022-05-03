@@ -1,6 +1,9 @@
 package fun.fengwk.convention4j.common.idgen.snowflakes;
 
-import fun.fengwk.convention4j.common.idgen.ClosedException;
+import fun.fengwk.convention4j.common.lifecycle.AbstractLifeCycle;
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleState;
+import fun.fengwk.convention4j.common.runtimex.RuntimeLifeCycleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,376 +17,120 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.*;
 
 /**
- * RedisWorkerIdClient为所有连接到同一redis库的客户端提供[0..1024)中的某一不重复workerId。
- * 算法采用最终一致，对于主从切换导致的数据不一致，客户端会有一个发现周期，由KEEPALIVE_INTERVAL决定，默认为1秒。
- * 换而言之，最坏情况下会可能会出现1秒+redis调用开销时间的workerId重复，因此如果想百分百保证分布式环境下的不重复，应该在调用方做出约束，比如唯一性约束。
- *
  * @author fengwk
  */
-public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
+public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdClient {
 
     private static final Logger log = LoggerFactory.getLogger(RedisWorkerIdClient.class);
 
-    private static final String LUA_GET_IDLE_WORKER_ID;
-    private static final String LUA_KEEPALIVE_WORKER_ID;
+    /**
+     * 用于申请空闲workerId的LUA脚本。
+     */
+    private static final String LUA_APPLY_IDLE_WORKER_ID;
+
+    /**
+     * 用于续约workerId的LUA脚本。
+     */
+    private static final String LUA_RENEW_WORKER_ID;
+
+    /**
+     * redis中存储所有workerId的hash结构的key。
+     */
+    private static final String WORKER_HASH_KEY = "REDIS_WORKER_ID_CLIENT_WORKER_HASH";
+
+    /**
+     * 锁过期时间，默认60秒。设置过期时间是为了防止异常情况下锁一直被占有得不到释放。
+     */
+    private static final String LOCK_EXPIRE = "60";
+
+    /**
+     * 续约时间间隔，1秒。
+     */
+    private static final long RENEW_INTERVAL = 1000L;
+
+    /**
+     * 申请错误重试时间间隔，1秒。
+     */
+    private static final long APPLY_ERROR_INTERVAL = 1000L;
+
+    /**
+     * 起始workerId，包含。
+     */
+    private static final int FROM = 0;
+
+    /**
+     * 结束workerId，不包含。
+     */
+    private static final int TO = 1024;
 
     static {
         try {
-            LUA_GET_IDLE_WORKER_ID = getLua("redis_getIdleWorkerId.lua");
-            LUA_KEEPALIVE_WORKER_ID = getLua("redis_keepaliveWorkerId.lua");
+            LUA_APPLY_IDLE_WORKER_ID = getLua("redis_applyIdleWorkerId.lua");
+            LUA_RENEW_WORKER_ID = getLua("redis_renewWorkerId.lua");
         } catch (IOException e) {
             throw new ExceptionInInitializerError();
         }
     }
 
-    // redis中使用的hash结构的key
-    private static final String WORKER_HASH_KEY = "WORKER_HASH";
-    // 锁定60秒
-    private static final String LOCK_TIME = "60";
-    // 保持锁定的时间间隔，1s
-    private static final long KEEPALIVE_INTERVAL = 1000L;
-    // 获取workerId的重试时间间隔，1s
-    private static final long GET_WORKER_ID_RETRY_INTERVAL = 1000L;
-    // 获取workerId的区间间隔
-    private static final int GET_WORKER_ID_RETRY_RANGE_INTERVAL = 32;
-
-    // [RANGE_MIN..RANGE_MAX)
-    private static final int RANGE_FROM = 0;
-    private static final int RANGE_TO = 1024;
-
     /**
-     * 状态：尚未获取。
+     * redis脚本执行器。
      */
-    private static final int STATE_NOT_ACQUIRED = 1;
-
-    /**
-     * 状态：已获取。
-     */
-    private static final int STATE_ACQUIRED = 2;
-
-    /**
-     * 状态：关闭中。
-     */
-    private static final int STATE_CLOSING = 3;
-
-    /**
-     * 状态：关闭中，并释放资源。
-     */
-    private static final int STATE_CLOSING_AND_RELEASE_RESOURCE = 4;
-
-    /**
-     * 状态：已完成全部关闭工作。
-     */
-    private static final int STATE_TERMINAL = 5;
-
-    private final ReentrantLock stateLock = new ReentrantLock();
-    private final Condition acquired = stateLock.newCondition();
-
     private final RedisScriptExecutor scriptExecutor;
-    private final String clientId = getClientId();
-    private final AtomicReference<WorkerIdAndState> workerIdAndStateRef = new AtomicReference<>(
-            new WorkerIdAndState(null, STATE_NOT_ACQUIRED));
-    private final CountDownLatch closedCdl = new CountDownLatch(1);
 
     /**
-     * workerId和state的快照信息。
+     * 当前客户端的唯一标识。
      */
-    static class WorkerIdAndState {
-
-        final Long workerId;
-        final int state;
-
-        WorkerIdAndState(Long workerId, int state) {
-            this.workerId = workerId;
-            this.state = state;
-        }
-
-    }
+    private final String clientId = getClientId();
 
     /**
-     * 构建一个RedisWorkerIdClient，一旦构建完成RedisWorkerIdClient就成功启动了。
+     * 当前维护的workerId，读取该状态需要获取workerIdRwLock中的读锁。
+     */
+    private Long workerId;
+
+    /**
+     * 该变量存储了与当前workerId对应的生命周期状态，从该变量中读取生命周期应该能保持与从{@link #getState()}获取的状态保持一致，
+     * 另外读取该状态需要获取workerIdRwLock中的读锁。
+     */
+    private LifeCycleState workerIdLifeCycleState;
+
+    /**
+     * workerId对应的读写锁。
+     */
+    private final ReadWriteLock workerIdRwLock = new ReentrantReadWriteLock();
+
+    /**
+     * 申请到了workerId。
+     */
+    private final Condition appliedWorkerId = workerIdRwLock.writeLock().newCondition();
+
+    /**
+     * STARTED状态的条件
+     */
+    private final Condition lifeCycleChange = getLifeCycleRwLock().writeLock().newCondition();
+
+    /**
+     * 执行申请workerId任务的线程。
+     */
+    private final Thread applyWorkerIdThread = new Thread(new ApplyWorkerIdTask());
+
+    /**
+     * applyWorkerIdThread终止同步器。
+     */
+    private final CountDownLatch applyWorkerIdThreadCdl = new CountDownLatch(1);
+
+    /**
      *
      * @param scriptExecutor not null
      */
     public RedisWorkerIdClient(RedisScriptExecutor scriptExecutor) {
-        this.scriptExecutor = Objects.requireNonNull(scriptExecutor);
-        Thread runner = new Thread(this);
-        runner.setDaemon(true);
-        runner.start();
-    }
-
-    @Override
-    public long get() throws ClosedException {
-        // 快速路径
-        WorkerIdAndState ws = workerIdAndStateRef.get();
-        if (ws.state == STATE_ACQUIRED) {
-            return ws.workerId;
-        }
-
-        // 等待，直到状态转为STATE_ACQUIRED
-        boolean isInterrupted = false;
-        stateLock.lock();
-        try {
-            while ((ws = workerIdAndStateRef.get()).state != STATE_ACQUIRED) {
-                // 如果客户端已被关闭，直接抛出异常
-                if (isClosed(ws)) {
-                    throw new ClosedException("RedisWorkerIdClient '" + clientId + "' has been closed");
-                }
-
-                try {
-                    acquired.await();
-                } catch (InterruptedException e) {
-                    isInterrupted = true;
-                }
-            }
-            return ws.workerId;
-        } finally {
-            stateLock.unlock();
-            if (isInterrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    @Override
-    public long getInterruptibly() throws InterruptedException, ClosedException {
-        // 快速路径
-        WorkerIdAndState ws = workerIdAndStateRef.get();
-        if (ws.state == STATE_ACQUIRED) {
-            return ws.workerId;
-        }
-
-        // 可中断地等待，尝试等到状态转为STATE_ACQUIRED
-        stateLock.lockInterruptibly();
-        try {
-            while ((ws = workerIdAndStateRef.get()).state != STATE_ACQUIRED) {
-                // 如果客户端已被关闭，直接抛出异常
-                if (isClosed(ws)) {
-                    throw new ClosedException("RedisWorkerIdClient '" + clientId + "' has been closed");
-                }
-
-                acquired.await();
-            }
-            return ws.workerId;
-        } finally {
-            stateLock.unlock();
-        }
-    }
-
-    @Override
-    public Long tryGet() throws ClosedException {
-        WorkerIdAndState ws = workerIdAndStateRef.get();
-        // 如果客户端已被关闭，直接抛出异常
-        if (isClosed(ws)) {
-            throw new ClosedException("RedisWorkerIdClient '" + clientId + "' has been closed");
-        }
-        return ws.state == STATE_ACQUIRED ? ws.workerId : null;
-    }
-
-    @Override
-    public Long tryGet(long timeout, TimeUnit unit) throws InterruptedException, ClosedException {
-        // 快速路径
-        WorkerIdAndState ws = workerIdAndStateRef.get();
-        if (ws.state == STATE_ACQUIRED) {
-            return ws.workerId;
-        }
-
-        // 有限时等待，尝试等到状态转为STATE_ACQUIRED
-        long prevRecordTime = System.nanoTime();
-        long remainingTime = TimeUnit.NANOSECONDS.convert(timeout, unit);
-        // 尝试在指定时间内获取锁资源
-        if (!stateLock.tryLock(remainingTime, TimeUnit.NANOSECONDS)) {
-            return null;
-        }
-        try {
-            while ((ws = workerIdAndStateRef.get()).state != STATE_ACQUIRED) {
-                // 如果客户端已被关闭，直接抛出异常
-                if (isClosed(ws)) {
-                    throw new ClosedException("RedisWorkerIdClient '" + clientId + "' has been closed");
-                }
-
-                // 计算剩余时间
-                long curRecordTime = System.nanoTime();
-                remainingTime -= (curRecordTime - prevRecordTime);
-                if (remainingTime <= 0) {
-                    return null;
-                }
-                prevRecordTime = curRecordTime;
-                // 如果还有剩余时间尝试等待状态变更
-                if (!acquired.await(remainingTime, TimeUnit.NANOSECONDS)
-                        && workerIdAndStateRef.get().state != STATE_ACQUIRED) {
-                    // await返回false表示已超时，如果此时状态还是不对，直接返回null
-                    return null;
-                }
-            }
-            return ws.workerId;
-        } finally {
-            stateLock.unlock();
-        }
-    }
-
-    @Override
-    public void run() {
-        boolean isInterrupted = false;
-        WorkerIdAndState ws;
-        while (!isTerminal(ws = workerIdAndStateRef.get())) {
-            try {
-                doRun(ws);
-            } catch (InterruptedException e) {
-                isInterrupted = true;
-            } catch (Throwable err) {
-                log.error("", err);
-                // 释放时间片，避免不断产生异常导致的CPU 100%
-                Thread.yield();
-            }
-        }
-        if (isInterrupted) {
-            Thread.currentThread().interrupt();
-        }
-        closedCdl.countDown();
-        signalAllAcquired();
-    }
-
-    /**
-     * 根据状态执行获取workerId，和workerId保活逻辑。
-     *
-     * @param ws not null
-     * @throws Throwable
-     */
-    private void doRun(WorkerIdAndState ws) throws Throwable {
-        switch (ws.state) {
-            case STATE_NOT_ACQUIRED:
-                // 分批次getIdleWorkerId，这么做虽然会减少整体吞吐量，但是可以显著减少单批处理的阻塞时间，对于大批量客户端有非常好的优化效果
-                Long acquiredWorkerId = null;
-                for (int i = RANGE_FROM; i < RANGE_TO; i += GET_WORKER_ID_RETRY_RANGE_INTERVAL) {
-                    acquiredWorkerId = getIdleWorkerId(i, Math.min(RANGE_TO, i + GET_WORKER_ID_RETRY_RANGE_INTERVAL));
-                    if (acquiredWorkerId != null) {
-                        break;
-                    }
-                }
-
-                if (acquiredWorkerId != null) {
-                    // 获取到了workerId，那么尝试改变workerId和状态
-                    if (!workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(acquiredWorkerId, STATE_ACQUIRED))) {
-                        // CAS失败则跳出重试
-                        break;
-                    }
-                    log.info("acquired worker id '{}' succeeded", acquiredWorkerId);
-                    signalAllAcquired();
-                } else {
-                    // 没有获取到空闲的workerId，则等待一会再重试
-                    Thread.sleep(GET_WORKER_ID_RETRY_INTERVAL);
-                }
-                break;
-
-            case STATE_ACQUIRED:
-                // 已经获取到了workerId，那么进行续约
-                Throwable err = null;
-                try {
-                    Long expiredTime = keepaliveWorkerId(ws.workerId);
-                    if (expiredTime != null) {
-                        log.debug("keepalive worker id succeeded");
-                        // 续约成功，等待一会再次续约
-                        Thread.sleep(KEEPALIVE_INTERVAL);
-                        break;
-                    }
-                } catch (Throwable e) {
-                    err = e;
-                }
-
-                // 如果代码执行到此处，有两种可能：
-                // 1、续约保活失败
-                // 2、发生异常，例如网络异常
-                // 无论哪种状态，重新转到未申请到状态
-                boolean cas = workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(null, STATE_NOT_ACQUIRED));
-                // 即使CAS失败，也需要继续执行下面的逻辑
-
-                // 如果存在异常，则需抛出
-                if (err != null) {
-                    throw err;
-                }
-                // 如果CAS成功了，输出状态转移日志
-                if (cas) {
-                    log.warn("keepalive worker id '{}' failed, restart acquire worker id", ws.workerId);
-                }
-                break;
-
-            case STATE_CLOSING:
-                if (workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(null, STATE_TERMINAL))) {
-                    log.info("{} closed", RedisWorkerIdClient.class.getSimpleName());
-                }
-                break;
-
-            case STATE_CLOSING_AND_RELEASE_RESOURCE:
-                if (workerIdAndStateRef.compareAndSet(ws, new WorkerIdAndState(null, STATE_TERMINAL))) {
-                    scriptExecutor.close();
-                    log.info("{} closed and close pool", RedisWorkerIdClient.class.getSimpleName());
-                }
-                break;
-
-            default:
-                throw new AssertionError("unknown state '" + ws.state + "'");
-        }
-    }
-
-    /**
-     * 唤醒所有等待在acquired条件上的线程。
-     */
-    private void signalAllAcquired() {
-        stateLock.lock();
-        try {
-            // 唤醒所有等待获取的线程
-            acquired.signalAll();
-        } finally {
-            stateLock.unlock();
-        }
-    }
-
-    /**
-     * 获取客户端id。
-     *
-     * @return
-     */
-    private String getClientId() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
-
-    /**
-     * 获取一个[from..to)区间内空闲的workerId，并且锁定该workerId 60秒，如果不存在空闲的workerId将返回null。
-     *
-     * @param from 包含
-     * @param to 不包含
-     * @return
-     */
-    private Long getIdleWorkerId(int from, int to) throws Exception {
-        if (from >= to) {
-            return null;
-        }
-
-        return scriptExecutor.execute(
-                LUA_GET_IDLE_WORKER_ID,
-                Collections.singletonList(WORKER_HASH_KEY),
-                Arrays.asList(clientId, LOCK_TIME, String.valueOf(from), String.valueOf(to - 1)),
-                Long.class);
-    }
-
-    /**
-     * 保持当前workerId的锁定，如果锁定成功返回下一次过期时间，锁定失败返回null。
-     *
-     * @param workerId
-     * @return
-     */
-    private Long keepaliveWorkerId(long workerId) throws Exception {
-        return scriptExecutor.execute(
-                LUA_KEEPALIVE_WORKER_ID,
-                Collections.singletonList(WORKER_HASH_KEY),
-                Arrays.asList(clientId, LOCK_TIME, String.valueOf(workerId)),
-                Long.class);
+        this.scriptExecutor = Objects.requireNonNull(scriptExecutor, "scriptExecutor cannot be null");
     }
 
     /**
@@ -409,42 +156,450 @@ public class RedisWorkerIdClient implements WorkerIdClient, Runnable {
         return out.toString(StandardCharsets.UTF_8.name());
     }
 
-    public void close(boolean releaseResource) {
-        WorkerIdAndState ws = workerIdAndStateRef.get();
-        if (!isClosed(ws)) {
-            WorkerIdAndState closedWs = new WorkerIdAndState(null,
-                    releaseResource ? STATE_CLOSING_AND_RELEASE_RESOURCE : STATE_CLOSING);
-            while (!workerIdAndStateRef.compareAndSet(ws, closedWs)) {
-                ws = workerIdAndStateRef.get();
+    /**
+     * 获取客户端id。
+     *
+     * @return
+     */
+    private String getClientId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * 获取一个[from..to)区间内空闲的workerId，并且锁定该workerId 60秒，如果不存在空闲的workerId将返回null。
+     *
+     * @param from 包含
+     * @param to 不包含
+     * @return
+     */
+    private Long applyIdleWorkerId(int from, int to) throws Exception {
+        if (from >= to) {
+            return null;
+        }
+
+        return scriptExecutor.execute(
+                LUA_APPLY_IDLE_WORKER_ID,
+                Collections.singletonList(WORKER_HASH_KEY),
+                Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(from), String.valueOf(to - 1)),
+                Long.class);
+    }
+
+    /**
+     * 续约指定的workerId，如果续约成功返回下一次过期时间，续约失败返回null。
+     *
+     * @param workerId
+     * @return
+     */
+    private Long renewWorkerId(long workerId) throws Exception {
+        return scriptExecutor.execute(
+                LUA_RENEW_WORKER_ID,
+                Collections.singletonList(WORKER_HASH_KEY),
+                Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(workerId)),
+                Long.class);
+    }
+
+    @Override
+    public long get() {
+        for (;;) {
+            // 读锁锁定lifeCycle，使每次迭代时状态不会发生改变
+            getLifeCycleRwLock().readLock().lock();
+            try {
+                // 如非STARTED状态抛出异常
+                if (getState() != STARTED) {
+                    throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                            getClass().getSimpleName(), STARTED));
+                }
+
+                // 读锁锁定workerId，使其值不会发生改变
+                workerIdRwLock.readLock().lock();
+                try {
+                    if (workerId != null) {
+                        return workerId;
+                    }
+                } finally {
+                    workerIdRwLock.readLock().unlock();
+                }
+
+            } finally {
+                getLifeCycleRwLock().readLock().unlock();
+            }
+
+            workerIdRwLock.writeLock().lock();
+            try {
+                while (workerId == null) {
+                    if (workerIdLifeCycleState != STARTED) {
+                        throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                                getClass().getSimpleName(), STARTED));
+                    }
+
+                    appliedWorkerId.awaitUninterruptibly();
+                }
+            } finally {
+                workerIdRwLock.writeLock().unlock();
             }
         }
     }
 
-    /**
-     * 检查当前客户端是否已关闭。
-     *
-     * @param ws
-     * @return
-     */
-    private boolean isClosed(WorkerIdAndState ws) {
-        return ws.state >= STATE_CLOSING;
+    @Override
+    public long getInterruptibly() throws InterruptedException {
+        for (;;) {
+            // 读锁锁定lifeCycle，使每次迭代时状态不会发生改变
+            getLifeCycleRwLock().readLock().lockInterruptibly();
+            try {
+                // 如非STARTED状态抛出异常
+                if (getState() != STARTED) {
+                    throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                            getClass().getSimpleName(), STARTED));
+                }
+
+                // 读锁锁定workerId，使其值不会发生改变
+                workerIdRwLock.readLock().lockInterruptibly();
+                try {
+                    if (workerId != null) {
+                        return workerId;
+                    }
+                } finally {
+                    workerIdRwLock.readLock().unlock();
+                }
+
+            } finally {
+                getLifeCycleRwLock().readLock().unlock();
+            }
+
+            workerIdRwLock.writeLock().lockInterruptibly();
+            try {
+                while (workerId == null) {
+                    if (workerIdLifeCycleState != STARTED) {
+                        throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                                getClass().getSimpleName(), STARTED));
+                    }
+
+                    appliedWorkerId.await();
+                }
+            } finally {
+                workerIdRwLock.writeLock().unlock();
+            }
+        }
     }
 
-    /**
-     * 检查是否已经完成关闭。
-     *
-     * @param ws
-     * @return
-     */
-    private boolean isTerminal(WorkerIdAndState ws) {
-        return ws.state == STATE_TERMINAL;
+    @Override
+    public Long tryGet() {
+        // 尝试使用读锁锁定lifeCycle，使每次迭代时状态不会发生改变，
+        // 如果锁定失败说明lifeCycle正在变更中不是稳定的STARTED状态，因此抛出异常
+        if (!getLifeCycleRwLock().readLock().tryLock()) {
+            throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                    getClass().getSimpleName(), STARTED));
+        }
+
+        try {
+            // 如非STARTED状态抛出异常
+            if (getState() != STARTED) {
+                throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                        getClass().getSimpleName(), STARTED));
+            }
+
+            // 尝试使用读锁锁定workerId，使其值不会发生改变，如果锁定失败，说明当前workerId正在变更中，返回null
+            if (!workerIdRwLock.readLock().tryLock()) {
+                return null;
+            }
+
+            try {
+                return workerId;
+            } finally {
+                workerIdRwLock.readLock().unlock();
+            }
+
+        } finally {
+            getLifeCycleRwLock().readLock().unlock();
+        }
     }
 
-    /**
-     * 阻塞，直到当前客户端调用关闭，并完成关闭。
-     */
-    public void waitClosed() throws InterruptedException {
-        closedCdl.await();
+    @Override
+    public Long tryGet(long timeout, TimeUnit unit) throws InterruptedException {
+        long timeoutNanos = TimeUnit.NANOSECONDS.convert(timeout, unit);
+        long recordNanos = System.nanoTime();
+
+        // 尝试使用读锁锁定lifeCycle，使每次迭代时状态不会发生改变，
+        // 如果锁定失败说明lifeCycle正在变更中不是稳定的STARTED状态，因此抛出异常
+        if (!getLifeCycleRwLock().readLock().tryLock(timeoutNanos, TimeUnit.NANOSECONDS)) {
+            throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                    getClass().getSimpleName(), STARTED));
+        }
+
+        try {
+            if (getState() != STARTED) {
+                throw new RuntimeLifeCycleException(String.format("%s state is not %s",
+                        getClass().getSimpleName(), STARTED));
+            }
+
+            // 更新超时时间
+            timeoutNanos -= (System.nanoTime() - recordNanos);
+            if (timeoutNanos <= 0) {
+                return null;
+            }
+
+            // 尝试使用读锁锁定workerId，使其值不会发生改变，如果锁定失败，说明当前workerId正在变更中，返回null
+            if (!workerIdRwLock.readLock().tryLock(timeoutNanos, TimeUnit.NANOSECONDS)) {
+                return null;
+            }
+
+            try {
+                return workerId;
+            } finally {
+                workerIdRwLock.readLock().unlock();
+            }
+
+        } finally {
+            getLifeCycleRwLock().readLock().unlock();
+        }
+    }
+
+    @Override
+    protected void doInit() throws LifeCycleException {
+        scriptExecutor.init();
+        applyWorkerIdThread.start();
+    }
+
+    @Override
+    protected void doStart() throws LifeCycleException {
+        scriptExecutor.start();
+    }
+
+    @Override
+    protected void doStop() throws LifeCycleException {
+        scriptExecutor.stop();
+    }
+
+    @Override
+    protected void doClose() throws LifeCycleException {
+        scriptExecutor.close();
+    }
+
+    @Override
+    protected void doFail() throws LifeCycleException {
+        // nothing to do
+    }
+
+    @Override
+    protected void onInitializing() {
+        super.onInitializing();
+
+        setWorkerIdLifeCycleState(INITIALIZING);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onInitialized() {
+        super.onInitialized();
+
+        setWorkerIdLifeCycleState(INITIALIZED);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onStarting() {
+        super.onStarting();
+
+        setWorkerIdLifeCycleState(STARTING);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onStarted() {
+        super.onStarted();
+
+        setWorkerIdLifeCycleState(STARTED);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onStopping() {
+        super.onStopping();
+
+        setWorkerIdLifeCycleState(STOPPING);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onStopped() {
+        super.onStopped();
+
+        setWorkerIdLifeCycleState(STOPPED);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onClosing() {
+        super.onClosing();
+
+        setWorkerIdLifeCycleState(CLOSING);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onClosed() {
+        super.onClosed();
+
+        setWorkerIdLifeCycleState(CLOSED);
+        signalAllLifeCycleChange();
+        applyWorkerIdThread.interrupt();
+        try {
+            applyWorkerIdThreadCdl.await();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    @Override
+    protected void onFailing() {
+        super.onFailing();
+
+        setWorkerIdLifeCycleState(FAILING);
+        signalAllLifeCycleChange();
+    }
+
+    @Override
+    protected void onFailed() {
+        super.onFailed();
+
+        setWorkerIdLifeCycleState(FAILED);
+        signalAllLifeCycleChange();
+        applyWorkerIdThread.interrupt();
+        try {
+            applyWorkerIdThreadCdl.await();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void setWorkerIdLifeCycleState(LifeCycleState state) {
+        workerIdRwLock.writeLock().lock();
+        try {
+            workerIdLifeCycleState = state;
+        } finally {
+            workerIdRwLock.writeLock().unlock();
+        }
+    }
+
+    private void signalAllLifeCycleChange() {
+        getLifeCycleRwLock().writeLock().lock();
+        try {
+            lifeCycleChange.signalAll();
+        } finally {
+            getLifeCycleRwLock().writeLock().unlock();
+        }
+    }
+
+    class ApplyWorkerIdTask implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+                        if (!doRun()) {
+                            break;
+                        }
+                    } catch (InterruptedException ignore) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            } finally {
+                applyWorkerIdThreadCdl.countDown();
+            }
+        }
+
+        private boolean doRun() throws InterruptedException {
+            LifeCycleState state;
+
+            // 尝试等待STARTED状态
+            getLifeCycleRwLock().writeLock().lockInterruptibly();
+            try {
+                while ((state = getState()) != STARTED) {
+                    resetWorkerId();
+
+                    if (state == STOPPED || state == FAILED) {
+                        return false;
+                    }
+
+                    lifeCycleChange.await();
+                }
+            } finally {
+                getLifeCycleRwLock().writeLock().unlock();
+            }
+
+            long waitMs = 0;
+
+            // 读锁锁定lifeCycle，使每次迭代时状态不会发生改变
+            getLifeCycleRwLock().readLock().lockInterruptibly();
+            try {
+                if ((state = getState()) == STOPPED || state == FAILED) {
+                    return false;
+                }
+
+                if (state == STARTED) {
+                    // 如果是STARTED状态则真正进行workerId获取何维护
+                    workerIdRwLock.writeLock().lockInterruptibly();
+                    try {
+                        if (workerId == null) {
+                            // 如果workerId为null说明要去申请workerId
+                            try {
+                                // 从[FROM..TO)区间中申请workerId
+                                workerId = applyIdleWorkerId(FROM, TO);
+                                // 通知已申请到workerId
+                                appliedWorkerId.signalAll();
+                                // 如果申请workerId成功，那么等待一个续约周期后将进入续约流程
+                                waitMs = RENEW_INTERVAL;
+                            } catch (Exception ex) {
+                                log.error("applyIdleWorkerId error", ex);
+                                // 如果发生异常，需要等待一段时间后重试
+                                waitMs = APPLY_ERROR_INTERVAL;
+                            }
+                        } else {
+                            // 如果workerId存在，尝试续约
+                            try {
+                                if (renewWorkerId(workerId) == null) {
+                                    log.warn("renewWorkerId fail, oldWorkerId: {}", workerId);
+                                    // 续约失败，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
+                                    workerId = null;
+                                } else {
+                                    // 续约成功，那么等待一个续约周期后将再次进入续约流程
+                                    waitMs = RENEW_INTERVAL;
+                                }
+                            } catch (Exception ex) {
+                                log.error("renewWorkerId error", ex);
+                                // 发生异常，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
+                                workerId = null;
+                            }
+                        }
+                    } finally {
+                        workerIdRwLock.writeLock().unlock();
+                    }
+                } else {
+                    resetWorkerId();
+                }
+
+            } finally {
+                getLifeCycleRwLock().readLock().unlock();
+            }
+
+            // 如果waitMs超过0，那么等待一段时间再进入下次循环
+            if (waitMs > 0) {
+                Thread.sleep(waitMs);
+            }
+
+            return true;
+        }
+
+        private void resetWorkerId() throws InterruptedException {
+            workerIdRwLock.writeLock().lockInterruptibly();
+            try {
+                workerId = null;
+            } finally {
+                workerIdRwLock.writeLock().unlock();
+            }
+        }
+
     }
 
 }

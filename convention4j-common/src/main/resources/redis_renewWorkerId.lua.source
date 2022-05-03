@@ -1,0 +1,19 @@
+-- 该脚本用于保障指定客户端可以持续锁定指定的workerId，如果保活失败返回nil，否则返回下次保活时间
+-- 输入参数：KEYS[1]=workerHashKey，clientId=ARGV[1]，lockTime=ARGV[2]，workerId=ARGV[3]
+local workerHashKey = KEYS[1]
+local clientId = ARGV[1]
+local lockTime = ARGV[2]
+local workerId = ARGV[3]
+
+local workerInfo = redis.call('hget', workerHashKey, workerId)
+-- 此处有坑：string.sub方法的第三个参数截取时是包含的
+local workerClientId = string.sub(workerInfo, 1, string.len(clientId))
+
+if workerClientId == clientId then
+    local nowSecondsStr = redis.call('time')[1]
+    local expiredTime = tonumber(nowSecondsStr) + lockTime
+    redis.call('hset', workerHashKey, workerId, clientId .. tostring(expiredTime));
+    return expiredTime
+else
+    return nil
+end

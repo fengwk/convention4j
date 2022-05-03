@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -9,6 +10,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -17,7 +19,33 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * NullSafe可以简化空指针判断。
+ * NullSafe可以简化空指针判断逻辑，突出代码语义。
+ *
+ * <p>下面使用一些对比示例展示使用NullSafe描述的简洁性与可读性：</p>
+ *
+ * <p>1、使用原生语句描述元素是否再交集中：
+ * <pre>{@code
+ *     if (set1 != null && set1.contains(element) && set2 != null && set2.contains(element)) {
+ *         return true;
+ *     }
+ * }</pre>
+ * </p>
+ *
+ * <p>2、使用Optional描述元素是否再交集中：
+ * <pre>{@code
+ *     if (Optional.ofNullable(set1).orElse(Collections::emptySet).contains(element) && Optional.ofNullable(set2).orElse(Collections::emptySet).contains(element)) {
+ *         return true;
+ *     }
+ * }</pre>
+ * </p>
+ *
+ * <p>3、使用NullSafe描述元素是否再交集中：
+ * <pre>{@code
+ *     if (NullSafe.of(set1).contains(element) && NullSafe.of(set2).contains(element)) {
+ *         return true;
+ *     }
+ * }</pre>
+ * </p>
  *
  * @author fengwk
  */
@@ -29,11 +57,12 @@ public class NullSafe {
      * 当obj不为null时进行映射操作。
      *
      * @param obj
-     * @param mapper
+     * @param mapper not null
      * @param <S>
      * @param <T>
      * @return
      */
+    @Nullable
     public static <S, T> T map(S obj, Function<S, T> mapper) {
         return obj == null ? null : mapper.apply(obj);
     }
@@ -42,11 +71,12 @@ public class NullSafe {
      * 当collection不为null时进行映射操作。
      *
      * @param collection
-     * @param mapper
+     * @param mapper not null
      * @param <S>
      * @param <T>
      * @return
      */
+    @Nullable
     public static <S, T> List<T> map(Collection<S> collection, Function<S, T> mapper) {
         return collection == null ? null : collection.stream().map(mapper).collect(Collectors.toList());
     }
@@ -59,6 +89,7 @@ public class NullSafe {
      * @param defaultObj
      * @return
      */
+    @Nullable
     public static <T> T of(T obj, T defaultObj) {
         return obj == null ? defaultObj : obj;
     }
@@ -68,9 +99,10 @@ public class NullSafe {
      *
      * @param <T>
      * @param obj
-     * @param defaultObjFactory
+     * @param defaultObjFactory not null
      * @return
      */
+    @Nullable
     public static <T> T of(T obj, Supplier<T> defaultObjFactory) {
         return obj == null ? defaultObjFactory.get() : obj;
     }
@@ -287,6 +319,46 @@ public class NullSafe {
      */
     public static Object[] of(Object[] objects) {
         return objects == null ? new Object[0] : objects;
+    }
+
+    /**
+     * 检查元素是否为true值。
+     *
+     * @param bool
+     * @return
+     */
+    public static boolean isTrue(Boolean bool) {
+        return Objects.equals(bool, true);
+    }
+
+    /**
+     * 检查元素是否为true值。
+     *
+     * @param intBool
+     * @return
+     */
+    public static boolean isTrue(Integer intBool) {
+        return isTrue(ConvertUtils.int2bool(intBool));
+    }
+
+    /**
+     * 检查元素是否为false值。
+     *
+     * @param bool
+     * @return
+     */
+    public static boolean isFalse(Boolean bool) {
+        return Objects.equals(bool, false);
+    }
+
+    /**
+     * 检查元素是否为false值。
+     *
+     * @param intBool
+     * @return
+     */
+    public static boolean isFalse(Integer intBool) {
+        return isFalse(ConvertUtils.int2bool(intBool));
     }
 
 }

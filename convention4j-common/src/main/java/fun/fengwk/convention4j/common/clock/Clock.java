@@ -1,11 +1,7 @@
 package fun.fengwk.convention4j.common.clock;
 
 /**
- * {@link Clock}是一个时钟接口，用于获取当前时间。
- * 
- * @author fengwk
- */
-/**
+ * 时钟接口，用于获取当前时间。
  * 
  * @author fengwk
  */

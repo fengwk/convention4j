@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.api.code.CommonCodeTable;
+import fun.fengwk.convention4j.common.code.CommonCodeTable;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +26,11 @@ public class ExceptionResultHandlerTest {
     @Test(expected = ArithmeticException.class)
     public void test2() {
         testService.test2();
+    }
+
+    @Test
+    public void test3() {
+        testService.checkUser(new TestService.User());
     }
 
 }

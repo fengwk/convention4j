@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.iterator;
 
+import fun.fengwk.convention4j.common.Order;
+
 /**
  * 同步的支持查看与退回操作的游标迭代器。
  *

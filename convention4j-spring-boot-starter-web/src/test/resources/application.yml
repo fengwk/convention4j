@@ -10,5 +10,4 @@ convention:
 
   error-code:
     i18n:
-      base-name: error-code
       locale: ${convention.i18n.locale}

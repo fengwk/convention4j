@@ -1,7 +1,8 @@
 package fun.fengwk.convention4j.common.clock;
 
 /**
- * 
+ * 使用系统时钟的时钟接口实现。
+ *
  * @author fengwk
  */
 public class SystemClock implements Clock {

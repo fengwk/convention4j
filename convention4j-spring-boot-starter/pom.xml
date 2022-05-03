@@ -14,7 +14,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>fun.fengwk.convention4j</groupId>
-			<artifactId>convention4j-api</artifactId>
+			<artifactId>convention4j-common</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -23,6 +23,15 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-aspects</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ognl</groupId>
+			<artifactId>ognl</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>fun.fengwk.auto-validation</groupId>
+			<artifactId>auto-validation-validator</artifactId>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -35,11 +44,6 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>fun.fengwk.auto-validation</groupId>
-			<artifactId>auto-validation-validator</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-redis</artifactId>
 			<optional>true</optional>
@@ -47,6 +51,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

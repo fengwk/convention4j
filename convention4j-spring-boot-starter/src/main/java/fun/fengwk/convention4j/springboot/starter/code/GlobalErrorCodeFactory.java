@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.ErrorCode;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
 
 /**
  * @author fengwk
@@ -9,6 +9,8 @@ import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
 public class GlobalErrorCodeFactory {
 
     private static volatile ErrorCodeFactory instance;
+
+    private GlobalErrorCodeFactory() {}
 
     /**
      * 设置全局ErrorCodeFactory实例。

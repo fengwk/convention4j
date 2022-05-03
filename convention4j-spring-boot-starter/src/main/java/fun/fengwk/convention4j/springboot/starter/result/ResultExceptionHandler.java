@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.api.result.Results;
+import fun.fengwk.convention4j.common.code.ErrorCode;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.common.result.Results;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import javax.validation.ConstraintViolationException;
 import java.util.Map;
 
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNSUPPORTED_OPERATION;
 
 /**
  * 异常结果处理，如果方法的返回类型是{@link Result}，那么将会把异常处理为Result结果。
@@ -35,7 +35,7 @@ public class ResultExceptionHandler {
 
     // 拦截所有返回Result及其子类的方法
     @Around("@within(fun.fengwk.convention4j.springboot.starter.result.AutoResultExceptionHandler) " +
-            "&& execution(fun.fengwk.convention4j.api.result.Result+ *.*(..))")
+            "&& execution(fun.fengwk.convention4j.common.result.Result+ *.*(..))")
     public Result<?> handle(ProceedingJoinPoint joinPoint) {
         try {
             return (Result<?>) joinPoint.proceed();
@@ -76,15 +76,15 @@ public class ResultExceptionHandler {
     }
 
     private void warn(Throwable ex) {
-        log.warn("ResultExceptionHandler catch exception, error={}", String.valueOf(ex));
+        log.warn("{} catch exception, error: {}", ResultExceptionHandler.class.getSimpleName(), String.valueOf(ex));
     }
 
     private void errorUseShortFormat(Throwable ex) {
-        log.error("ResultExceptionHandler catch exception, error={}", String.valueOf(ex));
+        log.error("{} catch exception, error: {}", ResultExceptionHandler.class.getSimpleName(), String.valueOf(ex));
     }
 
     private void error(Throwable ex) {
-        log.error("ResultExceptionHandler catch exception", ex);
+        log.error("{} catch exception", ResultExceptionHandler.class.getSimpleName(), ex);
     }
 
 }

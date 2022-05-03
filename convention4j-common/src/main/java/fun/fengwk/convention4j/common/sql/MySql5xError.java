@@ -1,0 +1,349 @@
+package fun.fengwk.convention4j.common.sql;
+
+import javax.annotation.Nullable;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * MySQL 5.x版本错误。
+ *
+ * @see <a href="https://dev.mysql.com/doc/connector-j/5.1/en/connector-j-reference-error-sqlstates.html">5.12 Mapping MySQL Error Numbers to JDBC SQLState Codes</a>
+ * @author fengwk
+ */
+public enum MySql5xError {
+
+    ER_DUP_KEY(1022),
+    ER_OUTOFMEMORY(1037),
+    ER_OUT_OF_SORTMEMORY(1038),
+    ER_CON_COUNT_ERROR(1040),
+    ER_BAD_HOST_ERROR(1042),
+    ER_HANDSHAKE_ERROR(1043),
+    ER_DBACCESS_DENIED_ERROR(1044),
+    ER_ACCESS_DENIED_ERROR(1045),
+    ER_NO_DB_ERROR(1046),
+    ER_UNKNOWN_COM_ERROR(1047),
+    ER_BAD_NULL_ERROR(1048),
+    ER_BAD_DB_ERROR(1049),
+    ER_TABLE_EXISTS_ERROR(1050),
+    ER_BAD_TABLE_ERROR(1051),
+    ER_NON_UNIQ_ERROR(1052),
+    ER_SERVER_SHUTDOWN(1053),
+    ER_BAD_FIELD_ERROR(1054),
+    ER_WRONG_FIELD_WITH_GROUP(1055),
+    ER_WRONG_GROUP_FIELD(1056),
+    ER_WRONG_SUM_SELECT(1057),
+    ER_WRONG_VALUE_COUNT(1058),
+    ER_TOO_LONG_IDENT(1059),
+    ER_DUP_FIELDNAME(1060),
+    ER_DUP_KEYNAME(1061),
+    ER_DUP_ENTRY(1062),
+    ER_WRONG_FIELD_SPEC(1063),
+    ER_PARSE_ERROR(1064),
+    ER_EMPTY_QUERY(1065),
+    ER_NONUNIQ_TABLE(1066),
+    ER_INVALID_DEFAULT(1067),
+    ER_MULTIPLE_PRI_KEY(1068),
+    ER_TOO_MANY_KEYS(1069),
+    ER_TOO_MANY_KEY_PARTS(1070),
+    ER_TOO_LONG_KEY(1071),
+    ER_KEY_COLUMN_DOES_NOT_EXITS(1072),
+    ER_BLOB_USED_AS_KEY(1073),
+    ER_TOO_BIG_FIELDLENGTH(1074),
+    ER_WRONG_AUTO_KEY(1075),
+    ER_FORCING_CLOSE(1080),
+    ER_IPSOCK_ERROR(1081),
+    ER_NO_SUCH_INDEX(1082),
+    ER_WRONG_FIELD_TERMINATORS(1083),
+    ER_BLOBS_AND_NO_TERMINATED(1084),
+    ER_CANT_REMOVE_ALL_FIELDS(1090),
+    ER_CANT_DROP_FIELD_OR_KEY(1091),
+    ER_BLOB_CANT_HAVE_DEFAULT(1101),
+    ER_WRONG_DB_NAME(1102),
+    ER_WRONG_TABLE_NAME(1103),
+    ER_TOO_BIG_SELECT(1104),
+    ER_UNKNOWN_PROCEDURE(1106),
+    ER_WRONG_PARAMCOUNT_TO_PROCEDURE(1107),
+    ER_UNKNOWN_TABLE(1109),
+    ER_FIELD_SPECIFIED_TWICE(1110),
+    ER_UNSUPPORTED_EXTENSION(1112),
+    ER_TABLE_MUST_HAVE_COLUMNS(1113),
+    ER_UNKNOWN_CHARACTER_SET(1115),
+    ER_TOO_BIG_ROWSIZE(1118),
+    ER_WRONG_OUTER_JOIN(1120),
+    ER_NULL_COLUMN_IN_INDEX(1121),
+    ER_HOST_IS_BLOCKED(1129),
+    ER_HOST_NOT_PRIVILEGED(1130),
+    ER_PASSWORD_ANONYMOUS_USER(1131),
+    ER_PASSWORD_NOT_ALLOWED(1132),
+    ER_PASSWORD_NO_MATCH(1133),
+    ER_WRONG_VALUE_COUNT_ON_ROW(1136),
+    ER_INVALID_USE_OF_NULL(1138),
+    ER_REGEXP_ERROR(1139),
+    ER_MIX_OF_GROUP_FUNC_AND_FIELDS(1140),
+    ER_NONEXISTING_GRANT(1141),
+    ER_TABLEACCESS_DENIED_ERROR(1142),
+    ER_COLUMNACCESS_DENIED_ERROR(1143),
+    ER_ILLEGAL_GRANT_FOR_TABLE(1144),
+    ER_GRANT_WRONG_HOST_OR_USER(1145),
+    ER_NO_SUCH_TABLE(1146),
+    ER_NONEXISTING_TABLE_GRANT(1147),
+    ER_NOT_ALLOWED_COMMAND(1148),
+    ER_SYNTAX_ERROR(1149),
+    ER_ABORTING_CONNECTION(1152),
+    ER_NET_PACKET_TOO_LARGE(1153),
+    ER_NET_READ_ERROR_FROM_PIPE(1154),
+    ER_NET_FCNTL_ERROR(1155),
+    ER_NET_PACKETS_OUT_OF_ORDER(1156),
+    ER_NET_UNCOMPRESS_ERROR(1157),
+    ER_NET_READ_ERROR(1158),
+    ER_NET_READ_INTERRUPTED(1159),
+    ER_NET_ERROR_ON_WRITE(1160),
+    ER_NET_WRITE_INTERRUPTED(1161),
+    ER_TOO_LONG_STRING(1162),
+    ER_TABLE_CANT_HANDLE_BLOB(1163),
+    ER_TABLE_CANT_HANDLE_AUTO_INCREMENT(1164),
+    ER_WRONG_COLUMN_NAME(1166),
+    ER_WRONG_KEY_COLUMN(1167),
+    ER_DUP_UNIQUE(1169),
+    ER_BLOB_KEY_WITHOUT_LENGTH(1170),
+    ER_PRIMARY_CANT_HAVE_NULL(1171),
+    ER_TOO_MANY_ROWS(1172),
+    ER_REQUIRES_PRIMARY_KEY(1173),
+    ER_KEY_DOES_NOT_EXITS(1176),
+    ER_CHECK_NO_SUCH_TABLE(1177),
+    ER_CHECK_NOT_IMPLEMENTED(1178),
+    ER_CANT_DO_THIS_DURING_AN_TRANSACTION(1179),
+    ER_NEW_ABORTING_CONNECTION(1184),
+    ER_MASTER_NET_READ(1189),
+    ER_MASTER_NET_WRITE(1190),
+    ER_TOO_MANY_USER_CONNECTIONS(1203),
+    ER_LOCK_WAIT_TIMEOUT(1205),
+    ER_READ_ONLY_TRANSACTION(1207),
+    ER_NO_PERMISSION_TO_CREATE_USER(1211),
+    ER_LOCK_DEADLOCK(1213),
+    ER_NO_REFERENCED_ROW(1216),
+    ER_ROW_IS_REFERENCED(1217),
+    ER_CONNECT_TO_MASTER(1218),
+    ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT(1222),
+    ER_USER_LIMIT_REACHED(1226),
+    ER_SPECIFIC_ACCESS_DENIED_ERROR(1227),
+    ER_NO_DEFAULT(1230),
+    ER_WRONG_VALUE_FOR_VAR(1231),
+    ER_WRONG_TYPE_FOR_VAR(1232),
+    ER_CANT_USE_OPTION_HERE(1234),
+    ER_NOT_SUPPORTED_YET(1235),
+    ER_WRONG_FK_DEF(1239),
+    ER_OPERAND_COLUMNS(1241),
+    ER_SUBQUERY_NO_1_ROW(1242),
+    ER_ILLEGAL_REFERENCE(1247),
+    ER_DERIVED_MUST_HAVE_ALIAS(1248),
+    ER_SELECT_REDUCED(1249),
+    ER_TABLENAME_NOT_ALLOWED_HERE(1250),
+    ER_NOT_SUPPORTED_AUTH_MODE(1251),
+    ER_SPATIAL_CANT_HAVE_NULL(1252),
+    ER_COLLATION_CHARSET_MISMATCH(1253),
+    ER_WARN_TOO_FEW_RECORDS(1261),
+    ER_WARN_TOO_MANY_RECORDS(1262),
+    ER_WARN_NULL_TO_NOTNULL(1263),
+    ER_WARN_DATA_OUT_OF_RANGE(1264),
+    ER_WARN_DATA_TRUNCATED(1265),
+    ER_WRONG_NAME_FOR_INDEX(1280),
+    ER_WRONG_NAME_FOR_CATALOG(1281),
+    ER_UNKNOWN_STORAGE_ENGINE(1286),
+    ER_TRUNCATED_WRONG_VALUE(1292),
+    ER_SP_NO_RECURSIVE_CREATE(1303),
+    ER_SP_ALREADY_EXISTS(1304),
+    ER_SP_DOES_NOT_EXIST(1305),
+    ER_SP_LILABEL_MISMATCH(1308),
+    ER_SP_LABEL_REDEFINE(1309),
+    ER_SP_LABEL_MISMATCH(1310),
+    ER_SP_UNINIT_VAR(1311),
+    ER_SP_BADSELECT(1312),
+    ER_SP_BADRETURN(1313),
+    ER_SP_BADSTATEMENT(1314),
+    ER_UPDATE_LOG_DEPRECATED_IGNORED(1315),
+    ER_UPDATE_LOG_DEPRECATED_TRANSLATED(1316),
+    ER_QUERY_INTERRUPTED(1317),
+    ER_SP_WRONG_NO_OF_ARGS(1318),
+    ER_SP_COND_MISMATCH(1319),
+    ER_SP_NORETURN(1320),
+    ER_SP_NORETURNEND(1321),
+    ER_SP_BAD_CURSOR_QUERY(1322),
+    ER_SP_BAD_CURSOR_SELECT(1323),
+    ER_SP_CURSOR_MISMATCH(1324),
+    ER_SP_CURSOR_ALREADY_OPEN(1325),
+    ER_SP_CURSOR_NOT_OPEN(1326),
+    ER_SP_UNDECLARED_VAR(1327),
+    ER_SP_FETCH_NO_DATA(1329),
+    ER_SP_DUP_PARAM(1330),
+    ER_SP_DUP_VAR(1331),
+    ER_SP_DUP_COND(1332),
+    ER_SP_DUP_CURS(1333),
+    ER_SP_SUBSELECT_NYI(1335),
+    ER_STMT_NOT_ALLOWED_IN_SF_OR_TRG(1336),
+    ER_SP_VARCOND_AFTER_CURSHNDLR(1337),
+    ER_SP_CURSOR_AFTER_HANDLER(1338),
+    ER_SP_CASE_NOT_FOUND(1339),
+    ER_DIVISION_BY_ZERO(1365),
+    ER_ILLEGAL_VALUE_FOR_TYPE(1367),
+    ER_PROCACCESS_DENIED_ERROR(1370),
+    ER_XAER_NOTA(1397),
+    ER_XAER_INVAL(1398),
+    ER_XAER_RMFAIL(1399),
+    ER_XAER_OUTSIDE(1400),
+    ER_XA_RMERR(1401),
+    ER_XA_RBROLLBACK(1402),
+    ER_NONEXISTING_PROC_GRANT(1403),
+    ER_DATA_TOO_LONG(1406),
+    ER_SP_BAD_SQLSTATE(1407),
+    ER_CANT_CREATE_USER_WITH_GRANT(1410),
+    ER_SP_DUP_HANDLER(1413),
+    ER_SP_NOT_VAR_ARG(1414),
+    ER_SP_NO_RETSET(1415),
+    ER_CANT_CREATE_GEOMETRY_OBJECT(1416),
+    ER_TOO_BIG_SCALE(1425),
+    ER_TOO_BIG_PRECISION(1426),
+    ER_M_BIGGER_THAN_D(1427),
+    ER_TOO_LONG_BODY(1437),
+    ER_TOO_BIG_DISPLAYWIDTH(1439),
+    ER_XAER_DUPID(1440),
+    ER_DATETIME_FUNCTION_OVERFLOW(1441),
+    ER_ROW_IS_REFERENCED_2(1451),
+    ER_NO_REFERENCED_ROW_2(1452),
+    ER_SP_BAD_VAR_SHADOW(1453),
+    ER_SP_WRONG_NAME(1458),
+    ER_SP_NO_AGGREGATE(1460),
+    ER_MAX_PREPARED_STMT_COUNT_REACHED(1461),
+    ER_NON_GROUPING_FIELD_USED(1463),
+    ER_FOREIGN_DUPLICATE_KEY(1557),
+    ER_CANT_CHANGE_TX_ISOLATION(1568),
+    ER_WRONG_PARAMCOUNT_TO_NATIVE_FCT(1582),
+    ER_WRONG_PARAMETERS_TO_NATIVE_FCT(1583),
+    ER_WRONG_PARAMETERS_TO_STORED_FCT(1584),
+    ER_DUP_ENTRY_WITH_KEY_NAME(1586),
+    ER_XA_RBTIMEOUT(1613),
+    ER_XA_RBDEADLOCK(1614),
+    ER_FUNC_INEXISTENT_NAME_COLLISION(1630),
+    ER_DUP_SIGNAL_SET(1641),
+    ER_SIGNAL_WARN(1642),
+    ER_SIGNAL_NOT_FOUND(1643),
+    ER_RESIGNAL_WITHOUT_ACTIVE_HANDLER(1645),
+    ER_SPATIAL_MUST_HAVE_GEOM_COL(1687),
+    ER_DATA_OUT_OF_RANGE(1690),
+    ER_ACCESS_DENIED_NO_PASSWORD_ERROR(1698),
+    ER_TRUNCATE_ILLEGAL_FK(1701),
+    ER_DA_INVALID_CONDITION_NUMBER(1758),
+    ER_FOREIGN_DUPLICATE_KEY_WITH_CHILD_INFO(1761),
+    ER_FOREIGN_DUPLICATE_KEY_WITHOUT_CHILD_INFO(1762),
+    ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION(1792),
+    ER_ALTER_OPERATION_NOT_SUPPORTED(1845),
+    ER_ALTER_OPERATION_NOT_SUPPORTED_REASON(1846),
+    ER_DUP_UNKNOWN_IN_INDEX(1859),
+    ER_ACCESS_DENIED_CHANGE_USER_ERROR(1873),
+    ER_GET_STACKED_DA_WITHOUT_ACTIVE_HANDLER(1887),
+    ER_INVALID_ARGUMENT_FOR_LOGARITHM(1903)
+
+    ;
+
+    private static final Map<Integer, MySql5xError> MAP;
+
+    private static final Pattern DUPLICATE_REGEX = Pattern.compile("Duplicate entry '(.+?)' for key '(.+?)'");
+
+    static {
+        Map<Integer, MySql5xError> map = new HashMap<>();
+        for (MySql5xError err : values()) {
+            map.put(err.getErrorCode(), err);
+        }
+
+        MAP = map;
+    }
+
+    private final int errorCode;
+
+    MySql5xError(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    /**
+     * 使用错误码获取{@link MySql5xError}，如果不存在返回null。
+     *
+     * @param errorCode
+     * @return
+     */
+    @Nullable
+    public static MySql5xError of(Integer errorCode) {
+        return MAP.get(errorCode);
+    }
+
+    /**
+     * 解析{@link SQLException}获取{@link MySql5xError}，如果不存在返回null。
+     *
+     * @param sqlException
+     * @return
+     */
+    @Nullable
+    public static MySql5xError parse(SQLException sqlException) {
+        return sqlException == null ? null : of(sqlException.getErrorCode());
+    }
+
+    /**
+     * 解析{@link Throwable}获取{@link MySql5xError}，如果不存在返回null。
+     *
+     * @param t
+     * @return
+     */
+    @Nullable
+    public static MySql5xError parse(Throwable t) {
+        return parse(SqlErrorUtils.findSqlException(t));
+    }
+
+    /**
+     * 尝试解析错误条目，例如从"Duplicate entry '1234567890' for key 'uk_mobile'"中解析出"1234567890"。
+     * <pre>{@code
+     *     if (err == MySql5xError.ER_DUP_ENTRY) {
+     *         String entry = MySql5xError.parseDuplicateEntry(sqlException.getMessage());
+     *     }
+     * }</pre>
+     *
+     * @param errorMessage
+     * @return
+     */
+    @Nullable
+    public static String parseDuplicateEntry(String errorMessage) {
+        Matcher matcher = DUPLICATE_REGEX.matcher(errorMessage);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        return matcher.group(1);
+    }
+
+    /**
+     * 尝试解析错误条目，例如从"Duplicate entry '1234567890' for key 'uk_mobile'"中解析出"uk_mobile"。
+     * <pre>{@code
+     *     if (err == MySql5xError.ER_DUP_ENTRY) {
+     *         String key = MySql5xError.parseDuplicateKey(sqlException.getMessage());
+     *     }
+     * }</pre>
+     *
+     * @param errorMessage
+     * @return
+     */
+    @Nullable
+    public static String parseDuplicateKey(String errorMessage) {
+        Matcher matcher = DUPLICATE_REGEX.matcher(errorMessage);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        return matcher.group(2);
+    }
+
+}

@@ -1,5 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  web.RestAutoConfiguration
+  fun.fengwk.convention4j.springboot.starter.web.WebAutoConfiguration
 
 org.springframework.context.ApplicationContextInitializer=\
-  web.RestEnvironmentInitializer
+  fun.fengwk.convention4j.springboot.starter.web.WebEnvironmentInitializer

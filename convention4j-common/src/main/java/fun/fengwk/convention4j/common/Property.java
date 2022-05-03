@@ -45,7 +45,7 @@ public class Property<T, R> {
     
     private SerializedLambda parseToSerializedLambda(Fn<T, R> fn) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Method method = fn.getClass().getDeclaredMethod("writeReplace");
-        method.setAccessible(Boolean.TRUE);
+        method.setAccessible(true);
         return (SerializedLambda) method.invoke(fn);
     }
     
@@ -54,10 +54,14 @@ public class Property<T, R> {
      * 
      * @param <T>
      * @param <R>
-     * @param fn
+     * @param fn not null
      * @return
      */
     public static <T, R> Property<T, R> of(Fn<T, R> fn) {
+        if (fn == null) {
+            throw new NullPointerException("fn cannot be null");
+        }
+
         return new Property<>(null, fn);
     }
     
@@ -65,10 +69,14 @@ public class Property<T, R> {
      * 获取当前属性描述JavaBean的下一级属性。
      * 
      * @param <U>
-     * @param fn
+     * @param fn not null
      * @return
      */
     public <U> Property<R, U> dot(Fn<R, U> fn) {
+        if (fn == null) {
+            throw new NullPointerException("fn cannot be null");
+        }
+
         return new Property<>(this, fn);
     }
     

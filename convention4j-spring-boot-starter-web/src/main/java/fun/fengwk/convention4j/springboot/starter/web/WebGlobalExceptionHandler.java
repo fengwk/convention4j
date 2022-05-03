@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
-import fun.fengwk.convention4j.api.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
-import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.api.result.Results;
+import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.ThrowableErrorCode;
+import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.springboot.starter.result.ExceptionHandlerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention4j.api.code.CommonCodeTable.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.RESOURCE_NOT_FOUND;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.CommonCodeTable.WAIT_TIMEOUT;
 
 /**
  * REST协议的异常处理程序。
@@ -261,6 +262,9 @@ public class WebGlobalExceptionHandler {
         if (ILLEGAL_STATE.equalsCode(ex)) {
             warn(request, ex);
             status = HttpStatus.BAD_REQUEST;
+        } else if (WAIT_TIMEOUT.equalsCode(ex)) {
+            error(request, ex);
+            status = HttpStatus.GATEWAY_TIMEOUT;
         } else {
             // 对于错误码严重异常，打印日志的级别为error，但并不使用冗长的错误输出格式，
             // 因为按照规约应当在错误码异常抛出时记录能够定位到问题的错误日志，如果必要也可记录当时的上下文信息，因此无需重复打印
@@ -287,15 +291,15 @@ public class WebGlobalExceptionHandler {
     }
 
     private void warn(HttpServletRequest request, Throwable ex) {
-        log.warn("request failed, request: [{}], error: [{}]", formatRequest(request), String.valueOf(ex));
+        log.warn("request failed, request: {}, error: {}", formatRequest(request), String.valueOf(ex));
     }
 
     private void errorUseShortFormat(HttpServletRequest request, Throwable ex) {
-        log.error("request failed, request: [{}], error: [{}]", formatRequest(request), String.valueOf(ex));
+        log.error("request failed, request: {}, error: {}", formatRequest(request), String.valueOf(ex));
     }
     
     private void error(HttpServletRequest request, Throwable ex) {
-        log.error("request failed, request: [{}]", formatRequest(request), ex);
+        log.error("request failed, request: '{}'", formatRequest(request), ex);
     }
     
     private String formatRequest(HttpServletRequest request) {

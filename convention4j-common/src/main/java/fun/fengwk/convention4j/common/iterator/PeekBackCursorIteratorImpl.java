@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.iterator;
 
+import fun.fengwk.convention4j.common.Order;
+
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -28,12 +30,7 @@ class PeekBackCursorIteratorImpl<E, C extends Comparable<C>> implements PeekBack
 
     @Override
     public boolean hasNext() {
-        if (bufferQueue.isEmpty() && iterator.hasNext()) {
-            bufferQueue.addLast(iterator.next());
-            cursorBufferQueue.addLast(iterator.getCursor());
-        }
-
-        return !bufferQueue.isEmpty();
+        return !bufferQueue.isEmpty() || iterator.hasNext();
     }
 
     @Override
@@ -93,15 +90,26 @@ class PeekBackCursorIteratorImpl<E, C extends Comparable<C>> implements PeekBack
             throw new NoSuchElementException("No next element");
         }
 
-        E next = bufferQueue.removeFirst();
+        E next;
+        C cursor;
+        if (!bufferQueue.isEmpty()) {
+            next = bufferQueue.removeFirst();
+            cursor = cursorBufferQueue.removeFirst();
+        } else {
+            next = iterator.next();
+            cursorBufferQueue.addLast(iterator.getCursor());
+            cursor = cursorBufferQueue.removeFirst();
+        }
+
         if (!drop) {
             while (putBackStack.size() >= putBackCapacity) {
                 putBackStack.removeLast();
                 cursorPutBackStack.removeLast();
             }
             putBackStack.addFirst(next);
-            cursorPutBackStack.addFirst(cursorBufferQueue.removeFirst());
+            cursorPutBackStack.addFirst(cursor);
         }
+
         return next;
     }
 

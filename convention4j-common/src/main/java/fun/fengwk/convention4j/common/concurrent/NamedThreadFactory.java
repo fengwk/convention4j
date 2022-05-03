@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 线程工厂，由该工厂生产的线程将具有名称{@code name-id}。
+ * 可以生产指定名称线程的线程工厂。
  *
  * @author fengwk
  */

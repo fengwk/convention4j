@@ -55,11 +55,13 @@ class PeekBackIteratorImpl<E> implements PeekBackIterator<E> {
 
     @Override
     public boolean hasNext() {
-        if (bufferQueue.isEmpty() && iterator.hasNext()) {
-            bufferQueue.addLast(iterator.next());
-        }
+        return !bufferQueue.isEmpty() || iterator.hasNext();
 
-        return !bufferQueue.isEmpty();
+//        if (bufferQueue.isEmpty() && iterator.hasNext()) {
+//            bufferQueue.addLast(iterator.next());
+//        }
+//
+//        return !bufferQueue.isEmpty();
     }
 
     @Override
@@ -73,13 +75,20 @@ class PeekBackIteratorImpl<E> implements PeekBackIterator<E> {
             throw new NoSuchElementException("No next element");
         }
 
-        E next = bufferQueue.removeFirst();
+        E next;
+        if (!bufferQueue.isEmpty()) {
+            next = bufferQueue.removeFirst();
+        } else {
+            next = iterator.next();
+        }
+
         if (!drop) {
             while (putBackStack.size() >= putBackCapacity) {
                 putBackStack.removeLast();
             }
             putBackStack.addFirst(next);
         }
+
         return next;
     }
 

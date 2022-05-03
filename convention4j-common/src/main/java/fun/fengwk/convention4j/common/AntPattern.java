@@ -3,17 +3,18 @@ package fun.fengwk.convention4j.common;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Objects;
 
 /**
- * ant pattern.
+ * ANT模式，具备ANT模式匹配功能。
  *
- * <p>在 ant pattern 中可以使用以下三种特殊的模式匹配符号：</p>
+ * <p>
+ * 在ANT模式中可以使用以下三种特殊的模式匹配符号：
  * <ul>
- * <li>?代表一段路径中的任意一个字符</li>
- * <li>*代表一段路径中的任意数量字符</li>
- * <li>**代表任意数量段路径</li>
+ *     <li>?代表一段路径中的任意一个字符</li>
+ *     <li>*代表一段路径中的任意数量字符</li>
+ *     <li>**代表任意数量段路径</li>
  * </ul>
+ * </p>
  *
  * @author fengwk
  */
@@ -28,18 +29,22 @@ public class AntPattern {
     private final String[] patternSegments;
 
     /**
-     * 构建一个 ant pattern。
+     * 构建一个ANT模式。
      *
      * @param pattern not null
      */
     public AntPattern(String pattern) {
-        this.pattern = Objects.requireNonNull(pattern);
+        if (pattern == null) {
+            throw new NullPointerException("pattern cannot be null");
+        }
+
+        this.pattern = pattern;
         this.patternSegments = split(pattern);
     }
 
     /**
      * <p>
-     * 检查当前AntPattern是否能匹配指定path。
+     * 检查当前ANT模式是否能匹配指定path。
      * </p>
      *
      * <ul>
@@ -69,7 +74,7 @@ public class AntPattern {
     }
 
     /**
-     * 判断path是否未绝对路径。
+     * 判断path是否为绝对路径。
      *
      * @param path
      * @return
@@ -81,12 +86,14 @@ public class AntPattern {
     /**
      * 从位置lo开始对path按照'/'进行分割。
      *
+     * <p>
      * 分隔示例：
      * <ul>
-     * <li>"a/b/c"将被分隔为["a", "b", "c"]。</li>
-     * <li>边界情况1，"/a/b/c"也会被分隔为["a", "b", "c"]。</li>
-     * <li>边界情况2，"/a/b/c//"也会被分隔为["a", "b", "c"]。</li>
+     *     <li>"a/b/c"将被分隔为["a", "b", "c"]。</li>
+     *     <li>边界情况1，"/a/b/c"也会被分隔为["a", "b", "c"]。</li>
+     *     <li>边界情况2，"/a/b/c//"也会被分隔为["a", "b", "c"]。</li>
      * </ul>
+     * </p>
      *
      * @param path
      * @return

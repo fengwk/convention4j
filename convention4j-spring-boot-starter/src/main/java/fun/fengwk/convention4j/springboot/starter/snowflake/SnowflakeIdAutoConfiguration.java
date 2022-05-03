@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.snowflake;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
-import fun.fengwk.convention4j.common.idgen.SimpleNamespaceIdGenerator;
 import fun.fengwk.convention4j.common.idgen.snowflakes.FixedWorkerIdClient;
 import fun.fengwk.convention4j.common.idgen.snowflakes.RedisTemplateScriptExecutor;
 import fun.fengwk.convention4j.common.idgen.snowflakes.RedisWorkerIdClient;
@@ -34,7 +33,7 @@ public class SnowflakeIdAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(SnowflakeIdAutoConfiguration.class);
 
     @ConditionalOnProperty(prefix = "convention.snowflake-id", name = "worker-id")
-    @ConditionalOnMissingBean(WorkerIdClient.class)
+    @ConditionalOnMissingBean
     @Bean
     public WorkerIdClient fixedWorkerIdClient(SnowflakeIdProperties snowflakeIdProperties) {
         WorkerIdClient workerIdClient = new FixedWorkerIdClient(snowflakeIdProperties.getWorkerId());
@@ -42,8 +41,9 @@ public class SnowflakeIdAutoConfiguration {
         return workerIdClient;
     }
 
+    @ConditionalOnClass(StringRedisTemplate.class)
     @ConditionalOnBean(StringRedisTemplate.class)
-    @ConditionalOnMissingBean(WorkerIdClient.class)
+    @ConditionalOnMissingBean
     @Bean
     public WorkerIdClient redisWorkerIdClient(StringRedisTemplate redisTemplate) {
         WorkerIdClient workerIdClient = new RedisWorkerIdClient(new RedisTemplateScriptExecutor(redisTemplate));
@@ -51,10 +51,11 @@ public class SnowflakeIdAutoConfiguration {
         return workerIdClient;
     }
 
+    @ConditionalOnMissingBean
     @Bean
     public NamespaceIdGenerator<Long> snowflakesIdGenerator(SnowflakeIdProperties snowflakeIdProperties,
                                                             WorkerIdClient workerIdClient) {
-        NamespaceIdGenerator<Long> namespaceIdGenerator = new SimpleNamespaceIdGenerator<>(
+        NamespaceIdGenerator<Long> namespaceIdGenerator = new SimpleNamespaceIdGeneratorBean<>(
                 ns -> new SnowflakesIdGenerator(
                         snowflakeIdProperties.getInitialTimestamp(),
                         workerIdClient)
@@ -62,8 +63,10 @@ public class SnowflakeIdAutoConfiguration {
 
         GlobalSnowflakeIdGenerator.setInstance(namespaceIdGenerator);
 
-        log.info("NamespaceSnowflakesIdGenerator autoconfiguration successfully, workerId: {}, initialTimestamp: {} ", 
-                snowflakeIdProperties.getWorkerId(), snowflakeIdProperties.getInitialTimestamp());
+        log.info("{} autoconfiguration successfully, workerId: {}, initialTimestamp: {}",
+                SimpleNamespaceIdGeneratorBean.class.getSimpleName(),
+                snowflakeIdProperties.getWorkerId(),
+                snowflakeIdProperties.getInitialTimestamp());
 
         return namespaceIdGenerator;
     }

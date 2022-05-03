@@ -1,12 +1,10 @@
 package fun.fengwk.convention4j.common.i18n;
 
-import ognl.OgnlException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import fun.fengwk.convention4j.common.expression.ExpressionException;
+import fun.fengwk.convention4j.common.expression.OgnlExpressionParser;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
@@ -16,28 +14,30 @@ import java.util.ResourceBundle;
  */
 public class StringManager {
 
-    private static final Logger log = LoggerFactory.getLogger(StringManager.class);
+    private static final OgnlExpressionParser EXPRESSION_PARSER = new OgnlExpressionParser();
 
     private final ResourceBundle resourceBundle;
     private final String keyPrefix;
 
     /**
-     * 构造字符串管理器
-     * 
-     * @param resourceBundle
+     *
+     * @param resourceBundle not null
      */
     public StringManager(ResourceBundle resourceBundle) {
         this(resourceBundle, null);
     }
     
     /**
-     * 构造字符串管理器
-     * 
-     * @param resourceBundle
+     *
+     * @param resourceBundle not null
      * @param keyPrefix
      */
     public StringManager(ResourceBundle resourceBundle, String keyPrefix) {
-        this.resourceBundle = Objects.requireNonNull(resourceBundle);
+        if (resourceBundle == null) {
+            throw new NullPointerException("resourceBundle cannot be null");
+        }
+
+        this.resourceBundle = resourceBundle;
         this.keyPrefix = keyPrefix;
     }
 
@@ -62,14 +62,14 @@ public class StringManager {
         String str = resourceBundle.getString(realKey(key));
 
         try {
-            return ExpressionParser.parse(str, ctx == null ? Collections.emptyMap() : ctx);
-        } catch (OgnlException e) {
-            throw new IllegalArgumentException(e);
+            return EXPRESSION_PARSER.parse(str, ctx == null ? Collections.emptyMap() : ctx);
+        } catch (ExpressionException e) {
+            throw new IllegalStateException(e);
         }
     }
     
     private String realKey(String key) {
         return keyPrefix == null ? key : keyPrefix + key;
     }
-    
+
 }

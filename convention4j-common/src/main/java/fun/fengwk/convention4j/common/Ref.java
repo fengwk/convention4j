@@ -1,5 +1,9 @@
 package fun.fengwk.convention4j.common;
 
+import javax.annotation.Nullable;
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * 对象引用。在java语言中缺少指针类型，使用Ref可以弥补这一缺失。
  * <pre> {@code
@@ -9,12 +13,25 @@ package fun.fengwk.convention4j.common;
  *
  * @author fengwk
  */
-public class Ref<T> {
+public final class Ref<T> implements Serializable {
 
-    public T value;
+    private static final long serialVersionUID = 1L;
+
+    private T value;
 
     private Ref(T value) {
         this.value = value;
+    }
+
+    /**
+     * 构造指向指定value的引用。
+     *
+     * @param <T>
+     * @param value
+     * @return
+     */
+    public static <T> Ref<T> of(T value) {
+        return new Ref<>(value);
     }
 
     /**
@@ -27,15 +44,31 @@ public class Ref<T> {
         return new Ref<>(null);
     }
 
-    /**
-     * 构造指向指定value的引用。
-     * 
-     * @param <T>
-     * @param value
-     * @return
-     */
-    public static <T> Ref<T> of(T value) {
-        return new Ref<>(value);
+    @Nullable
+    public T getValue() {
+        return value;
+    }
+
+    public void setValue(T value) {
+        this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Ref<?> ref = (Ref<?>) o;
+        return Objects.equals(value, ref.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
     }
 
 }
