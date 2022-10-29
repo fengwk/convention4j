@@ -199,7 +199,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { MissingServletRequestPartException.class })
     public Result<Void> handleMissingServletRequestPartException(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
+            MissingServletRequestPartException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, ILLEGAL_ARGUMENT, ex));
     }

@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.i18n;
 
+import fun.fengwk.convention4j.common.StringUtils;
+
 import java.lang.reflect.Proxy;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,7 +14,6 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class StringManagerFactory {
     
-    private static final String EMPTY = "";
     private static final String DOT = ".";
     
     private final ResourceBundle resourceBundle;
@@ -29,7 +30,7 @@ public class StringManagerFactory {
      * @return
      */
     public StringManager getStringManager() {
-        return stringManagerRegistry.computeIfAbsent(EMPTY, k -> new StringManager(resourceBundle, null));
+        return stringManagerRegistry.computeIfAbsent(StringUtils.EMPTY, k -> new StringManager(resourceBundle, null));
     }
 
     /**

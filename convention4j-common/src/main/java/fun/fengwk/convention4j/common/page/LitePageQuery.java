@@ -92,28 +92,28 @@ public class LitePageQuery implements Serializable {
      * @return
      */
     public long getLimit() {
-        return QueryNextSupport.getLimit(pageSize);
+        return DiscoverNextPageSupport.getLimit(pageSize);
     }
     
     /**
      * 获取真实的结果集。
      * 
-     * @param <E>
-     * @param results
+     * @param results 查询到的结果集。
      * @return
+     * @param <E> 元素类型。
      */
     public <E> List<E> getRealResults(List<E> results) {
-        return QueryNextSupport.getRealResults(results, pageSize);
+        return DiscoverNextPageSupport.getRealResults(results, pageSize);
     }
     
     /**
      * 判断是否存在下一页。
      * 
-     * @param resultsSize
-     * @return
+     * @param resultsSize 结果集大小。
+     * @return true-存在下一页，false-不存在下一页。
      */
     public boolean hasNext(int resultsSize) {
-        return QueryNextSupport.hasNext(resultsSize, pageSize);
+        return DiscoverNextPageSupport.hasNext(resultsSize, pageSize);
     }
 
     @Override

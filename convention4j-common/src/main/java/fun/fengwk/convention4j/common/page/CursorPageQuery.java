@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 游标分页查询器。
+ * 游标分页器。
  *
  * @author fengwk
  */
@@ -17,9 +17,10 @@ public class CursorPageQuery<C> implements Serializable {
     private int pageSize;
 
     /**
+     * 构建游标分页器。
      *
-     * @param pageCursor
-     * @param pageSize >= 1
+     * @param pageCursor 当页游标，如果是首页则为null或一个哨兵值（推荐使用null）。
+     * @param pageSize >= 1，页面大小。
      */
     public CursorPageQuery(C pageCursor, int pageSize) {
         if (pageSize < 1) {
@@ -31,7 +32,7 @@ public class CursorPageQuery<C> implements Serializable {
     }
 
     /**
-     * 获取当页游标，首个页面的游标为null，之后每个页面为上一页面最后元素的游标值。
+     * 获取当页游标，如果是首页则为null或一个哨兵值（推荐使用null）。
      *
      * @return
      */
@@ -71,33 +72,33 @@ public class CursorPageQuery<C> implements Serializable {
     }
     
     /**
-     * 获取要查询的元素数量。
+     * 获取要查询的元素数量，数量是{@link #getPageSize()}加1，目的是为了从查询结果集中获知是否有下一页。
      * 
      * @return
      */
     public long getLimit() {
-        return QueryNextSupport.getLimit(pageSize);
+        return DiscoverNextPageSupport.getLimit(pageSize);
     }
-    
+
     /**
      * 获取真实的结果集。
-     * 
-     * @param <E>
-     * @param results
+     *
+     * @param results 查询到的结果集。
      * @return
+     * @param <E> 结果集元素类型。
      */
     public <E> List<E> getRealResults(List<E> results) {
-        return QueryNextSupport.getRealResults(results, pageSize);
+        return DiscoverNextPageSupport.getRealResults(results, pageSize);
     }
     
     /**
      * 判断是否存在下一页。
      * 
-     * @param resultsSize
-     * @return
+     * @param resultsSize 结果集大小。
+     * @return true-存在下一页，false-不存在下一页。
      */
     public boolean hasNext(int resultsSize) {
-        return QueryNextSupport.hasNext(resultsSize, pageSize);
+        return DiscoverNextPageSupport.hasNext(resultsSize, pageSize);
     }
 
     @Override

@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.code;
 import java.util.Objects;
 
 /**
- * 状态码码表，用于描述状态码值。
+ * 状态码码表，用于描述状态码值。实现时可以参考{@link CommonCodeTable}，这是一个典型的状态码码表实现。
  *
  * @author fengwk
  */

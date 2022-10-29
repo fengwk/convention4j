@@ -13,7 +13,7 @@ import java.util.function.Function;
 public interface CursorPage<T, C> extends Serializable {
     
     /**
-     * 获取当页游标，如果是首页则为null。
+     * 获取当页游标，如果是首页则为null或一个哨兵值（推荐使用null）。
      * 
      * @return
      */
@@ -28,7 +28,7 @@ public interface CursorPage<T, C> extends Serializable {
     int getPageSize();
     
     /**
-     * 获取下一页游标，下一页的游标即为当前页面最后一个元素的游标属性，如果没有则为null。
+     * 获取下一页游标，在下一次进行游标查询时应当携带该游标进行后续查询。
      * 
      * @return
      */
@@ -36,7 +36,7 @@ public interface CursorPage<T, C> extends Serializable {
     C getNextCursor();
     
     /**
-     * 是否有下一页。
+     * 是否有下一页，这是决定游标分页是否已结束的唯一条件。
      * 
      * @return
      */
@@ -51,10 +51,10 @@ public interface CursorPage<T, C> extends Serializable {
 
     /**
      * 通过mapper将当前分页结果转换为另外的分页结果。
-     * 
-     * @param <S>
-     * @param mapper not null
+     *
+     * @param mapper
      * @return
+     * @param <S> 目标类型
      */
     <S> CursorPage<S, C> map(Function<? super T, ? extends S> mapper);
 

@@ -8,7 +8,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 /**
+ * {@link EventBus}自动装配。
+ *
  * @author fengwk
  */
 @ConditionalOnClass(EventBus.class)
@@ -24,11 +28,16 @@ public class EventBusAutoConfiguration {
     }
 
     @Bean
-    public EventBus eventBus(DeadEventListener deadEventListener) {
+    public EventBus eventBus(List<EventListener> eventListeners, DeadEventListener deadEventListener) {
         EventBus eventBus = new EventBus();
+        // 集成监听器
+        for (EventListener eventListener : eventListeners) {
+            eventBus.register(eventListener);
+        }
+        // 集成死信监听器
         eventBus.register(deadEventListener);
-        log.info("{} autoconfiguration successfully, deadEventListener: {}",
-                EventBus.class.getSimpleName(), deadEventListener);
+        log.info("{} autoconfiguration successfully, eventListeners: {}, deadEventListener: {}",
+                EventBus.class.getSimpleName(), eventListeners, deadEventListener);
         return eventBus;
     }
 

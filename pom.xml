@@ -12,8 +12,8 @@
 
 	<groupId>fun.fengwk.convention4j</groupId>
 	<artifactId>convention4j-parent</artifactId>
-	<packaging>pom</packaging>
 	<version>0.0.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>Convention For Java</description>

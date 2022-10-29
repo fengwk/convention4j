@@ -16,11 +16,11 @@ public class Pages {
     /**
      * 创建{@link Page}。
      * 
-     * @param <E>
      * @param pageQuery not null
      * @param results not null
      * @param totalCount >= 0
      * @return
+     * @param <E> 元素类型。
      */
     public static <E> Page<E> page(PageQuery pageQuery, List<E> results, long totalCount) {
         return new PageImpl<>(pageQuery.getPageNumber(), pageQuery.getPageSize(), results, totalCount);
@@ -30,8 +30,8 @@ public class Pages {
      * 创建空的{@link Page}。
      *
      * @param pageQuery not null
-     * @param <E>
      * @return
+     * @param <E> 元素类型。
      */
     public static <E> Page<E> emptyPage(PageQuery pageQuery) {
         return new PageImpl<>(pageQuery.getPageNumber(), pageQuery.getPageSize(), Collections.emptyList(), 0);
@@ -39,12 +39,12 @@ public class Pages {
     
     /**
      * 创建{@link LitePage}。
-     * 
-     * @param <E>
+     *
      * @param litePageQuery not null
      * @param results not null
      * @param hasNext
      * @return
+     * @param <E> 元素类型。
      */
     public static <E> LitePage<E> litePage(LitePageQuery litePageQuery, List<E> results, boolean hasNext) {
         return new LitePageImpl<>(litePageQuery.getPageNumber(), litePageQuery.getPageSize(), results, hasNext);
@@ -53,10 +53,10 @@ public class Pages {
     /**
      * 创建{@link LitePage}。
      * 
-     * @param <E>
      * @param litePageQuery not null
      * @param results not null
      * @return
+     * @param <E> 元素类型。
      */
     public static <E> LitePage<E> litePage(LitePageQuery litePageQuery, List<E> results) {
         return litePage(litePageQuery, litePageQuery.getRealResults(results), litePageQuery.hasNext(results.size()));
@@ -66,40 +66,40 @@ public class Pages {
      * 创建空的{@link LitePage}。
      *
      * @param litePageQuery not null
-     * @param <E>
      * @return
+     * @param <E> 元素类型。
      */
     public static <E> LitePage<E> emptyLitePage(LitePageQuery litePageQuery) {
         return new LitePageImpl<>(litePageQuery.getPageNumber(), litePageQuery.getPageSize(),
                 Collections.emptyList(), false);
     }
-    
+
     /**
      * 创建{@link CursorPage}。
-     * 
-     * @param <E>
-     * @param <C>
-     * @param cursorPageable not null
-     * @param results not null
-     * @param nextCursor
-     * @param hasNext
+     *
+     * @param cursorPageable not null，游标分页器。
+     * @param results not null，游标分页查询出的结果集。
+     * @param nextCursor 下一页的游标。
+     * @param hasNext 是否有下一页。
      * @return
+     * @param <E> 元素类型。
+     * @param <C> 游标类型。
      */
     public static <E, C> CursorPage<E, C> cursorPage(CursorPageQuery<C> cursorPageable, List<E> results,
                                                      C nextCursor, boolean hasNext) {
         return new CursorPageImpl<>(cursorPageable.getPageCursor(), cursorPageable.getPageSize(), results,
                 nextCursor, hasNext);
     }
-    
+
     /**
-     * 创建{@link CursorPage}。
-     * 
-     * @param <E>
-     * @param <C>
-     * @param cursorPageQuery not null
-     * @param results not null
-     * @param cursorGetter not null
+     * 创建{@link CursorPage}，该方法将自动把从结果集最后一个元素中获取到的游标作为下一页游标。
+     *
+     * @param cursorPageQuery 游标分页器。
+     * @param results 查询出的结果集。
+     * @param cursorGetter 从元素中获取游标的方法。
      * @return
+     * @param <E> 元素类型。
+     * @param <C> 游标类型。
      */
     public static <E, C> CursorPage<E, C> cursorPage(CursorPageQuery<C> cursorPageQuery, List<E> results,
                                                      Function<E, C> cursorGetter) {
@@ -120,8 +120,8 @@ public class Pages {
      *
      * @param cursorPageable not null
      * @return
-     * @param <E>
-     * @param <C>
+     * @param <E> 元素类型。
+     * @param <C> 游标类型。
      */
     public static <E, C> CursorPage<E, C> emptyCursorPage(CursorPageQuery<C> cursorPageable) {
         return new CursorPageImpl<>(cursorPageable.getPageCursor(), cursorPageable.getPageSize(),

@@ -24,12 +24,17 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     /**
      * 生命周期状态。
      */
-    private volatile LifeCycleState state = NEW;
+    private volatile LifeCycleState state;
 
     /**
      * 状态码读写锁。
      */
     private final ReentrantReadWriteLock lifeCycleRwLock = new ReentrantReadWriteLock();
+
+    public AbstractLifeCycle() {
+        this.state = NEW;
+        onNew();
+    }
 
     @Override
     public boolean init() throws LifeCycleException {
@@ -246,6 +251,11 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     protected boolean canClose(LifeCycleState state) {
         return state == NEW || state == INITIALIZED || state == STOPPED;
     }
+
+    /**
+     * 当状态变更为{@link LifeCycleState#NEW}时触发该回调。
+     */
+    protected void onNew() {}
 
     /**
      * 当状态变更为{@link LifeCycleState#INITIALIZING}时触发该回调。

@@ -3,6 +3,9 @@ package fun.fengwk.convention4j.common.lifecycle;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +28,11 @@ public class AbstractListenableLifeCycleTest {
         private final TestDoState testStateSet;
 
         public TestListenableLifeCycle(TestDoState testStateSet) {
+            this(testStateSet, Collections.emptyList());
+        }
+
+        public TestListenableLifeCycle(TestDoState testStateSet, Collection<LifeCycleListener> listeners) {
+            super(listeners);
             this.testStateSet = testStateSet;
         }
 
@@ -329,4 +337,39 @@ public class AbstractListenableLifeCycleTest {
         assert list.get(8) == LifeCycleState.FAILED;
     }
 
+    @Test
+    public void test15() throws LifeCycleException {
+        List<LifeCycleState> list = new ArrayList<>();
+        TestListenableLifeCycle lifeCycle = new TestListenableLifeCycle(new TestDoState(), Collections.singletonList(list::add)) {
+            @Override
+            protected void doClose() throws LifeCycleException {
+                throw new LifeCycleException();
+            }
+        };
+
+        assert lifeCycle.getState() == LifeCycleState.NEW;
+        assert lifeCycle.init();
+        assert lifeCycle.getState() == LifeCycleState.INITIALIZED;
+        assert lifeCycle.start();
+        assert lifeCycle.getState() == LifeCycleState.STARTED;
+        assert lifeCycle.stop();
+        assert lifeCycle.getState() == LifeCycleState.STOPPED;
+        try {
+            lifeCycle.close();
+        } catch (LifeCycleException ex) {
+            assert lifeCycle.getState() == LifeCycleState.FAILED;
+        }
+
+        assert list.get(0) == LifeCycleState.NEW;
+        assert list.get(1) == LifeCycleState.INITIALIZING;
+        assert list.get(2) == LifeCycleState.INITIALIZED;
+        assert list.get(3) == LifeCycleState.STARTING;
+        assert list.get(4) == LifeCycleState.STARTED;
+        assert list.get(5) == LifeCycleState.STOPPING;
+        assert list.get(6) == LifeCycleState.STOPPED;
+        assert list.get(7) == LifeCycleState.CLOSING;
+        assert list.get(8) == LifeCycleState.FAILING;
+        assert list.get(9) == LifeCycleState.FAILED;
+    }
+    
 }

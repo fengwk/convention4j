@@ -8,15 +8,11 @@ import org.junit.Test;
 public class MySql5xErrorTest {
 
     @Test
-    public void test1() {
-        String entry = MySql5xError.parseDuplicateEntry("Duplicate entry '1234567890' for key 'uk_mobile'");
-        assert entry.equals("1234567890");
-    }
-
-    @Test
-    public void test2() {
-        String key = MySql5xError.parseDuplicateKey("Duplicate entry '1234567890' for key 'uk_mobile'");
-        assert key.equals("uk_mobile");
+    public void test() {
+        DuplicateErrorInfo errorInfo = MySql5xError.parseDuplicateErrorInfo("Duplicate entry '1234567890' for key 'uk_mobile'");
+        assert errorInfo != null;
+        assert errorInfo.getKey().equals("uk_mobile");
+        assert errorInfo.getEntry().equals("1234567890");
     }
 
 }

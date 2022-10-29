@@ -245,7 +245,6 @@ public enum MySql5xError {
     ER_ACCESS_DENIED_CHANGE_USER_ERROR(1873),
     ER_GET_STACKED_DA_WITHOUT_ACTIVE_HANDLER(1887),
     ER_INVALID_ARGUMENT_FOR_LOGARITHM(1903)
-
     ;
 
     private static final Map<Integer, MySql5xError> MAP;
@@ -305,10 +304,10 @@ public enum MySql5xError {
     }
 
     /**
-     * 尝试解析错误条目，例如从"Duplicate entry '1234567890' for key 'uk_mobile'"中解析出"1234567890"。
+     * 尝试解析错误条目，例如从"Duplicate entry '1234567890' for key 'uk_mobile'"中解析出"1234567890"和"uk_mobile"。
      * <pre>{@code
      *     if (err == MySql5xError.ER_DUP_ENTRY) {
-     *         String entry = MySql5xError.parseDuplicateEntry(sqlException.getMessage());
+     *         DuplicateError errInfo = MySql5xError.parseDuplicateError(sqlException.getMessage());
      *     }
      * }</pre>
      *
@@ -316,34 +315,13 @@ public enum MySql5xError {
      * @return
      */
     @Nullable
-    public static String parseDuplicateEntry(String errorMessage) {
+    public static DuplicateErrorInfo parseDuplicateErrorInfo(String errorMessage) {
         Matcher matcher = DUPLICATE_REGEX.matcher(errorMessage);
         if (!matcher.find()) {
             return null;
         }
 
-        return matcher.group(1);
-    }
-
-    /**
-     * 尝试解析错误条目，例如从"Duplicate entry '1234567890' for key 'uk_mobile'"中解析出"uk_mobile"。
-     * <pre>{@code
-     *     if (err == MySql5xError.ER_DUP_ENTRY) {
-     *         String key = MySql5xError.parseDuplicateKey(sqlException.getMessage());
-     *     }
-     * }</pre>
-     *
-     * @param errorMessage
-     * @return
-     */
-    @Nullable
-    public static String parseDuplicateKey(String errorMessage) {
-        Matcher matcher = DUPLICATE_REGEX.matcher(errorMessage);
-        if (!matcher.find()) {
-            return null;
-        }
-
-        return matcher.group(2);
+        return new DuplicateErrorInfo(matcher.group(2), matcher.group(1));
     }
 
 }

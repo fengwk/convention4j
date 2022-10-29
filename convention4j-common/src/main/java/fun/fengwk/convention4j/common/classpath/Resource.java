@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.classpath;
 
+import fun.fengwk.convention4j.common.StringUtils;
+
 import java.net.URL;
 
 /**
@@ -7,8 +9,6 @@ import java.net.URL;
  * @author fengwk
  */
 public class Resource {
-
-    private static final String EMPTY = "";
 
     private final URL url;
     private final String classpath;
@@ -28,7 +28,7 @@ public class Resource {
     
     public String getName() {
         if (classpath.isEmpty()) {
-            return EMPTY;
+            return StringUtils.EMPTY;
         }
         
         int i = classpath.lastIndexOf(ClassPathScanner.CLASSPATH_SEPARATOR);

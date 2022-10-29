@@ -12,19 +12,20 @@ import java.util.regex.Pattern;
  * <p>
  * 描述：
  * 在业务系统中使用错误码来替代复杂的异常类继承结构可以保持业务代码的简洁以及错误信息的高内聚，
- * 同时错误码相比于异常进行进程间传递时更加轻量。
+ * 同时在进行进程间传递时，错误码相比异常显得更加轻量。
  * </p>
  * 
  * <p>
  * code编码规约：域_四位数字编号<br/>
- * 域：由简短的描述组成，必须符合格式^[a-zA-Z]+$
+ * 域：由简短的描述组成，用于表达一个聚类，比如COMMON表示通用域，USER表示用户域，
+ * 必须符合格式^[a-zA-Z]+$，在不产生歧义的情况下可以尽量简短。
  * </p>
  *
  * <p>
  * 示例：
  * <ul>
- * <li>C_0001：表示调用参数异常</li>
- * <li>C_0002：表示系统状态异常</li>
+ * <li>C_0001：表示通用的参数异常</li>
+ * <li>C_0002：表示通用的状态异常</li>
  * </ul>
  * </p>
  * 
@@ -33,22 +34,22 @@ import java.util.regex.Pattern;
 public interface ErrorCode extends Code {
 
     /**
-     * 错误码表示分隔符。
+     * 错误码域和编号的分隔符。
      */
     String SEPARATOR = "_";
 
     /**
-     * 域的模式。
+     * 域的正则匹配模式。
      */
     Pattern REGEX_DOMAIN = Pattern.compile("^[a-zA-Z]+$");
 
     /**
-     * 四位数字编号的模式。
+     * 编号的正则匹配模式。
      */
-    Pattern REGEX_NUM = Pattern.compile("^[0-9]{4}$");
+    Pattern REGEX_NUM = Pattern.compile("^\\d{4}$");
 
     /**
-     * 获取当前异常码码值，在使用异常码模式开发的过程中应该确保不同类型的错误具有不同的码值。
+     * 获取当前错误码码值，在使用错误码模式开发的过程中应该确保不同类型的错误具有不同的码值。
      * 
      * @return
      */
@@ -56,7 +57,7 @@ public interface ErrorCode extends Code {
     String getCode();
     
     /**
-     * 获取错误码信息，该信息应该简洁明了地阐述当前错误原因。
+     * 获取错误码信息，该信息应当能简洁明了地阐述当前错误原因。
      * 
      * @return nullable
      */

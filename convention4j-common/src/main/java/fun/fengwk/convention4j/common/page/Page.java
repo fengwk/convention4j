@@ -63,9 +63,9 @@ public interface Page<T> extends Serializable {
     /**
      * 通过mapper将当前分页结果转换为另外的分页结果。
      * 
-     * @param <S>
      * @param mapper not null
      * @return
+     * @param <S>
      */
     <S> Page<S> map(Function<? super T, ? extends S> mapper);
 
