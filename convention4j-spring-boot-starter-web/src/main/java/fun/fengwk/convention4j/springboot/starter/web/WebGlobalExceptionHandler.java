@@ -44,11 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNSUPPORTED_OPERATION;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.WAIT_TIMEOUT;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.RESOURCE_NOT_FOUND;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.WAIT_TIMEOUT;
 
 /**
  * REST协议的异常处理程序。

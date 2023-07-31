@@ -9,7 +9,8 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 /**
- * 
+ * IP地址工具。
+ *
  * @author fengwk
  */
 public class IpUtils {

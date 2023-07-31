@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.result;
 
+import fun.fengwk.convention4j.common.code.Code;
 import fun.fengwk.convention4j.common.code.ErrorCode;
-import fun.fengwk.convention4j.common.code.SuccessCode;
 
 import java.util.Map;
 import java.util.Objects;
@@ -49,24 +49,24 @@ public class Results {
     }
     
     /**
-     * 使用{@link SuccessCode}创建成功的返回结果。
+     * 使用{@link Code#SUCCESS}创建成功的返回结果。
      * 
      * @param <T>
      * @return
      */
     public static <T> Result<T> success() {
-        return new ResultImpl<>(true, SuccessCode.INSTANCE.getCode(), null, null, null);
+        return new ResultImpl<>(true, Code.SUCCESS.getCode(), null, null, null);
     }
     
     /**
-     * 使用{@link SuccessCode}创建成功的返回结果。
+     * 使用{@link Code#SUCCESS}创建成功的返回结果。
      * 
      * @param <T>
      * @param data
      * @return
      */
     public static <T> Result<T> success(T data) {
-        return new ResultImpl<>(true, SuccessCode.INSTANCE.getCode(), null, data, null);
+        return new ResultImpl<>(true, Code.SUCCESS.getCode(), null, data, null);
     }
     
     /**

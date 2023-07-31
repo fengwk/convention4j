@@ -338,7 +338,7 @@ public class NullSafe {
      * @return
      */
     public static boolean isTrue(Integer intBool) {
-        return isTrue(ConvertUtils.int2bool(intBool));
+        return isTrue(IntBool.int2bool(intBool));
     }
 
     /**
@@ -358,7 +358,7 @@ public class NullSafe {
      * @return
      */
     public static boolean isFalse(Integer intBool) {
-        return isFalse(ConvertUtils.int2bool(intBool));
+        return isFalse(IntBool.int2bool(intBool));
     }
 
 }

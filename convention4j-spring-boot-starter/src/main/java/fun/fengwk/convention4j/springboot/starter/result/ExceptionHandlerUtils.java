@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.common.code.CodeTable;
+import fun.fengwk.convention4j.common.code.ErrorCodes;
 import fun.fengwk.convention4j.common.code.ErrorCode;
 import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
 
@@ -26,7 +26,7 @@ public class ExceptionHandlerUtils {
      * @param ex
      * @return
      */
-    public static ErrorCode toErrorCode(ErrorCodeFactory errorCodeFactory, CodeTable errCode, Throwable ex) {
+    public static ErrorCode toErrorCode(ErrorCodeFactory errorCodeFactory, ErrorCodes errCode, Throwable ex) {
         String msg = ex.getLocalizedMessage();
         ErrorCode errorCode;
         if (msg == null || msg.trim().isEmpty()) {

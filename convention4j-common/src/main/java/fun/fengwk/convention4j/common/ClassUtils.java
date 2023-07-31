@@ -62,15 +62,15 @@ public class ClassUtils {
         }
         return cl;
     }
-    
+
     /**
      * 在被注解的元素上查找目标注解。
-     * 
-     * @param <A>
-     * @param annotatedElement
-     * @param annotationClass
-     * @param includeAncestors
-     * @return
+     *
+     * @param annotatedElement 被注解标记的元素。
+     * @param annotationClass 注解的Class。
+     * @param includeAncestors 是否需要向注解的注解标记寻找，可以实现类似注解的继承关系功能。
+     * @return 首个找到的注解。
+     * @param <A> 注解。
      */
     @Nullable
     public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass, boolean includeAncestors) {
@@ -80,7 +80,8 @@ public class ClassUtils {
             return annotatedElement.getAnnotation(annotationClass);
         }
     }
-    
+
+    @Nullable
     private static <A extends Annotation> A findAnnotationIncludeAncestors(Annotation[] annotations, Class<A> annotationClass) {
         for (Annotation annotation : annotations) {
             if (annotation.annotationType() == annotationClass) {

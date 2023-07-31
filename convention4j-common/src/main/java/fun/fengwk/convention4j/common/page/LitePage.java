@@ -47,12 +47,21 @@ public interface LitePage<T> extends Serializable {
     List<T> getResults();
 
     /**
-     * 通过mapper将当前分页结果转换为另外的分页结果。
+     * 通过mapper将一项当前分页结果转换为另外的分页结果。
      * 
      * @param <S>
      * @param mapper not null
      * @return
      */
     <S> LitePage<S> map(Function<? super T, ? extends S> mapper);
+
+    /**
+     * 通过mapper将所有当前分页结果转换为另外的分页结果。
+     *
+     * @param <S>
+     * @param mapper not null
+     * @return
+     */
+    <S> LitePage<S> mapAll(Function<? super List<T>, ? extends List<S>> mapper);
 
 }

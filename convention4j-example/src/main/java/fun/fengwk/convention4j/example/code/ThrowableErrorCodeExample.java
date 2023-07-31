@@ -18,7 +18,7 @@ public class ThrowableErrorCodeExample {
     public static void main(String[] args) {
         I18nErrorCodeFactory errorCodeFactory = new I18nErrorCodeFactory(Locale.getDefault(),
                 ErrorCodeExample.class.getClassLoader());
-        ErrorCode errorCode = errorCodeFactory.create(ExampleCodeTable.EXAMPLE_ERROR,
+        ErrorCode errorCode = errorCodeFactory.create(ExampleErrorCodes.EXAMPLE_ERROR,
                 MapUtils.newMap("name", "fengwk"));
 
         log.warn("发生了示例错误, 上下文信息是balabala...");

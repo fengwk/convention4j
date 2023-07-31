@@ -11,7 +11,6 @@ import java.util.Objects;
  */
 public class NamedIdGenerator<ID> extends AbstractIdGenerator<ID> {
 
-
     private final IdGenerator<ID> idGenerator;
     private final String name;
 

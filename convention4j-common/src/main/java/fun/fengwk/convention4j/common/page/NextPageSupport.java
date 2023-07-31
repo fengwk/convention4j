@@ -1,19 +1,17 @@
 package fun.fengwk.convention4j.common.page;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * {@link DiscoverNextPageSupport}提供了一组方法用于获取发现下一页是否存在。
+ * {@link NextPageSupport}提供了一组方法用于获取发现下一页是否存在。
  * 
  * @author fengwk
  */
-class DiscoverNextPageSupport {
+class NextPageSupport {
 
-    private DiscoverNextPageSupport() {}
+    private NextPageSupport() {}
     
     /**
      * 获取要查询的元素数量，pageSize+1。
@@ -21,7 +19,7 @@ class DiscoverNextPageSupport {
      * @param pageSize 页面大小。
      * @return 要查询元素的数量。
      */
-    static long getLimit(int pageSize) {
+    static int getLimit(int pageSize) {
         return pageSize + 1;
     }
 

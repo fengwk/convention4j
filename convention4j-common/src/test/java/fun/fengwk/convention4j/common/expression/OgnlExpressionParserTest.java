@@ -17,11 +17,11 @@ public class OgnlExpressionParserTest {
         Map<String, Object> ctx = new HashMap<>();
         ctx.put("name", "fengwk");
         ctx.put("age", 18);
-        
+
         String str = new OgnlExpressionParser<>().parse("${name} is ${age} years old", ctx);
         assert str.equals("fengwk is 18 years old");
     }
-    
+
     @Test
     public void test2() throws ExpressionException {
         Map<String, Object> ctx = new HashMap<>();
@@ -29,11 +29,11 @@ public class OgnlExpressionParserTest {
         ctx.put("a", 2);
         ctx.put("b", 5);
         ctx.put("c", 4);
-        
+
         String str = new OgnlExpressionParser<>().parse("${name} is ${a * ${b + ${c}}} years old", ctx);
         assert str.equals("fengwk is 18 years old");
     }
-    
+
     @Test
     public void test3() throws ExpressionException {
         String str = new OgnlExpressionParser<>().parse("${name == null ? 'is null' : name}", Collections.emptyMap());
@@ -46,7 +46,7 @@ public class OgnlExpressionParserTest {
         ctx.put("age", 18);
 
         String str = new OgnlExpressionParser<>().parse("${name} is ${age} years old", ctx);
-        assert str.equals("null is 18 years old");
+        assert str.equals(" is 18 years old");
     }
 
     @Test

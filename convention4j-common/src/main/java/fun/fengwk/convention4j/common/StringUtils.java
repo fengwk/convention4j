@@ -1,6 +1,8 @@
 package fun.fengwk.convention4j.common;
 
 /**
+ * 字符串工具类。
+ *
  * @author fengwk
  */
 public class StringUtils {

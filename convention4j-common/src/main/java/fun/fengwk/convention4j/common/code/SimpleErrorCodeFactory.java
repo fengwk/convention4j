@@ -7,7 +7,7 @@ import java.util.Map;
  *
  * @author fengwk
  */
-public class SimpleErrorCodeFactory extends ErrorCodeFactory {
+public class SimpleErrorCodeFactory extends AbstractErrorCodeFactory {
 
     @Override
     protected ErrorCode doCreate(String errorCode, Map<String, ?> errors) {

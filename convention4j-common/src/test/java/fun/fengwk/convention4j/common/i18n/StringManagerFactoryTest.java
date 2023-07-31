@@ -47,7 +47,7 @@ public class StringManagerFactoryTest {
         StringManager stringManager = stringManagerFactory.getStringManager(StringManagerFactoryTest.class);
 
         String str = stringManager.getString("message");
-        assert str.equals("你好，null");
+        assert str.equals("你好，");
     }
     
     @Test

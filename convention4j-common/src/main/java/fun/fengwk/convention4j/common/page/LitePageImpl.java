@@ -74,6 +74,12 @@ public class LitePageImpl<T> implements LitePage<T> {
     }
 
     @Override
+    public <S> LitePage<S> mapAll(Function<? super List<T>, ? extends List<S>> mapper) {
+        List<S> mappedResult = mapper.apply(results);
+        return new LitePageImpl<>(pageNumber, pageSize, mappedResult, hasNext);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

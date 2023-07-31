@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Pair用于描述一个数据对。
+ * {@link Pair}用于描述一个数据对。
  *
  * @author fengwk
  */

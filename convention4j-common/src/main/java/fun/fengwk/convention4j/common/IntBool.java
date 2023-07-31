@@ -3,14 +3,16 @@ package fun.fengwk.convention4j.common;
 import javax.annotation.Nullable;
 
 /**
+ * 使用int类型表示bool。
+ *
  * @author fengwk
  */
-public class ConvertUtils {
+public class IntBool {
 
-    public static final int INT_TRUE = 1;
-    public static final int INT_FALSE = 0;
+    public static final int TRUE = 1;
+    public static final int FALSE = 0;
 
-    private ConvertUtils() {}
+    private IntBool() {}
 
     /**
      * 使用int表示输入的boolean值。
@@ -19,7 +21,7 @@ public class ConvertUtils {
      * @return
      */
     public static int bool2int(boolean b) {
-        return b ? INT_TRUE : INT_FALSE;
+        return b ? TRUE : FALSE;
     }
 
     /**
@@ -40,7 +42,7 @@ public class ConvertUtils {
      * @return
      */
     public static boolean int2bool(int i) {
-        return i == INT_TRUE;
+        return i == TRUE;
     }
 
     /**

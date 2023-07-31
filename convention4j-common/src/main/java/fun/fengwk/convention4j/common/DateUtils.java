@@ -76,5 +76,33 @@ public class DateUtils {
 
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(date.getTime()), ZoneId.systemDefault());
     }
-	
+
+    /**
+     * 将毫秒时间戳转为{@link LocalDateTime}。
+     *
+     * @param epochMilli
+     * @return
+     */
+    @Nullable
+    public static LocalDateTime toLocalDateTime(Long epochMilli) {
+        if (epochMilli == null) {
+            return null;
+        }
+        return toLocalDateTime(Instant.ofEpochMilli(epochMilli));
+    }
+
+    /**
+     * 将{@link Instant}转为{@link LocalDateTime}。
+     *
+     * @param instant
+     * @return
+     */
+    @Nullable
+    public static LocalDateTime toLocalDateTime(Instant instant) {
+        if (instant == null) {
+            return null;
+        }
+        return instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
 }

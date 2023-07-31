@@ -1,8 +1,6 @@
 package fun.fengwk.convention4j.common.page;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -72,6 +70,12 @@ public class CursorPageImpl<T, C> implements CursorPage<T, C> {
     @Override
     public <S> CursorPage<S, C> map(Function<? super T, ? extends S> mapper) {
         List<S> mappedResult = results.stream().map(mapper).collect(Collectors.toList());
+        return new CursorPageImpl<>(pageCursor, pageSize, mappedResult, nextCursor, hasNext);
+    }
+
+    @Override
+    public <S> CursorPage<S, C> mapAll(Function<? super List<T>, ? extends List<S>> mapper) {
+        List<S> mappedResult = mapper.apply(results);
         return new CursorPageImpl<>(pageCursor, pageSize, mappedResult, nextCursor, hasNext);
     }
 

@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
+ * 类路径扫描器
  *
  * @author fengwk
  */
@@ -69,9 +70,10 @@ public class ClassPathScanner {
     }
     
     private String getRootPath(String pattern) {
+        // 如果模式中包含了通配符，就需要获取到通配符之前的路径，然后对带有通配符的路径进行遍历扫描
         int i1 = pattern.indexOf(AntPattern.ANY_SINGLE_CHARACTER);
         int i2 = pattern.indexOf(AntPattern.ANY_CHARACTER);
-        
+
         if (i1 != -1 || i2 != -1) {
             int i;
             if (i1 != -1 && i2 != -1) {
@@ -96,7 +98,7 @@ public class ClassPathScanner {
     
     private Set<URL> getRootUrls(String rootPath) throws IOException {
         Set<URL> rootUrls = new LinkedHashSet<>();
-        
+
         Enumeration<URL> urlEnum = classLoader.getResources(rootPath);
         while (urlEnum.hasMoreElements()) {
             URL url = urlEnum.nextElement();

@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
 import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.GlobalErrorCodeFactory;
 import fun.fengwk.convention4j.common.code.I18nErrorCodeFactory;
 import fun.fengwk.convention4j.common.code.SimpleErrorCodeFactory;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;

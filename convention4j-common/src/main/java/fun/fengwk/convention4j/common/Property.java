@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * Property是对JavaBean属性的描述，一种常见的使用方式是Property允许使用代码形式获取JavaBean属性属性，
+ * {@link Property}是对JavaBean属性的描述，一种常见的使用方式是Property允许使用代码形式获取JavaBean属性属性，
  * 这样做可以避免直接使用字符串书写JavaBean属性产生的错误。
  *
  * <pre> {@code

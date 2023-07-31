@@ -50,12 +50,21 @@ public interface CursorPage<T, C> extends Serializable {
     List<T> getResults();
 
     /**
-     * 通过mapper将当前分页结果转换为另外的分页结果。
+     * 通过mapper将一项当前分页结果转换为另外的分页结果。
      *
      * @param mapper
      * @return
      * @param <S> 目标类型
      */
     <S> CursorPage<S, C> map(Function<? super T, ? extends S> mapper);
+
+    /**
+     * 通过mapper将所有当前分页结果转换为另外的分页结果。
+     *
+     * @param mapper
+     * @return
+     * @param <S> 目标类型
+     */
+    <S> CursorPage<S, C> mapAll(Function<? super List<T>, ? extends List<S>> mapper);
 
 }

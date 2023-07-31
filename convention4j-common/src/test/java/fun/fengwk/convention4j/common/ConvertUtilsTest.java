@@ -9,17 +9,17 @@ public class ConvertUtilsTest {
 
     @Test
     public void test() {
-        assert ConvertUtils.bool2int(null) == null;
-        assert ConvertUtils.bool2int((Boolean) true) == ConvertUtils.INT_TRUE;
-        assert ConvertUtils.bool2int((Boolean) false) == ConvertUtils.INT_FALSE;
-        assert ConvertUtils.bool2int(true) == ConvertUtils.INT_TRUE;
-        assert ConvertUtils.bool2int(false) == ConvertUtils.INT_FALSE;
+        assert IntBool.bool2int(null) == null;
+        assert IntBool.bool2int((Boolean) true) == IntBool.TRUE;
+        assert IntBool.bool2int((Boolean) false) == IntBool.FALSE;
+        assert IntBool.bool2int(true) == IntBool.TRUE;
+        assert IntBool.bool2int(false) == IntBool.FALSE;
 
-        assert ConvertUtils.int2bool(null) == null;
-        assert ConvertUtils.int2bool((Integer) ConvertUtils.INT_TRUE);
-        assert !ConvertUtils.int2bool((Integer) ConvertUtils.INT_FALSE);
-        assert ConvertUtils.int2bool(ConvertUtils.INT_TRUE);
-        assert !ConvertUtils.int2bool(ConvertUtils.INT_FALSE);
+        assert IntBool.int2bool(null) == null;
+        assert IntBool.int2bool((Integer) IntBool.TRUE);
+        assert !IntBool.int2bool((Integer) IntBool.FALSE);
+        assert IntBool.int2bool(IntBool.TRUE);
+        assert !IntBool.int2bool(IntBool.FALSE);
     }
 
 }

@@ -34,7 +34,7 @@ public class Pages {
      * @param <E> 元素类型。
      */
     public static <E> Page<E> emptyPage(PageQuery pageQuery) {
-        return new PageImpl<>(pageQuery.getPageNumber(), pageQuery.getPageSize(), Collections.emptyList(), 0);
+        return page(pageQuery, Collections.emptyList(), 0);
     }
     
     /**
@@ -59,7 +59,9 @@ public class Pages {
      * @param <E> 元素类型。
      */
     public static <E> LitePage<E> litePage(LitePageQuery litePageQuery, List<E> results) {
-        return litePage(litePageQuery, litePageQuery.getRealResults(results), litePageQuery.hasNext(results.size()));
+        List<E> realResults = NextPageSupport.getRealResults(results, litePageQuery.getPageSize());
+        boolean hasNext = NextPageSupport.hasNext(results.size(), litePageQuery.getPageSize());
+        return litePage(litePageQuery, realResults, hasNext);
     }
 
     /**
@@ -70,8 +72,7 @@ public class Pages {
      * @param <E> 元素类型。
      */
     public static <E> LitePage<E> emptyLitePage(LitePageQuery litePageQuery) {
-        return new LitePageImpl<>(litePageQuery.getPageNumber(), litePageQuery.getPageSize(),
-                Collections.emptyList(), false);
+        return litePage(litePageQuery, Collections.emptyList(), false);
     }
 
     /**
@@ -103,10 +104,10 @@ public class Pages {
      */
     public static <E, C> CursorPage<E, C> cursorPage(CursorPageQuery<C> cursorPageQuery, List<E> results,
                                                      Function<E, C> cursorGetter) {
-        List<E> realResults = cursorPageQuery.getRealResults(results);
-        boolean hasNext = cursorPageQuery.hasNext(results.size());
+        List<E> realResults = NextPageSupport.getRealResults(results, cursorPageQuery.getPageSize());
+        boolean hasNext = NextPageSupport.hasNext(results.size(), cursorPageQuery.getPageSize());
         C nextCursor;
-        if (realResults == null || realResults.isEmpty()) {
+        if (realResults.isEmpty()) {
             // 没有查询到任何元素则保持游标不变，接下来的查询也将保持同样的结果
             nextCursor = cursorPageQuery.getPageCursor();
         } else {
@@ -124,8 +125,15 @@ public class Pages {
      * @param <C> 游标类型。
      */
     public static <E, C> CursorPage<E, C> emptyCursorPage(CursorPageQuery<C> cursorPageable) {
-        return new CursorPageImpl<>(cursorPageable.getPageCursor(), cursorPageable.getPageSize(),
-                Collections.emptyList(), cursorPageable.getPageCursor(), false);
+        return cursorPage(cursorPageable, Collections.emptyList(), cursorPageable.getPageCursor(), false);
+    }
+
+    static <C> int getLimit(CursorPageQuery<C> cursorPageQuery) {
+        return NextPageSupport.getLimit(cursorPageQuery.getPageSize());
+    }
+
+    static int getLimit(LitePageQuery litePageQuery) {
+        return NextPageSupport.getLimit(litePageQuery.getPageSize());
     }
 
 }

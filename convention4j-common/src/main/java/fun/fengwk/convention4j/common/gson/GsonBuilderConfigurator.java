@@ -11,6 +11,11 @@ import fun.fengwk.convention4j.common.OrderedObject;
 public interface GsonBuilderConfigurator extends OrderedObject {
 
     /**
+     * 构建后完成初始化
+     */
+    default void init() {};
+
+    /**
      * 配置指定的GsonBuilder。
      *
      * @param builder not null

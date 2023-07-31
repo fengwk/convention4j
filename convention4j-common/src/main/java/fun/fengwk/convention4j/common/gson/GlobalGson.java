@@ -7,7 +7,7 @@ import com.google.gson.Gson;
  */
 public class GlobalGson {
 
-    private static final Gson INSTANCE = DefaultGsonBuilderFactory.create().create();
+    private static final Gson INSTANCE = DefaultGsonBuilderFactory.builder().create();
     
     private GlobalGson() {}
 

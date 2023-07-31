@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.common;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Objects;
 
 /**
  * ANT模式，具备ANT模式匹配功能。
@@ -31,13 +32,11 @@ public class AntPattern {
     /**
      * 构建一个ANT模式。
      *
-     * @param pattern not null
+     * @param pattern not null 符合ANT模式的字符串。
+     * @throws NullPointerException 如果pattern为null将抛出该异常。
      */
     public AntPattern(String pattern) {
-        if (pattern == null) {
-            throw new NullPointerException("pattern cannot be null");
-        }
-
+        Objects.requireNonNull(pattern, "pattern cannot be null");
         this.pattern = pattern;
         this.patternSegments = split(pattern);
     }
@@ -100,7 +99,7 @@ public class AntPattern {
      */
     private String[] split(String path) {
         ArrayList<String> segments = new ArrayList<>();
-        // [i,j)是发现的segment区间
+        // [i,j)是正在寻找的segment区间
         // 一个segment从上一个区间结束开始，直到下一个区间开始位置'/'或者path结尾结束
         int i = 0, j = 0;
         for (; j < path.length(); j++) {
@@ -108,11 +107,11 @@ public class AntPattern {
             if (path.charAt(j) == SEPARATOR) {
                 if (i == j) {
                     // 区间没有内容，那么仅仅改变区间发现指针的开始位置
-                    i = j+1;
+                    i = j + 1;
                 } else {
                     // 区间里有内容，那么将该区间内容加入segments中
                     segments.add(path.substring(i, j));
-                    i = j+1;
+                    i = j + 1;
                 }
             }
         }
@@ -184,7 +183,7 @@ public class AntPattern {
             LinkedList<Integer> buf = null;
             for (int state : states) {
                 if (state != terminalState && ANY_SEGMENTS.equals(patternSegments[state])) {
-                    buf = tryAddBuf(buf, states, state+1);
+                    buf = tryAddBuf(buf, states, state + 1);
                 }
             }
             if (buf != null) {

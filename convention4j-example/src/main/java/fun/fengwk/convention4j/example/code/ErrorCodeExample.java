@@ -15,7 +15,7 @@ public class ErrorCodeExample {
         // 英语
         I18nErrorCodeFactory enErrorCodeFactory = new I18nErrorCodeFactory(Locale.ENGLISH,
                 ErrorCodeExample.class.getClassLoader());
-        ErrorCode enErrorCode = enErrorCodeFactory.create(ExampleCodeTable.EXAMPLE_ERROR,
+        ErrorCode enErrorCode = enErrorCodeFactory.create(ExampleErrorCodes.EXAMPLE_ERROR,
                 MapUtils.newMap("name", "fengwk"));
         System.out.println(enErrorCode);
         // 输出：<Example_0001, hi fengwk, this is example error.>
@@ -23,7 +23,7 @@ public class ErrorCodeExample {
         // 中文
         I18nErrorCodeFactory cnErrorCodeFactory = new I18nErrorCodeFactory(Locale.CHINA,
                 ErrorCodeExample.class.getClassLoader());
-        ErrorCode cnErrorCode = cnErrorCodeFactory.create(ExampleCodeTable.EXAMPLE_ERROR,
+        ErrorCode cnErrorCode = cnErrorCodeFactory.create(ExampleErrorCodes.EXAMPLE_ERROR,
                 MapUtils.newMap("name", "fengwk"));
         System.out.println(cnErrorCode);
         // 输出：<Example_0001, 你好fengwk，这是一个示例错误。>

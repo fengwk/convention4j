@@ -26,6 +26,10 @@ public class PageQuery implements Serializable {
         if (pageSize < 1) {
             throw new IllegalArgumentException("pageSize must be greater than or equal to 1");
         }
+        int maxPageSize = PageQueryLimiter.getMaxPageSize();
+        if (pageSize > maxPageSize) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to " + maxPageSize);
+        }
 
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
@@ -40,7 +44,7 @@ public class PageQuery implements Serializable {
         return pageNumber;
     }
 
-    /**
+    /**u
      * 获取页面大小，范围[1, +∞)。
      *
      * @return
@@ -71,6 +75,10 @@ public class PageQuery implements Serializable {
         if (pageSize < 1) {
             throw new IllegalArgumentException("pageSize must be greater than or equal to 1");
         }
+        int maxPageSize = PageQueryLimiter.getMaxPageSize();
+        if (pageSize > maxPageSize) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to " + maxPageSize);
+        }
 
         this.pageSize = pageSize;
     }
@@ -89,7 +97,7 @@ public class PageQuery implements Serializable {
      * 
      * @return
      */
-    public long getLimit() {
+    public int getLimit() {
         return pageSize;
     }
 

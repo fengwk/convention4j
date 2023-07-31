@@ -3,11 +3,10 @@ package fun.fengwk.convention4j.common.code;
 import fun.fengwk.convention4j.common.StringUtils;
 
 import java.util.Map;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * 错误码。
+ * 错误码，是用于描述错误信息的状态码。
  * 
  * <p>
  * 描述：
@@ -16,8 +15,8 @@ import java.util.regex.Pattern;
  * </p>
  * 
  * <p>
- * code编码规约：域_四位数字编号<br/>
- * 域：由简短的描述组成，用于表达一个聚类，比如COMMON表示通用域，USER表示用户域，
+ * code编码规约：{@code 域:四位数字编号}<br/>
+ * 域：由简短的描述组成，用于表达一个聚类，比如C表示通用域，USER表示用户域，
  * 必须符合格式^[a-zA-Z]+$，在不产生歧义的情况下可以尽量简短。
  * </p>
  *
@@ -49,13 +48,13 @@ public interface ErrorCode extends Code {
     Pattern REGEX_NUM = Pattern.compile("^\\d{4}$");
 
     /**
-     * 获取当前错误码码值，在使用错误码模式开发的过程中应该确保不同类型的错误具有不同的码值。
-     * 
+     * 获取当前错误码码值，在使用错误码模式开发的过程中应该确保同一领域下不同类型的错误具有不同的码值。
+     *
      * @return
      */
     @Override
     String getCode();
-    
+
     /**
      * 获取错误码信息，该信息应当能简洁明了地阐述当前错误原因。
      * 
@@ -87,32 +86,6 @@ public interface ErrorCode extends Code {
      */
     default ThrowableErrorCode asThrowable(Throwable cause) {
         return cause == null ? asThrowable() : new ThrowableErrorCode(this, cause);
-    }
-
-    /**
-     * 将指定异常转为{@link ThrowableErrorCode}视图。
-     *
-     * @param err not null，异常。
-     * @param asThrowableFunc not null，如果异常无法自动转为ThrowableErrorCode，则需要调用asThrowableFunc函数进行转换。
-     * @param <T>
-     * @return
-     */
-    static <T extends Throwable> ThrowableErrorCode asThrowable(
-            T err, Function<T, ThrowableErrorCode> asThrowableFunc) {
-        if (err == null) {
-            throw new NullPointerException("err cannot be null");
-        }
-        if (asThrowableFunc == null) {
-            throw new NullPointerException("asThrowableFunc cannot be null");
-        }
-
-        if (err instanceof ThrowableErrorCode) {
-            return (ThrowableErrorCode) err;
-        } else if (err instanceof ErrorCode) {
-            return ((ErrorCode) err).asThrowable(err);
-        } else {
-            return asThrowableFunc.apply(err);
-        }
     }
 
     /**

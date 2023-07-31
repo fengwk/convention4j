@@ -13,7 +13,7 @@ import java.util.ResourceBundle;
  * 
  * @author fengwk
  */
-public class I18nErrorCodeFactory extends ErrorCodeFactory {
+public class I18nErrorCodeFactory extends AbstractErrorCodeFactory {
 
     private static final String BASE_NAME = "error-code";
 

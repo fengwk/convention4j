@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.common.page;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -27,6 +26,10 @@ public class LitePageQuery implements Serializable {
         }
         if (pageSize < 1) {
             throw new IllegalArgumentException("pageSize must be greater than or equal to 1");
+        }
+        int maxPageSize = PageQueryLimiter.getMaxPageSize();
+        if (pageSize > maxPageSize) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to " + maxPageSize);
         }
         
         this.pageNumber = pageNumber;
@@ -73,6 +76,10 @@ public class LitePageQuery implements Serializable {
         if (pageSize < 1) {
             throw new IllegalArgumentException("pageSize must be greater than or equal to 1");
         }
+        int maxPageSize = PageQueryLimiter.getMaxPageSize();
+        if (pageSize > maxPageSize) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to " + maxPageSize);
+        }
 
         this.pageSize = pageSize;
     }
@@ -91,31 +98,10 @@ public class LitePageQuery implements Serializable {
      * 
      * @return
      */
-    public long getLimit() {
-        return DiscoverNextPageSupport.getLimit(pageSize);
+    public int getLimit() {
+        return Pages.getLimit(this);
     }
     
-    /**
-     * 获取真实的结果集。
-     * 
-     * @param results 查询到的结果集。
-     * @return
-     * @param <E> 元素类型。
-     */
-    public <E> List<E> getRealResults(List<E> results) {
-        return DiscoverNextPageSupport.getRealResults(results, pageSize);
-    }
-    
-    /**
-     * 判断是否存在下一页。
-     * 
-     * @param resultsSize 结果集大小。
-     * @return true-存在下一页，false-不存在下一页。
-     */
-    public boolean hasNext(int resultsSize) {
-        return DiscoverNextPageSupport.hasNext(resultsSize, pageSize);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

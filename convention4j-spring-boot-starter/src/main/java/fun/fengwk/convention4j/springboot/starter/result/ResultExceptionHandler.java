@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import javax.validation.ConstraintViolationException;
 import java.util.Map;
 
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNSUPPORTED_OPERATION;
 
 /**
  * 异常结果处理，如果方法的返回类型是{@link Result}，那么将会把异常处理为Result结果。

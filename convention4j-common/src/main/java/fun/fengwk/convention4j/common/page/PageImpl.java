@@ -87,6 +87,12 @@ public class PageImpl<T> implements Page<T> {
     }
 
     @Override
+    public <S> Page<S> mapAll(Function<? super List<T>, ? extends List<S>> mapper) {
+        List<S> mappedResult = mapper.apply(results);
+        return new PageImpl<>(pageNumber, pageSize, mappedResult, totalCount);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

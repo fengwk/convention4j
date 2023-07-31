@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.code;
 
 import fun.fengwk.convention4j.common.code.ErrorCode;
 import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.common.code.GlobalErrorCodeFactory;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,8 +35,8 @@ public class ErrorCodeAutoConfigurationTest {
 
     @Test
     public void test2() {
-        ErrorCode errorCode1 = GlobalErrorCodeFactory.create(TEST_ERROR_CODE);
-        ErrorCode errorCode2 = GlobalErrorCodeFactory.create(TEST_ERROR_CODE, "test error");
+        ErrorCode errorCode1 = GlobalErrorCodeFactory.getInstance().create(TEST_ERROR_CODE);
+        ErrorCode errorCode2 = GlobalErrorCodeFactory.getInstance().create(TEST_ERROR_CODE, "test error");
         assert errorCode1.getCode().equals(TEST_ERROR_CODE);
         assert errorCode1.getMessage().equals("测试错误") || errorCode1.getMessage().equals("test error");
         assert errorCode2.getCode().equals(TEST_ERROR_CODE);

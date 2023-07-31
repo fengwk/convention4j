@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -121,6 +122,20 @@ public class ListUtils {
      */
     public static <E> E removeLast(List<E> list) {
         return list.remove(list.size() - 1);
+    }
+
+    /**
+     * 合并两个列表。
+     *
+     * @param list1
+     * @param list2
+     * @return
+     * @param <E>
+     */
+    public static <E> List<E> merge(List<E> list1, List<E> list2) {
+        List<E> all = new ArrayList<>(NullSafe.of(list1));
+        all.addAll(NullSafe.of(list2));
+        return all;
     }
 
 }

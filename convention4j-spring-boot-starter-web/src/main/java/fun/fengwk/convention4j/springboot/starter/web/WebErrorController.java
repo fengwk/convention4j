@@ -15,11 +15,11 @@ import javax.annotation.PostConstruct;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.FORBIDDEN;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention4j.common.code.CommonCodeTable.UNAUTHORIZED;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.FORBIDDEN;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_ARGUMENT;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_STATE;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.RESOURCE_NOT_FOUND;
+import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNAUTHORIZED;
 
 /**
  * @see org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController
