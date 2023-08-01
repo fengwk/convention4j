@@ -1,30 +1,26 @@
 package fun.fengwk.convention4j.example.code;
 
-import fun.fengwk.convention4j.common.code.ErrorCodes;
+import fun.fengwk.convention4j.api.code.HttpStatus;
+import fun.fengwk.convention4j.common.code.ConventionErrorCodeFactory;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * @author fengwk
  */
-public enum ExampleErrorCodes implements ErrorCodes {
+@Getter
+@AllArgsConstructor
+public enum ExampleErrorCodes implements ConventionErrorCodeFactory {
 
-    EXAMPLE_ERROR("0001")
+    EXAMPLE_ERROR(1, HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
-    private static final String EXAMPLE = "Example";
-
-    private final String value;
-
-    ExampleErrorCodes(String value) {
-        this.value = value;
-    }
+    private final int domainCode;
+    private final HttpStatus httpStatus;
 
     @Override
     public String getDomain() {
-        return EXAMPLE;
+        return "Example";
     }
 
-    @Override
-    public String getValue() {
-        return value;
-    }
 }

@@ -1,8 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.common.code.ErrorCodes;
-import fun.fengwk.convention4j.common.code.ErrorCode;
-import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
+import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.common.code.ConventionErrorCodeFactory;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -21,20 +20,22 @@ public class ExceptionHandlerUtils {
     /**
      * 将异常转化为指定类型的错误码。
      *
-     * @param errorCodeFactory
-     * @param errCode
+     * @param conventionErrorCodeFactory
      * @param ex
      * @return
      */
-    public static ErrorCode toErrorCode(ErrorCodeFactory errorCodeFactory, ErrorCodes errCode, Throwable ex) {
+    public static ErrorCode toErrorCode(ConventionErrorCodeFactory conventionErrorCodeFactory, Throwable ex) {
         String msg = ex.getLocalizedMessage();
-        ErrorCode errorCode;
-        if (msg == null || msg.trim().isEmpty()) {
-            errorCode = errorCodeFactory.create(errCode);
-        } else {
-            errorCode = errorCodeFactory.create(errCode, msg);
+        if (msg == null) {
+            msg = ex.getMessage();
         }
-        return errorCode;
+        ErrorCode finalErrorCode;
+        if (msg == null || msg.trim().isEmpty()) {
+            finalErrorCode = conventionErrorCodeFactory;
+        } else {
+            finalErrorCode = conventionErrorCodeFactory.create(msg);
+        }
+        return finalErrorCode;
     }
 
     /**

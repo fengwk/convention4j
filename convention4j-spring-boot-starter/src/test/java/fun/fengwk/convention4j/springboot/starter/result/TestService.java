@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -18,7 +18,7 @@ public class TestService {
 
     public Result<String> test1() {
         int a = 1 / 0;
-        return Results.success("ok");
+        return Results.ok();
     }
 
     public String test2() {
@@ -27,7 +27,7 @@ public class TestService {
     }
 
     public Result<Void> checkUser(@Valid User user) {
-        return Results.success();
+        return Results.ok();
     }
 
     static class User {

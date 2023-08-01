@@ -1,10 +1,13 @@
 package fun.fengwk.convention4j.common.result;
 
-import fun.fengwk.convention4j.common.code.Code;
-import fun.fengwk.convention4j.common.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.Status;
+import fun.fengwk.convention4j.api.result.Errors;
+import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.api.result.DefaultResult;
+import fun.fengwk.convention4j.common.code.SuccessCodes;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 用于构建{@link Result}的工厂方法集。
@@ -12,123 +15,124 @@ import java.util.Objects;
  * @author fengwk
  */
 public class Results {
-    
+
     private Results() {}
 
     /**
      * 创建成功的返回结果。
      * 
      * @param <T>
-     * @param code not empty
-     * @param message
+     * @param status 状态信息。
      * @return
      */
-    public static <T> Result<T> success(String code, String message) {
-        if (code == null || code.isEmpty()) {
-            throw new IllegalArgumentException("code cannot be empty");
-        }
-
-        return new ResultImpl<>(true, code, message, null, null);
+    public static <T> Result<T> success(Status status) {
+        return new DefaultResult<>(status.getStatus(), status.getMessage(), null, new Errors());
     }
 
     /**
      * 创建成功的返回结果。
      * 
      * @param <T>
-     * @param code not empty
-     * @param message
+     * @param status 状态信息。
      * @param data
      * @return
      */
-    public static <T> Result<T> success(String code, String message, T data) {
-        if (code == null || code.isEmpty()) {
-            throw new IllegalArgumentException("code cannot be empty");
-        }
+    public static <T> Result<T> success(Status status, T data) {
+        return new DefaultResult<>(status.getStatus(), status.getMessage(), data, new Errors());
+    }
 
-        return new ResultImpl<>(true, code, message, data, null);
-    }
-    
     /**
-     * 使用{@link Code#SUCCESS}创建成功的返回结果。
+     * 创建失败的返回结果。
      * 
      * @param <T>
+     * @param errorCode 错误编码
      * @return
      */
-    public static <T> Result<T> success() {
-        return new ResultImpl<>(true, Code.SUCCESS.getCode(), null, null, null);
-    }
-    
-    /**
-     * 使用{@link Code#SUCCESS}创建成功的返回结果。
-     * 
-     * @param <T>
-     * @param data
-     * @return
-     */
-    public static <T> Result<T> success(T data) {
-        return new ResultImpl<>(true, Code.SUCCESS.getCode(), null, data, null);
+    public static <T> Result<T> error(ErrorCode errorCode) {
+        Errors errors = new Errors();
+        errors.setCode(errorCode.getCode());
+        return new DefaultResult<>(errorCode.getStatus(), errorCode.getMessage(), null, errors);
     }
     
     /**
      * 创建失败的返回结果。
      * 
      * @param <T>
-     * @param code not empty
-     * @param message
-     * @return
-     */
-    public static <T> Result<T> error(String code, String message) {
-        if (code == null || code.isEmpty()) {
-            throw new IllegalArgumentException("code cannot be empty");
-        }
-
-        return new ResultImpl<>(false, code, message, null, null);
-    }
-    
-    /**
-     * 创建失败的返回结果。
-     * 
-     * @param <T>
-     * @param code not empty
-     * @param message
+     * @param errorCode 错误编码
      * @param errors not null
      * @return
      */
-    public static <T> Result<T> error(String code, String message, Map<String, Object> errors) {
-        if (code == null || code.isEmpty()) {
-            throw new IllegalArgumentException("code cannot be empty");
-        }
-        Objects.requireNonNull(errors, "errors cannot be null");
-
-        return new ResultImpl<>(false, code, message, null, errors);
+    public static <T> Result<T> error(ErrorCode errorCode, Map<String, ?> errors) {
+        Errors finalErrors = new Errors();
+        finalErrors.setCode(errorCode.getCode());
+        finalErrors.putAll(errors);
+        return new DefaultResult<>(errorCode.getStatus(), errorCode.getMessage(), null, finalErrors);
     }
-    
+
     /**
-     * 使用{@link ErrorCode}创建失败的返回结果。
-     * 
+     * success {@link SuccessCodes#OK)}的快捷方式。
+     * 推荐GET、PUT、PATCH使用。
+     *
      * @param <T>
-     * @param errorCode not null
      * @return
      */
-    public static <T> Result<T> of(ErrorCode errorCode) {
-        Objects.requireNonNull(errorCode, "errorCode cannot be null");
-
-        return new ResultImpl<>(false, errorCode.getCode(), errorCode.getMessage(), null, null);
+    public static <T> Result<T> ok() {
+        return success(SuccessCodes.OK);
     }
-    
+
     /**
-     * 使用{@link ErrorCode}创建失败的返回结果。
-     * 
+     * success {@link SuccessCodes#OK)}的快捷方式。
+     * 推荐GET、PUT、PATCH使用。
+     *
      * @param <T>
-     * @param errorCode not null
-     * @param errors not null
      * @return
      */
-    public static <T> Result<T> of(ErrorCode errorCode, Map<String, ?> errors) {
-        Objects.requireNonNull(errorCode, "errorCode cannot be null");
-        Objects.requireNonNull(errors, "errors cannot be null");
+    public static <T> Result<T> ok(T data) {
+        return success(SuccessCodes.OK, data);
+    }
 
-        return new ResultImpl<>(false, errorCode.getCode(), errorCode.getMessage(), null, errors);
+    /**
+     * success {@link SuccessCodes#CREATED)}的快捷方式。
+     * 推荐POST使用。
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> Result<T> created() {
+        return success(SuccessCodes.CREATED);
+    }
+
+    /**
+     * success {@link SuccessCodes#CREATED)}的快捷方式。
+     * 推荐POST使用。
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> Result<T> created(T data) {
+        return success(SuccessCodes.CREATED, data);
+    }
+
+    /**
+     * success {@link SuccessCodes#NO_CONTENT)}的快捷方式。
+     * 推荐DELETE使用。
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> Result<T> noContent() {
+        return success(SuccessCodes.NO_CONTENT);
+    }
+
+    /**
+     * success {@link SuccessCodes#NO_CONTENT)}的快捷方式。
+     * 推荐DELETE使用。
+     *
+     * @param <T>
+     * @return
+     */
+    public static <T> Result<T> noContent(T data) {
+        return success(SuccessCodes.NO_CONTENT, data);
     }
 
 }

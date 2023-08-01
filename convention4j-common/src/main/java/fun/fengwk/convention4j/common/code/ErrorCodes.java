@@ -1,107 +1,86 @@
 package fun.fengwk.convention4j.common.code;
 
-import java.util.Map;
-import java.util.Objects;
+
+import fun.fengwk.convention4j.api.code.HttpStatus;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
- * 错误状态码集，用于描述状态码值。实现时可以参考{@link CommonErrorCodes}，这是一个典型的状态码码表实现。
+ * 通用错误码
  *
  * @author fengwk
  */
-public interface ErrorCodes {
+@Getter
+@AllArgsConstructor
+public enum ErrorCodes implements ConventionErrorCodeFactory {
 
-    /**
-     * 获取错误码所属的领域。
-     *
-     * @return
-     */
-    String getDomain();
+    BAD_REQUEST(400, HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED(401, HttpStatus.UNAUTHORIZED),
+    PAYMENT_REQUIRED(402, HttpStatus.PAYMENT_REQUIRED),
+    FORBIDDEN(403, HttpStatus.FORBIDDEN),
+    NOT_FOUND(404, HttpStatus.NOT_FOUND),
+    METHOD_NOT_ALLOWED(405, HttpStatus.METHOD_NOT_ALLOWED),
+    NOT_ACCEPTABLE(406, HttpStatus.NOT_ACCEPTABLE),
+    PROXY_AUTHENTICATION_REQUIRED(407, HttpStatus.PROXY_AUTHENTICATION_REQUIRED),
+    REQUEST_TIMEOUT(408, HttpStatus.REQUEST_TIMEOUT),
+    CONFLICT(409, HttpStatus.CONFLICT),
+    GONE(410, HttpStatus.GONE),
+    LENGTH_REQUIRED(411, HttpStatus.LENGTH_REQUIRED),
+    PRECONDITION_FAILED(412, HttpStatus.PRECONDITION_FAILED),
+    PAYLOAD_TOO_LARGE(413, HttpStatus.PAYLOAD_TOO_LARGE),
+    URI_TOO_LONG(414, HttpStatus.URI_TOO_LONG),
+    UNSUPPORTED_MEDIA_TYPE(415, HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    REQUESTED_RANGE_NOT_SATISFIABLE(416, HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE),
+    EXPECTATION_FAILED(417, HttpStatus.EXPECTATION_FAILED),
+    I_AM_A_TEAPOT(418, HttpStatus.I_AM_A_TEAPOT),
+    UNPROCESSABLE_ENTITY(422, HttpStatus.UNPROCESSABLE_ENTITY),
+    LOCKED(423, HttpStatus.LOCKED),
+    FAILED_DEPENDENCY(424, HttpStatus.FAILED_DEPENDENCY),
+    TOO_EARLY(425, HttpStatus.TOO_EARLY),
+    UPGRADE_REQUIRED(426, HttpStatus.UPGRADE_REQUIRED),
+    PRECONDITION_REQUIRED(428, HttpStatus.PRECONDITION_REQUIRED),
+    TOO_MANY_REQUESTS(429, HttpStatus.TOO_MANY_REQUESTS),
+    REQUEST_HEADER_FIELDS_TOO_LARGE(431, HttpStatus.REQUEST_HEADER_FIELDS_TOO_LARGE),
+    UNAVAILABLE_FOR_LEGAL_REASONS(451, HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS),
 
-    /**
-     * 获取错误码值，应当由四位数字编号组成。
-     *
-     * @return
-     */
-    String getValue();
+    INTERNAL_SERVER_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR),
+    NOT_IMPLEMENTED(501, HttpStatus.NOT_IMPLEMENTED),
+    BAD_GATEWAY(502, HttpStatus.BAD_GATEWAY),
+    SERVICE_UNAVAILABLE(503, HttpStatus.SERVICE_UNAVAILABLE),
+    GATEWAY_TIMEOUT(504, HttpStatus.GATEWAY_TIMEOUT),
+    HTTP_VERSION_NOT_SUPPORTED(505, HttpStatus.HTTP_VERSION_NOT_SUPPORTED),
+    VARIANT_ALSO_NEGOTIATES(506, HttpStatus.VARIANT_ALSO_NEGOTIATES),
+    INSUFFICIENT_STORAGE(507, HttpStatus.INSUFFICIENT_STORAGE),
+    LOOP_DETECTED(508, HttpStatus.LOOP_DETECTED),
+    BANDWIDTH_LIMIT_EXCEEDED(509, HttpStatus.BANDWIDTH_LIMIT_EXCEEDED),
+    NOT_EXTENDED(510, HttpStatus.NOT_EXTENDED),
+    NETWORK_AUTHENTICATION_REQUIRED(511, HttpStatus.NETWORK_AUTHENTICATION_REQUIRED),
+    ;
 
-    /**
-     * 获取错误码。
-     *
-     * @return
-     */
-    default String getCode() {
-        return ErrorCode.encodeCode(getDomain(), getValue());
+    private final int domainCode;
+    private final HttpStatus httpStatus;
+
+    @Override
+    public String getDomain() {
+        return "C";
     }
 
-    /**
-     * 获取当前错误码集的创建构建工厂。
-     *
-     * @return
-     */
-    default ErrorCodeFactory getErrorCodeFactory() {
-        return GlobalErrorCodeFactory.getInstance();
+    public static ErrorCodes of(int domainCode) {
+        for (ErrorCodes errorCode : ErrorCodes.values()) {
+            if (errorCode.getDomainCode() == domainCode) {
+                return errorCode;
+            }
+        }
+        return null;
     }
 
-    /**
-     * {@link ErrorCodeFactory#create(ErrorCodes)}
-     */
-    default ErrorCode create() {
-        return getErrorCodeFactory().create(this);
-    }
-
-    /**
-     * {@link ErrorCodeFactory#create(ErrorCodes, Map)}
-     */
-    default ErrorCode create(Map<String, ?> errors) {
-        return getErrorCodeFactory().create(this, errors);
-    }
-
-    /**
-     * {@link ErrorCodeFactory#create(ErrorCodes, String)}
-     */
-    default ErrorCode create(String message) {
-        return getErrorCodeFactory().create(this, message);
-    }
-
-    /**
-     * {@link ErrorCodeFactory#create(ErrorCodes, String, Map)}
-     */
-    default ErrorCode create(String message, Map<String, ?> errors) {
-        return getErrorCodeFactory().create(this, message, errors);
-    }
-
-    /**
-     * {@link ErrorCode#asThrowable()}
-     */
-    default ThrowableErrorCode asThrowable() {
-        return create().asThrowable();
-    }
-
-    /**
-     * {@link ErrorCode#asThrowable(Throwable)}
-     */
-    default ThrowableErrorCode asThrowable(Throwable cause) {
-        return create().asThrowable();
-    }
-
-    /**
-     * 检查是否与指定编码具有相同的编码值。
-     *
-     * @param code
-     * @return
-     */
-    default boolean equalsCode(Code code) {
-        return Objects.equals(getCode(), code.getCode());
-    }
-
-    /**
-     * 检查是否与指定编码值相同。
-     *
-     * @param code
-     * @return
-     */
-    default boolean equalsCode(String code) {
-        return Objects.equals(getCode(), code);
+    public static ErrorCodes of(HttpStatus httpStatus) {
+        for (ErrorCodes errorCode : ErrorCodes.values()) {
+            if (errorCode.getHttpStatus() == httpStatus) {
+                return errorCode;
+            }
+        }
+        return null;
     }
 
 }

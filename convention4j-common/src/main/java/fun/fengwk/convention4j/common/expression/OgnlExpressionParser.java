@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.common.expression;
 
-import java.util.Objects;
-
 import ognl.Ognl;
 import ognl.OgnlException;
+
+import java.util.Objects;
 
 /**
  * @author fengwk
@@ -24,10 +24,18 @@ public class OgnlExpressionParser<C> extends FixedOpenCloseExpressionParser<C> {
     }
 
     /**
-     * 指定open和close构造解析器。
+     *
+     * @param nullValue
+     */
+    public OgnlExpressionParser(String nullValue) {
+        this(DEFAULT_OPEN, DEFAULT_CLOSE, nullValue);
+    }
+
+    /**
      *
      * @param open
      * @param close
+     * @param nullValue
      */
     public OgnlExpressionParser(String open, String close, String nullValue) {
         super(open, close);

@@ -8,13 +8,14 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import fun.fengwk.convention4j.common.page.CursorPage;
-import fun.fengwk.convention4j.common.page.CursorPageQuery;
-import fun.fengwk.convention4j.common.page.LitePage;
-import fun.fengwk.convention4j.common.page.LitePageQuery;
-import fun.fengwk.convention4j.common.page.Page;
-import fun.fengwk.convention4j.common.page.PageQuery;
+import fun.fengwk.convention4j.api.page.CursorPage;
+import fun.fengwk.convention4j.api.page.CursorPageQuery;
+import fun.fengwk.convention4j.api.page.Page;
+import fun.fengwk.convention4j.api.page.PageQuery;
+import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.code.ErrorCodes;
 import fun.fengwk.convention4j.common.page.Pages;
+import fun.fengwk.convention4j.common.result.Results;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import java.util.Map;
  */
 public class GsonTest {
 
-    private final Gson gson = GlobalGson.getInstance();
+    private final Gson gson = GsonHolder.getInstance();
 
     @Test
     public void test1() {
@@ -87,26 +88,7 @@ public class GsonTest {
     }
 
     @Test
-    public void test9() {
-        LitePageQuery litePageQuery = new LitePageQuery(1, 10);
-        String json = gson.toJson(litePageQuery);
-
-        LitePageQuery litePageQuery2 = gson.fromJson(json, LitePageQuery.class);
-        assert litePageQuery2.equals(litePageQuery);
-    }
-
-    @Test
-    public void test10() {
-        LitePageQuery litePageQuery = new LitePageQuery(1, 2);
-        List<String> results = Arrays.asList("123", "456", "789");
-        LitePage<String> litePage = Pages.litePage(litePageQuery, results);
-        String json = gson.toJson(litePage);
-        LitePage<String> litePage2 = gson.fromJson(json, new TypeToken<LitePage<String>>() {}.getType());
-        assert litePage2.equals(litePage);
-    }
-
-    @Test
-    public void test11() {
+    public void test8() {
         PageQuery pageQuery = new PageQuery(1, 10);
         String json = gson.toJson(pageQuery);
 
@@ -115,13 +97,29 @@ public class GsonTest {
     }
 
     @Test
-    public void test12() {
+    public void test9() {
         PageQuery pageQuery = new PageQuery(1, 10);
         List<String> results = Arrays.asList("123", "456", "789");
         Page<String> page = Pages.page(pageQuery, results, 3);
         String json = gson.toJson(page);
         Page<String> page2 = gson.fromJson(json, new TypeToken<Page<String>>() {}.getType());
         assert page2.equals(page);
+    }
+
+    @Test
+    public void test10() {
+        Result<String> res = Results.ok("ok");
+        String resJson = gson.toJson(res);
+        Object res2 = gson.fromJson(resJson, new TypeToken<Result<String>>() {}.getType());
+        assert res.equals(res2);
+    }
+
+    @Test
+    public void test11() {
+        Result<Void> res = Results.error(ErrorCodes.INTERNAL_SERVER_ERROR);
+        String resJson = gson.toJson(res);
+        Object res2 = gson.fromJson(resJson, new TypeToken<Result<Void>>() {}.getType());
+        assert res.equals(res2);
     }
 
 }

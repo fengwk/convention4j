@@ -22,8 +22,8 @@ public class JsonPathGsonBuilderConfigurator implements GsonBuilderConfigurator 
     public void init() {
         Configuration.setDefaults(new Configuration.Defaults() {
 
-            private final JsonProvider jsonProvider = new GsonJsonProvider(GlobalGson.getInstance());
-            private final MappingProvider mappingProvider = new GsonMappingProvider(GlobalGson.getInstance());
+            private final JsonProvider jsonProvider = new GsonJsonProvider(GsonHolder.getInstance());
+            private final MappingProvider mappingProvider = new GsonMappingProvider(GsonHolder.getInstance());
 
             @Override
             public JsonProvider jsonProvider() {

@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
 import com.google.gson.Gson;
-import fun.fengwk.convention4j.common.gson.GlobalGson;
+import fun.fengwk.convention4j.common.gson.GsonHolder;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
@@ -26,7 +26,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @ConditionalOnMissingBean
     @Bean
     public Gson gson() {
-        return GlobalGson.getInstance();
+        return GsonHolder.getInstance();
     }
 
 }

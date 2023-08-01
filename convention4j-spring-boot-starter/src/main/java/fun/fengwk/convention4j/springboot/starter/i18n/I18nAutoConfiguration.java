@@ -33,6 +33,9 @@ public class I18nAutoConfiguration {
         if (classLoader == null) {
             classLoader = ClassUtils.getDefaultClassLoader();
         }
+        if (classLoader == null) {
+            classLoader = I18nAutoConfiguration.class.getClassLoader();
+        }
 
         ResourceBundle resourceBundle = ResourceBundle.getBundle(properties.getBaseName(), properties.getLocale(),
                 classLoader, AggregateResourceBundle.CONTROL);

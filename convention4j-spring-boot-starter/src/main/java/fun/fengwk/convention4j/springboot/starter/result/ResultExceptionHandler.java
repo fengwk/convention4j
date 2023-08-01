@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.common.code.ErrorCode;
-import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.HttpStatus;
+import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import javax.validation.ConstraintViolationException;
 import java.util.Map;
 
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNSUPPORTED_OPERATION;
+import static fun.fengwk.convention4j.common.code.ErrorCodes.BAD_REQUEST;
+import static fun.fengwk.convention4j.common.code.ErrorCodes.INTERNAL_SERVER_ERROR;
+import static fun.fengwk.convention4j.common.code.ErrorCodes.NOT_IMPLEMENTED;
 
 /**
  * 异常结果处理，如果方法的返回类型是{@link Result}，那么将会把异常处理为Result结果。
@@ -27,15 +27,9 @@ public class ResultExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ResultExceptionHandler.class);
 
-    private final ErrorCodeFactory errorCodeFactory;
-
-    public ResultExceptionHandler(ErrorCodeFactory errorCodeFactory) {
-        this.errorCodeFactory = errorCodeFactory;
-    }
-
     // 拦截所有返回Result及其子类的方法
     @Around("@within(fun.fengwk.convention4j.springboot.starter.result.AutoResultExceptionHandler) " +
-            "&& execution(fun.fengwk.convention4j.common.result.Result+ *.*(..))")
+            "&& execution(fun.fengwk.convention4j.api.result.Result+ *.*(..))")
     public Result<?> handle(ProceedingJoinPoint joinPoint) {
         try {
             return (Result<?>) joinPoint.proceed();
@@ -48,30 +42,29 @@ public class ResultExceptionHandler {
         if (ex instanceof ConstraintViolationException) {
             warn(ex);
             Map<String, String> errors = ExceptionHandlerUtils.convertToErrors((ConstraintViolationException) ex);
+            ErrorCode errorCode = ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex);
             if (errors.isEmpty()) {
-                return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, ILLEGAL_ARGUMENT, ex));
+                return Results.error(errorCode);
             } else {
-                return Results.of(errorCodeFactory.create(ILLEGAL_ARGUMENT), errors);
+                return Results.error(errorCode, errors);
             }
         } else if (ex instanceof ErrorCode) {
-            if (ILLEGAL_STATE.equalsCode((ErrorCode) ex)) {
+            ErrorCode exErrorCode = (ErrorCode) ex;
+            if (HttpStatus.is4xx(exErrorCode)) {
                 warn(ex);
             } else {
                 errorUseShortFormat(ex);
             }
-            return Results.of((ErrorCode) ex);
+            return Results.error((ErrorCode) ex);
         } else if (ex instanceof IllegalArgumentException) {
             warn(ex);
-            return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, ILLEGAL_ARGUMENT, ex));
-        } else if (ex instanceof IllegalStateException) {
+            return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        }  else if (ex instanceof UnsupportedOperationException) {
             error(ex);
-            return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, ILLEGAL_STATE, ex));
-        } else if (ex instanceof UnsupportedOperationException) {
-            warn(ex);
-            return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, UNSUPPORTED_OPERATION, ex));
+            return Results.error(ExceptionHandlerUtils.toErrorCode(NOT_IMPLEMENTED, ex));
         } else {
             error(ex);
-            return Results.of(ExceptionHandlerUtils.toErrorCode(errorCodeFactory, ILLEGAL_STATE, ex));
+            return Results.error(ExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
         }
     }
 

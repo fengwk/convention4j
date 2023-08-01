@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.example.page;
 
-import fun.fengwk.convention4j.common.page.Page;
-import fun.fengwk.convention4j.common.page.PageQuery;
+import fun.fengwk.convention4j.api.page.Page;
+import fun.fengwk.convention4j.api.page.PageQuery;
 import fun.fengwk.convention4j.common.page.Pages;
 
 import java.util.Collections;

@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
-import fun.fengwk.convention4j.common.code.CommonErrorCodes;
+import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class ExceptionResultHandlerTest {
 
     @Test
     public void test1() {
-        assert CommonErrorCodes.ILLEGAL_STATE.equalsCode(testService.test1().getCode());
+        assert testService.test1().getStatus() == HttpStatus.INTERNAL_SERVER_ERROR.getStatus();
     }
 
     @Test(expected = ArithmeticException.class)

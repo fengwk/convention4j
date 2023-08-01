@@ -3,11 +3,10 @@ package fun.fengwk.convention4j.common.gson;
 import com.google.auto.service.AutoService;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.bind.DateTypeAdapter;
+import fun.fengwk.convention4j.api.page.CursorPage;
+import fun.fengwk.convention4j.api.page.Page;
+import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.OrderedObject;
-import fun.fengwk.convention4j.common.page.CursorPage;
-import fun.fengwk.convention4j.common.page.LitePage;
-import fun.fengwk.convention4j.common.page.Page;
-import fun.fengwk.convention4j.common.result.Result;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,9 +34,8 @@ public class DefaultGsonBuilderConfigurator implements GsonBuilderConfigurator {
         builder.registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter());
         builder.registerTypeAdapter(Date.class, new DateTypeAdapter());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateTypeAdapter());
-        builder.registerTypeAdapter(Result.class, new ResultTypeAdapter());
+        builder.registerTypeAdapter(Result.class, new ResultDeserializer());
         builder.registerTypeAdapter(CursorPage.class, new CursorPageDeserializer());
-        builder.registerTypeAdapter(LitePage.class, new LitePageDeserializer());
         builder.registerTypeAdapter(Page.class, new PageDeserializer());
     }
 

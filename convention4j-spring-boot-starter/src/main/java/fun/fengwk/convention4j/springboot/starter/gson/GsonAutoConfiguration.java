@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.gson;
 
 import com.google.gson.Gson;
-import fun.fengwk.convention4j.common.gson.GlobalGson;
+import fun.fengwk.convention4j.common.gson.GsonHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -21,7 +21,7 @@ public class GsonAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public Gson gson() {
-        Gson gson = GlobalGson.getInstance();
+        Gson gson = GsonHolder.getInstance();
         log.info("{} autoconfiguration successfully", Gson.class.getSimpleName());
         return gson;
     }

@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.expression;
 /**
  * @author fengwk
  */
-public class ExpressionException extends Exception {
+public class ExpressionException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

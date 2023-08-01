@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.common.i18n;
 
-import fun.fengwk.convention4j.common.expression.ExpressionException;
-import fun.fengwk.convention4j.common.expression.OgnlExpressionParser;
+import fun.fengwk.convention4j.common.expression.ExpressionUtils;
 
 import java.util.Collections;
 import java.util.Map;
@@ -13,8 +12,6 @@ import java.util.ResourceBundle;
  * @author fengwk
  */
 public class StringManager {
-
-    private static final OgnlExpressionParser EXPRESSION_PARSER = new OgnlExpressionParser();
 
     private final ResourceBundle resourceBundle;
     private final String keyPrefix;
@@ -48,7 +45,7 @@ public class StringManager {
      * @return
      */
     public String getString(String key) {
-        return getString(key, null);
+        return getString(key, Collections.emptyMap());
     }
     
     /**
@@ -60,12 +57,7 @@ public class StringManager {
      */
     public String getString(String key, Map<String, ?> ctx) {
         String str = resourceBundle.getString(realKey(key));
-
-        try {
-            return EXPRESSION_PARSER.parse(str, ctx == null ? Collections.emptyMap() : ctx);
-        } catch (ExpressionException e) {
-            throw new IllegalStateException(e);
-        }
+        return ExpressionUtils.format(str, ctx);
     }
     
     private String realKey(String key) {

@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
-import fun.fengwk.convention4j.common.code.ErrorCodeFactory;
-import fun.fengwk.convention4j.common.result.Result;
+import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.code.ErrorCodes;
 import fun.fengwk.convention4j.common.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +15,6 @@ import javax.annotation.PostConstruct;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.FORBIDDEN;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_ARGUMENT;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.ILLEGAL_STATE;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.RESOURCE_NOT_FOUND;
-import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNAUTHORIZED;
-
 /**
  * @see org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController
  * @author fengwk
@@ -30,12 +24,6 @@ import static fun.fengwk.convention4j.common.code.CommonErrorCodes.UNAUTHORIZED;
 public class WebErrorController implements ErrorController {
     
     private static final Logger log = LoggerFactory.getLogger(WebErrorController.class);
-    
-    private final ErrorCodeFactory codeFactory;
-    
-    public WebErrorController(ErrorCodeFactory codeFactory) {
-        this.codeFactory = codeFactory;
-    }
 
     @PostConstruct
     public void init() {
@@ -45,18 +33,12 @@ public class WebErrorController implements ErrorController {
     @RequestMapping
     public ResponseEntity<Result<Void>> error(HttpServletRequest request) {
         HttpStatus status = getStatus(request);
-        Result<Void> result;
-        if (status == HttpStatus.NOT_FOUND) {
-            result = Results.of(codeFactory.create(RESOURCE_NOT_FOUND));
-        } else if (status == HttpStatus.UNAUTHORIZED) {
-            result = Results.of(codeFactory.create(UNAUTHORIZED));
-        } else if (status == HttpStatus.FORBIDDEN) {
-            result = Results.of(codeFactory.create(FORBIDDEN));
-        } else if (status.is4xxClientError()) {
-            result = Results.of(codeFactory.create(ILLEGAL_ARGUMENT));
-        } else {
-            result = Results.of(codeFactory.create(ILLEGAL_STATE));
+        fun.fengwk.convention4j.api.code.HttpStatus httpStatus = fun.fengwk.convention4j.api.code.HttpStatus.of(status.value());
+        ErrorCodes errorCode = ErrorCodes.of(httpStatus);
+        if (errorCode == null) {
+            errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
         }
+        Result<Void> result = Results.error(errorCode);
         return new ResponseEntity<>(result, status);
     }
 

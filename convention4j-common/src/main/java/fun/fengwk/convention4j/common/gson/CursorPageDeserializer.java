@@ -5,8 +5,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.internal.$Gson$Types;
-import fun.fengwk.convention4j.common.page.CursorPage;
-import fun.fengwk.convention4j.common.page.CursorPageImpl;
+import fun.fengwk.convention4j.api.page.CursorPage;
+import fun.fengwk.convention4j.api.page.DefaultCursorPage;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -24,10 +24,10 @@ public class CursorPageDeserializer implements JsonDeserializer<CursorPage<?, ?>
     private Type toCursorPageBeanType(Type cursorPageType) {
         if (cursorPageType instanceof ParameterizedType) {
             ParameterizedType cursorPagePt = (ParameterizedType) cursorPageType;
-            return $Gson$Types.newParameterizedTypeWithOwner(null, CursorPageImpl.class,
+            return $Gson$Types.newParameterizedTypeWithOwner(null, DefaultCursorPage.class,
                     cursorPagePt.getActualTypeArguments());
         } else {
-            return CursorPageImpl.class;
+            return DefaultCursorPage.class;
         }
     }
 

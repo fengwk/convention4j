@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.log;
 import fun.fengwk.convention4j.common.MapUtils;
 import fun.fengwk.convention4j.common.expression.ExpressionException;
 import fun.fengwk.convention4j.common.expression.OgnlExpressionParser;
-import fun.fengwk.convention4j.common.gson.GlobalGson;
+import fun.fengwk.convention4j.common.gson.GsonHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,16 +140,16 @@ public class Log {
                     parsedRecord = EXPRESSION_PARSER.parse(record, ctx);
                 } catch (ExpressionException e) {
                     // 降级策略打印未解析过的日志
-                    delegate.warn("parse record error {}", GlobalGson.getInstance().toJson(
+                    delegate.warn("parse record error {}", GsonHolder.getInstance().toJson(
                             MapUtils.newMap("record", record, "ctx", ctx, "t", t)));
                 }
             }
 
             if (ctx != null) {
                 if (t != null) {
-                    logFunc4.log(parsedRecord + " {}", GlobalGson.getInstance().toJson(ctx), t);
+                    logFunc4.log(parsedRecord + " {}", GsonHolder.getInstance().toJson(ctx), t);
                 } else {
-                    logFunc3.log(parsedRecord + " {}", GlobalGson.getInstance().toJson(ctx));
+                    logFunc3.log(parsedRecord + " {}", GsonHolder.getInstance().toJson(ctx));
                 }
             } else {
                 if (t != null) {

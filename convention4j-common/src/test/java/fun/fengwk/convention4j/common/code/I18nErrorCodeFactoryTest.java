@@ -12,17 +12,10 @@ public class I18nErrorCodeFactoryTest {
 
     @Test
     public void test1() throws IOException {
-        I18nErrorCodeFactory i18nErrorCodeFactory = new I18nErrorCodeFactory(Locale.SIMPLIFIED_CHINESE,
-                I18nErrorCodeFactoryTest.class.getClassLoader());
-        ErrorCode errorCode = i18nErrorCodeFactory.create(CommonErrorCodes.ILLEGAL_ARGUMENT);
-        assert "参数异常".equals(errorCode.getMessage());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void test2() throws IOException {
-        I18nErrorCodeFactory i18nErrorCodeFactory = new I18nErrorCodeFactory(Locale.SIMPLIFIED_CHINESE,
-                I18nErrorCodeFactoryTest.class.getClassLoader());
-        i18nErrorCodeFactory.create("-999");
+        I18nErrorCodeMessageManager i18nErrorCodeMessageManager = new I18nErrorCodeMessageManager(
+            Locale.SIMPLIFIED_CHINESE, I18nErrorCodeFactoryTest.class.getClassLoader());
+        String message = i18nErrorCodeMessageManager.getMessage(ErrorCodes.BAD_REQUEST);
+        assert "错误的请求".equals(message);
     }
 
 }
