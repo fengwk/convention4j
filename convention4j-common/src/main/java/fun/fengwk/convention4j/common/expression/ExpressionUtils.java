@@ -25,6 +25,9 @@ public class ExpressionUtils {
      * @return 返回表达式格式化后的字符串。
      */
     public static String format(String expr, Object ctx) {
+        if (expr == null) {
+            return null;
+        }
         if (ctx == null) {
             ctx = Collections.emptyMap();
         }
@@ -39,6 +42,9 @@ public class ExpressionUtils {
      * @return 返回表达式格式化后的字符串。
      */
     public static String formatByKVs(String expr, Object...kvs) {
+        if (expr == null) {
+            return null;
+        }
         Map<Object, Object> ctx = new HashMap<>();
         for (int i = 0; i < kvs.length; i += 2) {
             ctx.put(kvs[i], i + 1 < kvs.length ? kvs[i + 1] : null);

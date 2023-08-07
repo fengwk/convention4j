@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.common.code.ErrorCodeMessageManager;
-import fun.fengwk.convention4j.common.code.ErrorCodeMessageManagerHolder;
+import fun.fengwk.convention4j.api.code.ErrorCodeMessageManager;
+import fun.fengwk.convention4j.api.code.ErrorCodeMessageManagerHolder;
 import fun.fengwk.convention4j.common.code.I18nErrorCodeMessageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

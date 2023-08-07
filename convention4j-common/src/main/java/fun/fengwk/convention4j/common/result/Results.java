@@ -5,7 +5,7 @@ import fun.fengwk.convention4j.api.code.Status;
 import fun.fengwk.convention4j.api.result.Errors;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.api.result.DefaultResult;
-import fun.fengwk.convention4j.common.code.SuccessCodes;
+import fun.fengwk.convention4j.api.code.SuccessCodes;
 
 import java.util.Map;
 

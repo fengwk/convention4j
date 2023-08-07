@@ -9,7 +9,7 @@ import java.util.ResourceBundle;
 /**
  * @author fengwk
  */
-public class I18nErrorCodeMessageManager implements ErrorCodeMessageManager {
+public class I18nErrorCodeMessageManager extends AbstractErrorCodeMessageManager {
 
     private static final String BASE_NAME = "error-code";
 

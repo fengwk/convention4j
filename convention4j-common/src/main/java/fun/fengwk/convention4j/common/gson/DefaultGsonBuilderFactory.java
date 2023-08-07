@@ -28,15 +28,22 @@ public class DefaultGsonBuilderFactory {
             GsonBuilderConfigurator configurator;
             try {
                 configurator = iterator.next();
-            } catch (ServiceConfigurationError err) {
-                if (err.getCause() != null
+                configurator.init();
+            } catch (ServiceConfigurationError | NoClassDefFoundError ex) {
+                NoClassDefFoundError ncEx = null;
+                if (ex instanceof NoClassDefFoundError) {
+                    ncEx = (NoClassDefFoundError) ex;
+                }
+                if (ex.getCause() instanceof NoClassDefFoundError) {
+                    ncEx = (NoClassDefFoundError) ex.getCause();
+                }
+                if (ncEx != null
                     // ignore for JsonPathGsonBuilderConfigurator
-                    && Objects.equals("com/jayway/jsonpath/Configuration$Defaults", err.getCause().getMessage())) {
+                    && Objects.equals("com/jayway/jsonpath/Configuration$Defaults", ncEx.getMessage())) {
                     continue;
                 }
-                throw err;
+                throw ex;
             }
-            configurator.init();
             configurators.add(configurator);
         }
         CONFIGURATORS = OrderedObject.sort(configurators);

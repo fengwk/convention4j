@@ -1,11 +1,13 @@
-package fun.fengwk.convention4j.common.code;
+package fun.fengwk.convention4j.api.code;
 
+import fun.fengwk.convention4j.api.code.DomainErrorCode;
+import fun.fengwk.convention4j.api.code.ErrorCodePrototypeFactory;
 import fun.fengwk.convention4j.api.code.HttpStatus;
 
 /**
  * @author fengwk
  */
-public interface ConventionErrorCodeFactory extends DomainErrorCode, ErrorCodePrototypeFactory {
+public interface ConventionErrorCode extends DomainErrorCode, ErrorCodePrototypeFactory {
 
     /**
      * 获取http状态码。

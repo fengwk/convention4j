@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common.code;
+package fun.fengwk.convention4j.api.code;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
 

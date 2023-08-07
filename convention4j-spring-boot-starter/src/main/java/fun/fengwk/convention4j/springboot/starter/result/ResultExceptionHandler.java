@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import javax.validation.ConstraintViolationException;
 import java.util.Map;
 
-import static fun.fengwk.convention4j.common.code.ErrorCodes.BAD_REQUEST;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.INTERNAL_SERVER_ERROR;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.NOT_IMPLEMENTED;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.BAD_REQUEST;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.INTERNAL_SERVER_ERROR;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.NOT_IMPLEMENTED;
 
 /**
  * 异常结果处理，如果方法的返回类型是{@link Result}，那么将会把异常处理为Result结果。

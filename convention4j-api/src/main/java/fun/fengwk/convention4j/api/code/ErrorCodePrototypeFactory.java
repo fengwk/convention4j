@@ -1,8 +1,4 @@
-package fun.fengwk.convention4j.common.code;
-
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ImmutableErrorCode;
-import fun.fengwk.convention4j.common.expression.ExpressionUtils;
+package fun.fengwk.convention4j.api.code;
 
 /**
  * 错误码原型工厂。
@@ -17,7 +13,15 @@ public interface ErrorCodePrototypeFactory extends ErrorCode {
      * @return
      */
     default ErrorCode create() {
-        return new ImmutableErrorCode(getStatus(), getCode(), getMessage(this));
+        ErrorCodeMessageManager manager = ErrorCodeMessageManagerHolder.getInstance();
+        String message = getMessage();
+        if (manager != null) {
+            String managerMessage = manager.getMessage(this);
+            if (managerMessage != null) {
+                message = managerMessage;
+            }
+        }
+        return new ImmutableErrorCode(getStatus(), getCode(), message);
     }
 
     /**
@@ -27,8 +31,15 @@ public interface ErrorCodePrototypeFactory extends ErrorCode {
      * @return
      */
     default ErrorCode create(Object ctx) {
-        String message = getMessage(this);
-        message = ExpressionUtils.format(message, ctx);
+        ErrorCodeMessageManager manager = ErrorCodeMessageManagerHolder.getInstance();
+        String message = getMessage();
+        if (manager != null) {
+            String managerMessage = manager.getMessage(this);
+            if (managerMessage != null) {
+                message = managerMessage;
+            }
+            message = manager.formatMessage(message, ctx);
+        }
         return new ImmutableErrorCode(getStatus(), getCode(), message);
     }
 
@@ -50,22 +61,9 @@ public interface ErrorCodePrototypeFactory extends ErrorCode {
      * @return
      */
     default ErrorCode create(String message, Object ctx) {
-        message = ExpressionUtils.format(message, ctx);
-        return new ImmutableErrorCode(getStatus(), getCode(), message);
-    }
-
-    /**
-     * 获取指定错误码的错误信息。
-     *
-     * @param errorCode
-     * @return
-     */
-    default String getMessage(ErrorCode errorCode) {
         ErrorCodeMessageManager manager = ErrorCodeMessageManagerHolder.getInstance();
-        if (manager == null) {
-            return errorCode.getMessage();
-        }
-        return manager.getMessage(errorCode);
+        message = manager.formatMessage(message, ctx);
+        return new ImmutableErrorCode(getStatus(), getCode(), message);
     }
 
 }

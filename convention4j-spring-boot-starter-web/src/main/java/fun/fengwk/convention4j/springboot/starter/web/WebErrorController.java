@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.code.ErrorCodes;
+import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.common.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +34,9 @@ public class WebErrorController implements ErrorController {
     public ResponseEntity<Result<Void>> error(HttpServletRequest request) {
         HttpStatus status = getStatus(request);
         fun.fengwk.convention4j.api.code.HttpStatus httpStatus = fun.fengwk.convention4j.api.code.HttpStatus.of(status.value());
-        ErrorCodes errorCode = ErrorCodes.of(httpStatus);
+        CommonErrorCodes errorCode = CommonErrorCodes.of(httpStatus);
         if (errorCode == null) {
-            errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
+            errorCode = CommonErrorCodes.INTERNAL_SERVER_ERROR;
         }
         Result<Void> result = Results.error(errorCode);
         return new ResponseEntity<>(result, status);

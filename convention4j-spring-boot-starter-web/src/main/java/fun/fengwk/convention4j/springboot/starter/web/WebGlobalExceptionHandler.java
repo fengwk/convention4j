@@ -43,13 +43,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static fun.fengwk.convention4j.common.code.ErrorCodes.BAD_REQUEST;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.INTERNAL_SERVER_ERROR;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.NOT_ACCEPTABLE;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.NOT_FOUND;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.NOT_IMPLEMENTED;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.SERVICE_UNAVAILABLE;
-import static fun.fengwk.convention4j.common.code.ErrorCodes.UNSUPPORTED_MEDIA_TYPE;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.BAD_REQUEST;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.INTERNAL_SERVER_ERROR;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.NOT_ACCEPTABLE;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.NOT_FOUND;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.NOT_IMPLEMENTED;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.SERVICE_UNAVAILABLE;
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.UNSUPPORTED_MEDIA_TYPE;
 
 /**
  * REST协议的异常处理程序。

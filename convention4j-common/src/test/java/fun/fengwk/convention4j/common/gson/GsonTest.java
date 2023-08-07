@@ -13,11 +13,12 @@ import fun.fengwk.convention4j.api.page.CursorPageQuery;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.page.PageQuery;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.code.ErrorCodes;
+import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.common.page.Pages;
 import fun.fengwk.convention4j.common.result.Results;
 import org.junit.Test;
 
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -116,10 +117,34 @@ public class GsonTest {
 
     @Test
     public void test11() {
-        Result<Void> res = Results.error(ErrorCodes.INTERNAL_SERVER_ERROR);
+        Result<Void> res = Results.error(CommonErrorCodes.INTERNAL_SERVER_ERROR);
         String resJson = gson.toJson(res);
         Object res2 = gson.fromJson(resJson, new TypeToken<Result<Void>>() {}.getType());
         assert res.equals(res2);
+    }
+
+    @Test
+    public void test12() {
+        Result<String> res = Results.ok("ok");
+        StringWriter w = new StringWriter();
+        gson.toJson(res, Result.class, w);
+        assert "{\"status\":200,\"message\":\"OK\",\"data\":\"ok\",\"errors\":{}}".equals(w.toString());
+    }
+
+    @Test
+    public void test13() {
+        StringWriter w = new StringWriter();
+        Page<Void> page = Pages.emptyPage(new PageQuery(1, 10));
+        gson.toJson(page, Page.class, w);
+        assert "{\"pageNumber\":1,\"pageSize\":10,\"results\":[],\"totalCount\":\"0\"}".equals(w.toString());
+    }
+
+    @Test
+    public void test14() {
+        StringWriter w = new StringWriter();
+        CursorPage<Void, String> cursorPage = Pages.emptyCursorPage(new CursorPageQuery<>(null, 10));
+        gson.toJson(cursorPage, CursorPage.class, w);
+        assert "{\"limit\":10,\"results\":[],\"hasNext\":false}".equals(w.toString());
     }
 
 }

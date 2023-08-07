@@ -1,18 +1,17 @@
-package fun.fengwk.convention4j.common.code;
+package fun.fengwk.convention4j.api.code;
 
 
-import fun.fengwk.convention4j.api.code.HttpStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 通用错误码
+ * 通用错误码。
  *
  * @author fengwk
  */
 @Getter
 @AllArgsConstructor
-public enum ErrorCodes implements ConventionErrorCodeFactory {
+public enum CommonErrorCodes implements ConventionErrorCode {
 
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(401, HttpStatus.UNAUTHORIZED),
@@ -65,8 +64,8 @@ public enum ErrorCodes implements ConventionErrorCodeFactory {
         return "C";
     }
 
-    public static ErrorCodes of(int domainCode) {
-        for (ErrorCodes errorCode : ErrorCodes.values()) {
+    public static CommonErrorCodes of(int domainCode) {
+        for (CommonErrorCodes errorCode : CommonErrorCodes.values()) {
             if (errorCode.getDomainCode() == domainCode) {
                 return errorCode;
             }
@@ -74,8 +73,8 @@ public enum ErrorCodes implements ConventionErrorCodeFactory {
         return null;
     }
 
-    public static ErrorCodes of(HttpStatus httpStatus) {
-        for (ErrorCodes errorCode : ErrorCodes.values()) {
+    public static CommonErrorCodes of(HttpStatus httpStatus) {
+        for (CommonErrorCodes errorCode : CommonErrorCodes.values()) {
             if (errorCode.getHttpStatus() == httpStatus) {
                 return errorCode;
             }

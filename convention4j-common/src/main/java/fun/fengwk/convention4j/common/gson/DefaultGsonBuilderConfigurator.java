@@ -34,9 +34,9 @@ public class DefaultGsonBuilderConfigurator implements GsonBuilderConfigurator {
         builder.registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter());
         builder.registerTypeAdapter(Date.class, new DateTypeAdapter());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateTypeAdapter());
-        builder.registerTypeAdapter(Result.class, new ResultDeserializer());
-        builder.registerTypeAdapter(CursorPage.class, new CursorPageDeserializer());
-        builder.registerTypeAdapter(Page.class, new PageDeserializer());
+        builder.registerTypeAdapter(Result.class, new ResultTypeAdapter());
+        builder.registerTypeAdapter(CursorPage.class, new CursorPageTypeAdapter());
+        builder.registerTypeAdapter(Page.class, new PageTypeAdapter());
     }
 
 }
