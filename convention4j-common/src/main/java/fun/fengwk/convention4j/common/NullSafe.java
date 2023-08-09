@@ -78,7 +78,8 @@ public class NullSafe {
      */
     @Nullable
     public static <S, T> List<T> map(Collection<S> collection, Function<S, T> mapper) {
-        return collection == null ? null : collection.stream().map(mapper).collect(Collectors.toList());
+        return collection == null ? null : collection.stream()
+            .filter(Objects::nonNull).map(mapper).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**

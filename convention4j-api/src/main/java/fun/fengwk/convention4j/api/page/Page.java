@@ -28,32 +28,11 @@ public interface Page<T> extends Serializable {
     int getPageSize();
 
     /**
-     * 判断是否有上一页。
-     *
-     * @return 是否有上一页。
-     */
-    boolean hasPrev();
-
-    /**
-     * 判断是否有下一页。
-     *
-     * @return 是否有下一页。
-     */
-    boolean hasNext();
-
-    /**
      * 获取总数。
      *
      * @return 总数。
      */
     long getTotalCount();
-
-    /**
-     * 获取总页数。
-     *
-     * @return 总页数。
-     */
-    long getTotalPages();
 
     /**
      * 获取结果集列表，如果没有结果则返回空列表。

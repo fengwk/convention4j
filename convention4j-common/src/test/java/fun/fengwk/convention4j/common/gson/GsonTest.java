@@ -144,7 +144,7 @@ public class GsonTest {
         StringWriter w = new StringWriter();
         CursorPage<Void, String> cursorPage = Pages.emptyCursorPage(new CursorPageQuery<>(null, 10));
         gson.toJson(cursorPage, CursorPage.class, w);
-        assert "{\"limit\":10,\"results\":[],\"hasNext\":false}".equals(w.toString());
+        assert "{\"limit\":10,\"results\":[],\"more\":false}".equals(w.toString());
     }
 
 }

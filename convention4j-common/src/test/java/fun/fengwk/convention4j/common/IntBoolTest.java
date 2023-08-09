@@ -5,7 +5,7 @@ import org.junit.Test;
 /**
  * @author fengwk
  */
-public class ConvertUtilsTest {
+public class IntBoolTest {
 
     @Test
     public void test() {

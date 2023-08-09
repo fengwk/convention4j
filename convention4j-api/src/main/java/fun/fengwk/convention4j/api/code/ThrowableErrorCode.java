@@ -1,13 +1,10 @@
 package fun.fengwk.convention4j.api.code;
 
-import lombok.Getter;
-
 /**
  * 错误码异常。
  *
  * @author fengwk
  */
-@Getter
 public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
 
     private static final long serialVersionUID = 1L;
@@ -41,6 +38,10 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
     @Override
     public int getStatus() {
         return errorCode.getStatus();
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 
 }

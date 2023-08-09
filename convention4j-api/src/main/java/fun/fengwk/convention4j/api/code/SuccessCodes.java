@@ -1,15 +1,10 @@
 package fun.fengwk.convention4j.api.code;
 
-import fun.fengwk.convention4j.api.code.HttpStatus;
-import fun.fengwk.convention4j.api.code.Status;
-import lombok.AllArgsConstructor;
-
 /**
  * 成功状态码。
  *
  * @author fengwk
  */
-@AllArgsConstructor
 public enum SuccessCodes implements Status {
 
     OK(HttpStatus.OK),
@@ -26,6 +21,10 @@ public enum SuccessCodes implements Status {
 
     private final HttpStatus httpStatus;
 
+    SuccessCodes(HttpStatus httpStatus) {
+        this.httpStatus = httpStatus;
+    }
+
     @Override
     public int getStatus() {
         return httpStatus.getStatus();
@@ -34,6 +33,10 @@ public enum SuccessCodes implements Status {
     @Override
     public String getMessage() {
         return httpStatus.getMessage();
+    }
+
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
     }
 
 }

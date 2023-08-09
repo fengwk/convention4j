@@ -1,16 +1,11 @@
 package fun.fengwk.convention4j.api.code;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 通用错误码。
  *
  * @author fengwk
  */
-@Getter
-@AllArgsConstructor
 public enum CommonErrorCodes implements ConventionErrorCode {
 
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST),
@@ -59,6 +54,11 @@ public enum CommonErrorCodes implements ConventionErrorCode {
     private final int domainCode;
     private final HttpStatus httpStatus;
 
+    CommonErrorCodes(int domainCode, HttpStatus httpStatus) {
+        this.domainCode = domainCode;
+        this.httpStatus = httpStatus;
+    }
+
     @Override
     public String getDomain() {
         return "C";
@@ -80,6 +80,16 @@ public enum CommonErrorCodes implements ConventionErrorCode {
             }
         }
         return null;
+    }
+
+    @Override
+    public int getDomainCode() {
+        return domainCode;
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
     }
 
 }

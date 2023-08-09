@@ -1,8 +1,5 @@
 package fun.fengwk.convention4j.api.code;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.Objects;
 
 /**
@@ -10,8 +7,6 @@ import java.util.Objects;
  *
  * @author fengwk
  */
-@Getter
-@AllArgsConstructor
 public enum HttpStatus implements Status {
 
     // 1xx Informational
@@ -399,6 +394,11 @@ public enum HttpStatus implements Status {
     private final int status;
     private final String message;
 
+    HttpStatus(int status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
     public static HttpStatus of(int status) {
         for (HttpStatus hs : HttpStatus.values()) {
             if (Objects.equals(hs.getStatus(), status)) {
@@ -466,6 +466,16 @@ public enum HttpStatus implements Status {
 
     public boolean is5xx() {
         return is5xx(this);
+    }
+
+    @Override
+    public int getStatus() {
+        return status;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
     }
 
 }

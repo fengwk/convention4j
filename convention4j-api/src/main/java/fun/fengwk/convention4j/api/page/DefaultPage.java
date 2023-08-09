@@ -1,8 +1,7 @@
 package fun.fengwk.convention4j.api.page;
 
-import lombok.Data;
-
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -10,7 +9,6 @@ import java.util.stream.Collectors;
  * 
  * @author fengwk
  */
-@Data
 public class DefaultPage<T> implements Page<T> {
 
     private static final long serialVersionUID = 1L;
@@ -20,19 +18,11 @@ public class DefaultPage<T> implements Page<T> {
     private final List<T> results;
     private final long totalCount;
 
-    @Override
-    public boolean hasPrev() {
-        return pageNumber > 1;
-    }
-
-    @Override
-    public boolean hasNext() {
-        return pageNumber < getTotalPages();
-    }
-
-    @Override
-    public long getTotalPages() {
-        return totalCount % (long) pageSize == 0 ? totalCount / (long) pageSize : totalCount / (long) pageSize + 1;
+    public DefaultPage(int pageNumber, int pageSize, List<T> results, long totalCount) {
+        this.pageNumber = pageNumber;
+        this.pageSize = pageSize;
+        this.results = results;
+        this.totalCount = totalCount;
     }
 
     @Override
@@ -45,6 +35,49 @@ public class DefaultPage<T> implements Page<T> {
     public <S> Page<S> mapAll(Function<? super List<T>, ? extends List<S>> mapper) {
         List<S> mappedResult = mapper.apply(results);
         return new DefaultPage<>(pageNumber, pageSize, mappedResult, totalCount);
+    }
+
+    @Override
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    @Override
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    @Override
+    public List<T> getResults() {
+        return results;
+    }
+
+    @Override
+    public long getTotalCount() {
+        return totalCount;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DefaultPage<?> that = (DefaultPage<?>) o;
+        return pageNumber == that.pageNumber && pageSize == that.pageSize && totalCount == that.totalCount && Objects.equals(results, that.results);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pageNumber, pageSize, results, totalCount);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultPage{" +
+            "pageNumber=" + pageNumber +
+            ", pageSize=" + pageSize +
+            ", results=" + results +
+            ", totalCount=" + totalCount +
+            '}';
     }
 
 }

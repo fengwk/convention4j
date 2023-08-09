@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.api.page;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
@@ -20,7 +19,6 @@ public interface CursorPage<T, C> extends Serializable {
      *
      * @return 当前页游标。
      */
-    @Nullable
     C getCursor();
 
     /**
@@ -35,15 +33,14 @@ public interface CursorPage<T, C> extends Serializable {
      * 
      * @return 下一页游标。
      */
-    @Nullable
     C getNextCursor();
     
     /**
-     * 是否还有下一页，这是决定游标分页是否已结束的唯一条件。
+     * 是否还有更多数据，这是决定游标分页是否已结束的唯一条件。
      * 
      * @return 是否还有下一页。
      */
-    boolean hasNext();
+    boolean isMore();
 
     /**
      * 获取结果集列表，如果没有结果则返回空列表。
