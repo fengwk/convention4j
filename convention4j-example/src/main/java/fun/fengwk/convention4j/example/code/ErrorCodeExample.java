@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.example.code;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.common.MapUtils;
 import fun.fengwk.convention4j.api.code.ErrorCodeMessageManagerHolder;
+import fun.fengwk.convention4j.common.MapUtils;
 import fun.fengwk.convention4j.common.code.I18nErrorCodeMessageManager;
 
 import java.util.Locale;

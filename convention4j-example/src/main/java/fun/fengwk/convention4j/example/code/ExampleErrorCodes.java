@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.example.code;
 
-import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.HttpStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

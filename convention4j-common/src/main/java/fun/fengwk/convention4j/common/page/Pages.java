@@ -1,14 +1,10 @@
 package fun.fengwk.convention4j.common.page;
 
-import fun.fengwk.convention4j.api.page.CursorPage;
-import fun.fengwk.convention4j.api.page.DefaultCursorPage;
-import fun.fengwk.convention4j.api.page.CursorPageQuery;
-import fun.fengwk.convention4j.api.page.Page;
-import fun.fengwk.convention4j.api.page.DefaultPage;
-import fun.fengwk.convention4j.api.page.PageQuery;
+import fun.fengwk.convention4j.api.page.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,7 +37,7 @@ public class Pages {
      * @param pageQuery 分页查询器。
      * @return 查询偏移量。
      */
-    public static int queryOffset(PageQuery pageQuery) {
+    public static long queryOffset(PageQuery pageQuery) {
         int offset = (pageQuery.getPageNumber() - 1) * getPageSize(pageQuery);
         return Math.max(offset, 0);
     }
@@ -95,6 +91,17 @@ public class Pages {
     }
 
     /**
+     * 创建空的{@link Page}。
+     *
+     * @return
+     * @param <E> 元素类型。
+     */
+    public static <E> Page<E> emptyPage() {
+        PageQuery pageQuery = new PageQuery(1, 0);
+        return emptyPage(pageQuery);
+    }
+
+    /**
      * 创建{@link CursorPage}。
      *
      * @param cursorPageQuery not null，游标分页器。
@@ -144,12 +151,36 @@ public class Pages {
         return cursorPage(cursorPageable, Collections.emptyList(), cursorPageable.getCursor(), false);
     }
 
+    /**
+     * 创建空的{@link CursorPage}。
+     *
+     * @return
+     * @param <E> 元素类型。
+     * @param <C> 游标类型。
+     */
+    public static <E, C> CursorPage<E, C> emptyCursorPage() {
+        CursorPageQuery<C> cursorPageQuery = new CursorPageQuery<>(null, 0);
+        return emptyCursorPage(cursorPageQuery);
+    }
+
     private static int getPageSize(PageQuery pageQuery) {
         return Math.min(pageQuery.getPageSize(), maxLimit);
     }
 
     private static <C> int getLimit(CursorPageQuery<C> cursorPageQuery) {
         return Math.min(cursorPageQuery.getLimit(), maxLimit);
+    }
+
+    public static String formatSqlOrderBy(List<Sort> sorts, Map<String, String> keyMap) {
+        if (sorts == null || sorts.isEmpty()) {
+            return null;
+        }
+        return sorts.stream().map(s -> formatSqlOrderBy(s, keyMap)).collect(Collectors.joining(", "));
+    }
+
+    private static String formatSqlOrderBy(Sort sort, Map<String, String> keyMap) {
+        String key = keyMap.getOrDefault(sort.getKey(), sort.getKey());
+        return sort.isAsc() ? key : key + " desc";
     }
 
 }

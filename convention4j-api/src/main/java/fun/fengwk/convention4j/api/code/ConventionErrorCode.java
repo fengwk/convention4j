@@ -1,9 +1,5 @@
 package fun.fengwk.convention4j.api.code;
 
-import fun.fengwk.convention4j.api.code.DomainErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCodePrototypeFactory;
-import fun.fengwk.convention4j.api.code.HttpStatus;
-
 /**
  * @author fengwk
  */

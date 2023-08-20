@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.api.code;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-
 /**
  * 具备领域隔离能力的错误编码信息。
  *

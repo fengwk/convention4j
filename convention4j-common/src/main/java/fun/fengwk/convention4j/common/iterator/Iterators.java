@@ -2,11 +2,7 @@ package fun.fengwk.convention4j.common.iterator;
 
 import fun.fengwk.convention4j.common.Order;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 /**

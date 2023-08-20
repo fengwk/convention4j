@@ -1,19 +1,14 @@
 package fun.fengwk.convention4j.common.gson;
 
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.api.page.CursorPage;
 import fun.fengwk.convention4j.api.page.CursorPageQuery;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.page.PageQuery;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.common.page.Pages;
 import fun.fengwk.convention4j.common.result.Results;
 import org.junit.Test;
@@ -128,7 +123,7 @@ public class GsonTest {
         Result<String> res = Results.ok("ok");
         StringWriter w = new StringWriter();
         gson.toJson(res, Result.class, w);
-        assert "{\"status\":200,\"message\":\"OK\",\"data\":\"ok\",\"errors\":{}}".equals(w.toString());
+        assert "{\"status\":200,\"message\":\"OK\",\"data\":\"ok\"}".equals(w.toString());
     }
 
     @Test

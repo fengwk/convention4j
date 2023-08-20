@@ -12,7 +12,7 @@
 
 	<groupId>fun.fengwk.convention4j</groupId>
 	<artifactId>convention4j-parent</artifactId>
-	<version>0.0.4-SNAPSHOT</version>
+	<version>0.0.6</version>
 	<packaging>pom</packaging>
 
 	<name>${project.groupId}:${project.artifactId}</name>
@@ -62,8 +62,8 @@
 		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
 		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>0.0.4-SNAPSHOT</convention4j.version>
-		<auto-mapper.version>0.0.26</auto-mapper.version>
+        <convention4j.version>0.0.6</convention4j.version>
+		<auto-mapper.version>0.0.29</auto-mapper.version>
 		<auto-validation.version>0.0.12</auto-validation.version>
 		<spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
 		<spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>

@@ -5,4 +5,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   fun.fengwk.convention4j.springboot.starter.code.ErrorCodeAutoConfiguration,\
   fun.fengwk.convention4j.springboot.starter.gson.GsonAutoConfiguration,\
   fun.fengwk.convention4j.springboot.starter.eventbus.EventBusAutoConfiguration,\
-  fun.fengwk.convention4j.springboot.starter.result.ResultAutoConfiguration
+  fun.fengwk.convention4j.springboot.starter.result.ResultAutoConfiguration,\
+  fun.fengwk.convention4j.springboot.starter.cache.CacheSupportAutoConfiguration

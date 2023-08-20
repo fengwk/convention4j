@@ -21,8 +21,17 @@
 #        max-wait: 5s
 
 spring:
+
   application:
     name: convention4j-spring-boot-starter
+
+  redis:
+    host: 127.0.0.1
+    port: 6379
+
+  datasource:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: SA
 
 convention:
   snowflake-id:

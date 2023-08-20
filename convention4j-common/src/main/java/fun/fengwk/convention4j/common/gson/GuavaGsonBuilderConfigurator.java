@@ -1,12 +1,7 @@
 package fun.fengwk.convention4j.common.gson;
 
 import com.google.auto.service.AutoService;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.*;
 import com.google.gson.GsonBuilder;
 import fun.fengwk.convention4j.common.OrderedObject;
 

@@ -1,21 +1,10 @@
 package fun.fengwk.convention4j.common;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -68,18 +57,37 @@ public class NullSafe {
     }
 
     /**
-     * 当collection不为null时进行映射操作。
+     * 安全地映射collection到目标类型列表。
      *
-     * @param collection
-     * @param mapper not null
      * @param <S>
      * @param <T>
+     * @param collection
+     * @param mapper
+     * @param collector
      * @return
      */
-    @Nullable
     public static <S, T> List<T> map(Collection<S> collection, Function<S, T> mapper) {
-        return collection == null ? null : collection.stream()
+        return collection == null ? Collections.emptyList() : collection.stream()
             .filter(Objects::nonNull).map(mapper).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * 安全地映射collection到目标类型。
+     *
+     * @param <S>
+     * @param <T>
+     * @param <A>
+     * @param <R>
+     * @param collection
+     * @param mapper
+     * @param collector
+     * @return
+     */
+    public static <S, T, A, R> R map(Collection<S> collection, Function<S, T> mapper, Collector<? super T, A, R> collector) {
+        if (collection == null) {
+            collection = Collections.emptyList();
+        }
+        return collection.stream().filter(Objects::nonNull).map(mapper).filter(Objects::nonNull).collect(collector);
     }
 
     /**

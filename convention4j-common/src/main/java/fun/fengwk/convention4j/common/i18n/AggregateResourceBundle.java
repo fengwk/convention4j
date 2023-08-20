@@ -3,13 +3,7 @@ package fun.fengwk.convention4j.common.i18n;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 参考hibernate-validator库中实现.

@@ -2,10 +2,10 @@ package fun.fengwk.convention4j.common.result;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.Status;
+import fun.fengwk.convention4j.api.code.SuccessCodes;
+import fun.fengwk.convention4j.api.result.DefaultResult;
 import fun.fengwk.convention4j.api.result.Errors;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.api.result.DefaultResult;
-import fun.fengwk.convention4j.api.code.SuccessCodes;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ public class Results {
      * @return
      */
     public static <T> Result<T> success(Status status) {
-        return new DefaultResult<>(status.getStatus(), status.getMessage(), null, new Errors());
+        return new DefaultResult<>(status.getStatus(), status.getMessage(), null, null);
     }
 
     /**
@@ -38,7 +38,7 @@ public class Results {
      * @return
      */
     public static <T> Result<T> success(Status status, T data) {
-        return new DefaultResult<>(status.getStatus(), status.getMessage(), data, new Errors());
+        return new DefaultResult<>(status.getStatus(), status.getMessage(), data, null);
     }
 
     /**

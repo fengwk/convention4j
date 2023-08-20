@@ -1,11 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.snowflake;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
-import fun.fengwk.convention4j.common.idgen.snowflakes.FixedWorkerIdClient;
-import fun.fengwk.convention4j.common.idgen.snowflakes.RedisTemplateScriptExecutor;
-import fun.fengwk.convention4j.common.idgen.snowflakes.RedisWorkerIdClient;
-import fun.fengwk.convention4j.common.idgen.snowflakes.SnowflakesIdGenerator;
-import fun.fengwk.convention4j.common.idgen.snowflakes.WorkerIdClient;
+import fun.fengwk.convention4j.common.idgen.snowflakes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;

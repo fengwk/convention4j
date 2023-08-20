@@ -5,17 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.CLOSED;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.CLOSING;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.FAILED;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.FAILING;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.INITIALIZED;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.INITIALIZING;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.NEW;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.STARTED;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.STARTING;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.STOPPED;
-import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.STOPPING;
+import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.*;
 
 /**
  * @author fengwk

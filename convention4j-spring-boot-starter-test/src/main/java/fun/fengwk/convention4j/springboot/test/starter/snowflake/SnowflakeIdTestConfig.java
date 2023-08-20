@@ -16,11 +16,14 @@ public class SnowflakeIdTestConfig {
     @Bean
     public NamespaceIdGenerator<Long> snowflakesIdGenerator(
             @Value("${convention.snowflake-id.initial-timestamp:}") Long initialTimestamp) throws LifeCycleException {
-        return new SimpleNamespaceIdGenerator<>(
+        SimpleNamespaceIdGenerator<Long> idGenerator = new SimpleNamespaceIdGenerator<>(
                 ns -> new SnowflakesIdGenerator(
                         initialTimestamp == null ? System.currentTimeMillis() : initialTimestamp,
                         new FixedWorkerIdClient(0))
         );
+        idGenerator.init();
+        idGenerator.start();
+        return idGenerator;
     }
 
 }
