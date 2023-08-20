@@ -5,10 +5,7 @@ import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,7 +66,7 @@ public class StringRedisTemplateCacheAdapter implements CacheAdapter {
     }
 
     @Override
-    public void batchDelete(List<String> keys) {
+    public void batchDelete(Collection<String> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

@@ -33,6 +33,9 @@ public interface UserMapper extends LongIdCacheMapper<UserDO> {
     @CacheReadMethod
     int countById(@IdKey("id") Long id);
 
+    @CacheReadMethod
+    int countByAge(@IdKey("age") Integer age);
+
     @CacheReadMethod(useIdQuery = true)
     UserDO findById(@IdKey("id") Long id);
 

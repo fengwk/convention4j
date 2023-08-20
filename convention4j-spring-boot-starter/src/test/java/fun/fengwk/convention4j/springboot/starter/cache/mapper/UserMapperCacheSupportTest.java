@@ -2,7 +2,9 @@ package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
+import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheAdapterMetrics;
 import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheSupportMetrics;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +27,13 @@ public class UserMapperCacheSupportTest {
     @Autowired
     private NamespaceIdGenerator<Long> idGen;
     @Autowired
-    private CacheSupportMetrics cacheSupportMetrics;
-    @Autowired
     private UserMapper userMapper;
     @Autowired
     private TransactionTest transactionTest;
+    @Autowired
+    private CacheSupportMetrics cacheSupportMetrics;
+//    @Autowired
+//    private CacheAdapterMetrics cacheAdapterMetrics;
 
     @Test
     public void test() throws NoSuchMethodException {
@@ -159,6 +163,35 @@ public class UserMapperCacheSupportTest {
         assert cacheSupportMetrics.getFullCacheHitCount(methodFindByIdIn) == 1L;
 
         transactionTest.test();
+
+        long id5 = idGen.next(getClass());
+        assert userMapper.countById(id5) == 0;
+        UserDO userDO5 = new UserDO();
+        userDO5.setUsername("username_5");
+        userDO5.setEmail("email_5");
+        userDO5.setMobile("mobile_5");
+        userDO5.setPassword("password_5");
+        userDO5.setAge(55);
+        userDO5.setCity("hangzhou");
+        userDO5.setId(id5);
+        assert userMapper.insert(userDO5) > 0;
+        assert userMapper.countById(id5) > 0;
+
+        assert userMapper.countByAge(55) == 1;
+        UserDO userDO6 = new UserDO();
+        userDO6.setUsername("username_6");
+        userDO6.setEmail("email_6");
+        userDO6.setMobile("mobile_6");
+        userDO6.setPassword("password_6");
+        userDO6.setAge(55);
+        userDO6.setCity("hangzhou");
+        userDO6.setId(idGen.next(getClass()));
+        assert userMapper.insert(userDO6) > 0;
+        assert userMapper.countByAge(55) == 2;
+
+//        System.out.println(cacheAdapterMetrics.getReadCount());
+//        System.out.println(cacheAdapterMetrics.getWriteCount());
+//        System.out.println(cacheAdapterMetrics.getWriteKeyCount());
     }
 
 }

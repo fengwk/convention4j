@@ -4,10 +4,7 @@ import fun.fengwk.convention4j.common.function.VoidFunc0;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 事务场景下不进行缓存读写，只进行缓存失效，并在事务提交后进行缓存处理。
@@ -70,7 +67,7 @@ public class TransactionCacheAdapter implements CacheAdapter, TransactionSynchro
     }
 
     @Override
-    public void batchDelete(List<String> keys) {
+    public void batchDelete(Collection<String> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

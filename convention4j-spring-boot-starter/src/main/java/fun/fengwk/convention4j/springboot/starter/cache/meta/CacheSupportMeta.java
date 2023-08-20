@@ -37,7 +37,7 @@ public class CacheSupportMeta {
                     toDataKeyMetaMap.put(name, dataKeyMeta);
                 } else {
                     throw new CacheParseException(
-                        "Cache read method key '" + name + "' must be contained in data key");
+                        "Cache read method '" + cacheReadMethodMeta.getMethod() + "' key '" + name + "' must be contained in data key");
                 }
             }
             cacheReadMethodMeta.setToDataKeyMetaMap(toDataKeyMetaMap);

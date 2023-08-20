@@ -13,6 +13,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.ResolvableType;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -44,13 +45,17 @@ public class CacheSupportMethodHandler {
 
         // 获取原来的idList和dataList
         List<Map<String, Object>> idKeyMapList;
+        List<Map<String, Object>> keyMapList;
         if (writeMethodMeta.isMulti()) {
-            idKeyMapList = writeMethodMeta.buildKeyMapListByParameters(invocation.getArguments());
+            idKeyMapList = writeMethodMeta.buildIdKeyMapListByParameters(invocation.getArguments());
+            keyMapList = writeMethodMeta.buildKeyMapListByParameters(invocation.getArguments());
         } else {
-            Map<String, Object> idKeyMap = writeMethodMeta.buildKeyMapByParameters(invocation.getArguments());
+            Map<String, Object> idKeyMap = writeMethodMeta.buildIdKeyMapByParameters(invocation.getArguments());
             idKeyMapList = Collections.singletonList(idKeyMap);
+            Map<String, Object> keyMap = writeMethodMeta.buildKeyMapByParameters(invocation.getArguments());
+            keyMapList = Collections.singletonList(keyMap);
         }
-        List<ID> idList = idKeyMapList.stream().map(support::idKeyMapToId).collect(Collectors.toList());;
+        List<ID> idList = idKeyMapList.stream().map(support::idKeyMapToId).collect(Collectors.toList());
         List<DATA> dataList = listByIdsWithCache(supportMeta, writeMethodMeta, idList);
 
         // 执行原方法
@@ -72,8 +77,18 @@ public class CacheSupportMethodHandler {
             }
         }
 
+        // 如果无法通过id查询到原对象，可能是新增，因此需要失效所有的新增键
+        for (Map<String, Object> keyMap : keyMapList) {
+            for (CacheReadMethodMeta readMethodMeta : supportMeta.getCacheReadMethodMetas()) {
+                Map<String, Object> readKeyMap = readMethodMeta.buildKeyMapByAnotherKeyMap(keyMap);
+                String lv1CacheKey = readMethodMeta.buildLv1CacheKey(readKeyMap);
+                lv1CacheKeyList.add(lv1CacheKey);
+            }
+        }
+
         // 清理所有关联key
-        List<String> allDeleteKeys = ListUtils.merge(idCacheKeyList, lv1CacheKeyList);
+        Set<String> allDeleteKeys = new HashSet<>(idCacheKeyList);
+        allDeleteKeys.addAll(lv1CacheKeyList);
         if (!allDeleteKeys.isEmpty()) {
             try {
                 cacheAdapter.batchDelete(allDeleteKeys);

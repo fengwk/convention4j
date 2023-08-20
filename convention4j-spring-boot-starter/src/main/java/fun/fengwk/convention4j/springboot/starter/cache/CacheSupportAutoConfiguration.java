@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.springboot.starter.cache;
 import fun.fengwk.convention4j.springboot.starter.cache.adapter.CacheAdapter;
 import fun.fengwk.convention4j.springboot.starter.cache.adapter.StringRedisTemplateCacheAdapter;
 import fun.fengwk.convention4j.springboot.starter.cache.adapter.TransactionCacheAdapter;
+import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheAdapterMetrics;
 import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheSupportMetrics;
 import fun.fengwk.convention4j.springboot.starter.cache.metrics.LogCacheSupportMetrics;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.data.geo.Metric;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
@@ -31,8 +33,14 @@ public class CacheSupportAutoConfiguration {
 
     @ConditionalOnBean(CacheAdapter.class)
     @Bean
-    public TransactionCacheAdapter transactionCacheAdapter(CacheAdapter cacheAdapter) {
-        return new TransactionCacheAdapter(cacheAdapter);
+    public CacheAdapterMetrics cacheAdapterMetrics(CacheAdapter cacheAdapter) {
+        return new CacheAdapterMetrics(cacheAdapter);
+    }
+
+    @ConditionalOnBean(CacheAdapterMetrics.class)
+    @Bean
+    public TransactionCacheAdapter transactionCacheAdapter(CacheAdapterMetrics cacheAdapterMetrics) {
+        return new TransactionCacheAdapter(cacheAdapterMetrics);
     }
 
     @ConditionalOnBean(CacheAdapter.class)

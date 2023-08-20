@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheReadMethod;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.IdKey;
+import fun.fengwk.convention4j.springboot.starter.cache.annotation.Key;
 import fun.fengwk.convention4j.springboot.starter.cache.support.CacheSupport;
 import fun.fengwk.convention4j.springboot.starter.mapper.BaseMapper;
 

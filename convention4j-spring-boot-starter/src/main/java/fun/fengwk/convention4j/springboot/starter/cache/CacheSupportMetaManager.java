@@ -10,6 +10,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.util.ReflectionUtils;
 
 import java.beans.PropertyDescriptor;
@@ -30,6 +32,9 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
 
     private final Map<Class<?>, CacheSupportMeta> supportMetaMap
         = Collections.synchronizedMap(new IdentityHashMap<>());
+
+    private static final String ID = "id";
+    private static final String VALUE = "value";
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
@@ -108,18 +113,15 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
         }
 
         // 扫描data类型中被@Key注解的字段
-        List<KeyMeta> dataKeyMeta = new ArrayList<>();
-        scanKeyMeta(dataKeyMeta, (anno, pName, valueGetter) ->
-            new KeyMeta(false, anno.value().isEmpty() ? pName : anno.value(), valueGetter),
+        List<KeyMeta> keyMetas = new ArrayList<>();
+        scanKeyMeta(keyMetas, (anno, pName, valueGetter) ->
+            new KeyMeta(
+                anno.getBoolean(ID),
+                anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                valueGetter),
             Key.class, new HashSet<>(), ResolvableType.forClass(dataClass), o -> o);
 
-        // 扫描data类型中被@IdKey注解的字段
-        List<KeyMeta> dataIdKeyMeta = new ArrayList<>();
-        scanKeyMeta(dataIdKeyMeta, (anno, pName, valueGetter) ->
-                new KeyMeta(true, anno.value().isEmpty() ? pName : anno.value(), valueGetter),
-            IdKey.class, new HashSet<>(), ResolvableType.forClass(dataClass), o -> o);
-
-        return KeyMeta.merge(dataIdKeyMeta, dataKeyMeta);
+        return keyMetas;
     }
 
     private void parseReadMethodCacheMeta(
@@ -130,19 +132,16 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
         List<MethodKeyMeta> keyMetas = new ArrayList<>();
         scanParameters(keyMetas, method,
             (anno, pName, valueGetter, parameterIndex, multi) ->
-                new MethodKeyMeta(false, anno.value().isEmpty() ? pName : anno.value(), valueGetter,
-                    parameterIndex, multi), Key.class);
-
-        List<MethodKeyMeta> idKeyMetas = new ArrayList<>();
-        scanParameters(idKeyMetas, method,
-            (anno, pName, valueGetter, parameterIndex, multi) ->
-                new MethodKeyMeta(true, anno.value().isEmpty() ? pName : anno.value(), valueGetter,
-                    parameterIndex, multi), IdKey.class);
+                new MethodKeyMeta(
+                    anno.getBoolean(ID),
+                    anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                    valueGetter, parameterIndex, multi),
+            Key.class);
 
         ResolvableType retType = ResolvableType.forMethodReturnType(method);
 
         supportMeta.addCacheReadMethodMeta(new CacheReadMethodMeta(
-            method, cacheConfigMeta, KeyMeta.merge(idKeyMetas, keyMetas), retType,
+            method, cacheConfigMeta, keyMetas, retType,
             supportMeta.getDataClass(), cacheReadMethod.useIdQuery()));
     }
 
@@ -151,13 +150,17 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
         CacheConfigMeta cacheConfigMeta = cacheConfig == null ? DEFAULT_CACHE_CONFIG_META :
             new CacheConfigMeta(cacheConfig.version(), cacheConfig.expireSeconds());
 
-        List<MethodKeyMeta> idKeyMetas = new ArrayList<>();
-        scanParameters(idKeyMetas, method,
+        List<MethodKeyMeta> keyMetas = new ArrayList<>();
+        scanParameters(keyMetas, method,
             (anno, pName, valueGetter, parameterIndex, multi) ->
-                new MethodKeyMeta(true, anno.value().isEmpty() ? pName : anno.value(), valueGetter,
-                    parameterIndex, multi), IdKey.class);
+                new MethodKeyMeta(
+                    anno.getBoolean(ID),
+                    anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                    valueGetter,
+                    parameterIndex, multi), Key.class);
 
-        supportMeta.addCacheWriteMethodMeta(new CacheWriteMethodMeta(method, cacheConfigMeta, idKeyMetas));
+        supportMeta.addCacheWriteMethodMeta(new CacheWriteMethodMeta(
+            method, cacheConfigMeta, keyMetas));
     }
 
     private void checkAopMethod(Method method, String cacheName) {
@@ -225,8 +228,9 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
             }
 
             Parameter parameter = parameters[i];
-            ANNO anno = AnnotationUtils.findAnnotation(parameter, scanAnnotationClass);
-            if (anno != null) {
+            MergedAnnotation<ANNO> anno = MergedAnnotations
+                .from(parameter, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY).get(scanAnnotationClass);
+            if (anno.isPresent()) {
                 M meta = metaBuilder.build(anno, parameter.getName(), o -> o, i, multi);
                 keyMetas.add(meta);
             } else {
@@ -255,19 +259,21 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
         PropertyDescriptor[] pds = BeanUtils.getPropertyDescriptors(beanClass);
         for (PropertyDescriptor pd : pds) {
             Method readMethod = pd.getReadMethod();
-            ANNO anno = AnnotationUtils.findAnnotation(readMethod, scanAnnotationClass);
-            if (anno == null) {
+            MergedAnnotation<ANNO> anno = MergedAnnotations
+                .from(readMethod, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY).get(scanAnnotationClass);
+            if (!anno.isPresent()) {
                 String pdName = pd.getName();
                 Field field = ReflectionUtils.findField(beanClass, pdName);
                 if (field != null) {
-                    anno = AnnotationUtils.findAnnotation(field, scanAnnotationClass);
+                    anno = MergedAnnotations
+                        .from(field, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY).get(scanAnnotationClass);
                 }
             }
 
             Function<Object, Object> keyGetter = currentBeanGetter
                 .andThen(o -> o == null ? null : ReflectionUtils.invokeMethod(readMethod, o));
 
-            if (anno != null) {
+            if (anno.isPresent()) {
                 M meta = metaBuilder.build(anno, pd.getName(), keyGetter);
                 keyMetas.add(meta);
             } else {
@@ -280,14 +286,14 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
     @FunctionalInterface
     interface CacheKeyMetaBuilder<M extends KeyMeta, ANNO extends Annotation> {
 
-        M build(ANNO anno, String propertyName, Function<Object, Object> valueGetter);
+        M build(MergedAnnotation<ANNO> anno, String propertyName, Function<Object, Object> valueGetter);
 
     }
 
     @FunctionalInterface
     interface ParameterCacheKeyMetaBuilder<M extends KeyMeta, ANNO extends Annotation> {
 
-        M build(ANNO anno, String propertyName, Function<Object, Object> valueGetter,
+        M build(MergedAnnotation<ANNO> anno, String propertyName, Function<Object, Object> valueGetter,
                 int parameterIndex, boolean multi);
 
     }

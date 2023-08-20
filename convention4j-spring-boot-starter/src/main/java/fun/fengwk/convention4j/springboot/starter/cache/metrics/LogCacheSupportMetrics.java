@@ -30,7 +30,7 @@ public class LogCacheSupportMetrics implements CacheSupportMetrics {
         } else if (log.isDebugEnabled()) {
             fullCacheHitCount = getFullCacheHitCount(method);
         }
-        log.info("{} cache, callCount: {}, partialCacheHitCount: {}, fullHitCount: {}, method: {}",
+        log.debug("{} cache, callCount: {}, partialCacheHitCount: {}, fullHitCount: {}, method: {}",
             (fullCacheHit ? "full" : (partialCacheHit ? "partial" : "none")),
             callCount, partialCacheHitCount, fullCacheHitCount, method);
     }

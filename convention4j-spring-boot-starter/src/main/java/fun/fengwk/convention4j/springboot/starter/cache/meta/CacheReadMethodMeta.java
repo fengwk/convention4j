@@ -5,6 +5,7 @@ import fun.fengwk.convention4j.springboot.starter.cache.util.CacheUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.checkerframework.checker.units.qual.K;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.Array;
@@ -106,11 +107,17 @@ public class CacheReadMethodMeta extends CacheMethodMeta {
     public Map<String, Object> buildKeyMapByData(Object data) {
         return KeyMeta.buildKeyMap(cacheKeyMetas, k -> data, (k, r) -> {
             KeyMeta dataKeyMeta = toDataKeyMetaMap.get(k.getName());
-            if (dataKeyMeta == null) {
-                System.out.println("");
-            }
             return dataKeyMeta.getValue(r);
         });
+    }
+
+    public Map<String, Object> buildKeyMapByAnotherKeyMap(Map<String, Object> anotherKeyMap) {
+        Map<String, Object> keyMap = new HashMap<>();
+        for (KeyMeta keyMeta : cacheKeyMetas) {
+            Object value = anotherKeyMap.get(keyMeta.getName());
+            keyMap.put(keyMeta.getName(), value);
+        }
+        return keyMap;
     }
 
     public String buildLv1CacheKey(Map<String, Object> keyMap) {

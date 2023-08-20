@@ -7,6 +7,8 @@ import lombok.ToString;
 
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author fengwk
@@ -30,6 +32,16 @@ public class CacheWriteMethodMeta extends CacheMethodMeta {
                     "Multi property and non-multi property cannot be mixed: " + method);
             }
         }
+    }
+
+    public Map<String, Object> buildIdKeyMapByParameters(Object...args) {
+        return KeyMeta.buildKeyMap(cacheKeyMetas.stream().filter(KeyMeta::isId).collect(Collectors.toList()),
+            k -> k.selectParameter(args), KeyMeta::getValue);
+    }
+
+    public List<Map<String, Object>> buildIdKeyMapListByParameters(Object...args) {
+        return KeyMeta.buildKeyMapList(cacheKeyMetas.stream().filter(KeyMeta::isId).collect(Collectors.toList()),
+            k -> k.selectParameter(args), KeyMeta::getValue);
     }
 
 }

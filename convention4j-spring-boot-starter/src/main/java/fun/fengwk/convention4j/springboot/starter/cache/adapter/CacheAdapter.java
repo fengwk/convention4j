@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache.adapter;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,6 @@ public interface CacheAdapter {
      *
      * @param keys 指定的key列表
      */
-    void batchDelete(List<String> keys);
+    void batchDelete(Collection<String> keys);
 
 }
