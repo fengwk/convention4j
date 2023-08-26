@@ -104,20 +104,48 @@ public class CacheReadMethodMeta extends CacheMethodMeta {
         this.toDataKeyMetaMap = toDataKeyMetaMap;
     }
 
-    public Map<String, Object> buildKeyMapByData(Object data) {
-        return KeyMeta.buildKeyMap(cacheKeyMetas, k -> data, (k, r) -> {
-            KeyMeta dataKeyMeta = toDataKeyMetaMap.get(k.getName());
-            return dataKeyMeta.getValue(r);
-        });
+    public List<Map<String, Object>> buildKeyMapByData(Object data) {
+        List<Object[]> kvsList = new ArrayList<>();
+        for (MethodKeyMeta keyMeta : cacheKeyMetas) {
+            KeyMeta dataKeyMeta = toDataKeyMetaMap.get(keyMeta.getName());
+            Object value = dataKeyMeta.getValue(data);
+            Object[] kvs = new Object[] { keyMeta.getName(), value, keyMeta.isSelective() };
+            kvsList.add(kvs);
+        }
+        List<Map<String, Object>> keyMapList = new ArrayList<>();
+        collectKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
+        return keyMapList;
     }
 
-    public Map<String, Object> buildKeyMapByAnotherKeyMap(Map<String, Object> anotherKeyMap) {
-        Map<String, Object> keyMap = new HashMap<>();
+    public List<Map<String, Object>> buildKeyMapByAnotherKeyMap(Map<String, Object> anotherKeyMap) {
+        List<Object[]> kvsList = new ArrayList<>();
         for (KeyMeta keyMeta : cacheKeyMetas) {
             Object value = anotherKeyMap.get(keyMeta.getName());
-            keyMap.put(keyMeta.getName(), value);
+            Object[] kvs = new Object[] { keyMeta.getName(), value, keyMeta.isSelective() };
+            kvsList.add(kvs);
         }
-        return keyMap;
+        List<Map<String, Object>> keyMapList = new ArrayList<>();
+        collectKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
+        return keyMapList;
+    }
+
+    private void collectKeyMapList(List<Object[]> kvsList, int idx,
+                                   Map<String, Object> curLinkMap, List<Map<String, Object>> collector) {
+        if (idx == kvsList.size()) {
+            collector.add(curLinkMap);
+            return;
+        }
+        Object[] kvs = kvsList.get(idx);
+        if ((boolean) kvs[2]) {
+            curLinkMap.put((String) kvs[0], kvs[1]);
+            Map<String, Object> newLinkMap = new HashMap<>(curLinkMap);
+            newLinkMap.put((String) kvs[0], null);
+            collectKeyMapList(kvsList, idx + 1, curLinkMap, collector);
+            collectKeyMapList(kvsList, idx + 1, newLinkMap, collector);
+        } else {
+            curLinkMap.put((String) kvs[0], kvs[1]);
+            collectKeyMapList(kvsList, idx + 1, curLinkMap, collector);
+        }
     }
 
     public String buildLv1CacheKey(Map<String, Object> keyMap) {

@@ -18,9 +18,9 @@ public class MethodKeyMeta extends KeyMeta {
     private final boolean multi;
 
     public MethodKeyMeta(
-        boolean id, String name, Function<Object, Object> valueGetter,
+        boolean id, String name, boolean selective, Function<Object, Object> valueGetter,
         int parameterIndex, boolean multi) {
-        super(id, name, valueGetter);
+        super(id, name, selective, valueGetter);
         this.parameterIndex = parameterIndex;
         this.multi = multi;
     }

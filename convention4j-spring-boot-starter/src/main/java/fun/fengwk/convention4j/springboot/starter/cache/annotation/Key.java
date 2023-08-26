@@ -22,4 +22,9 @@ public @interface Key {
      */
     boolean id() default false;
 
+    /**
+     * 如果当前键为null时将不作为执行条件应当设置为true。
+     */
+    boolean selective() default false;
+
 }

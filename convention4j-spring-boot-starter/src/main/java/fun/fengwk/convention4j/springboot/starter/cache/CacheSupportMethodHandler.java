@@ -71,18 +71,20 @@ public class CacheSupportMethodHandler {
         List<String> lv1CacheKeyList = new ArrayList<>();
         for (Object data : dataList) {
             for (CacheReadMethodMeta readMethodMeta : supportMeta.getCacheReadMethodMetas()) {
-                Map<String, Object> keyMap = readMethodMeta.buildKeyMapByData(data);
-                String lv1CacheKey = readMethodMeta.buildLv1CacheKey(keyMap);
-                lv1CacheKeyList.add(lv1CacheKey);
+                for (Map<String, Object> keyMap : readMethodMeta.buildKeyMapByData(data)) {
+                    String lv1CacheKey = readMethodMeta.buildLv1CacheKey(keyMap);
+                    lv1CacheKeyList.add(lv1CacheKey);
+                }
             }
         }
 
         // 如果无法通过id查询到原对象，可能是新增，因此需要失效所有的新增键
         for (Map<String, Object> keyMap : keyMapList) {
             for (CacheReadMethodMeta readMethodMeta : supportMeta.getCacheReadMethodMetas()) {
-                Map<String, Object> readKeyMap = readMethodMeta.buildKeyMapByAnotherKeyMap(keyMap);
-                String lv1CacheKey = readMethodMeta.buildLv1CacheKey(readKeyMap);
-                lv1CacheKeyList.add(lv1CacheKey);
+                for (Map<String, Object> readKeyMap : readMethodMeta.buildKeyMapByAnotherKeyMap(keyMap)) {
+                    String lv1CacheKey = readMethodMeta.buildLv1CacheKey(readKeyMap);
+                    lv1CacheKeyList.add(lv1CacheKey);
+                }
             }
         }
 

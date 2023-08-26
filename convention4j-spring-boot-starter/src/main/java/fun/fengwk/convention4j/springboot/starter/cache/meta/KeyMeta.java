@@ -17,6 +17,7 @@ public class KeyMeta {
 
     private final boolean id;
     private final String name;
+    private final boolean selective;
     private final Function<Object, Object> valueGetter;
 
     public Object getValue(Object root) {

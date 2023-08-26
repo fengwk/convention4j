@@ -35,6 +35,7 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
 
     private static final String ID = "id";
     private static final String VALUE = "value";
+    private static final String SELECTIVE = "selective";
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
@@ -118,6 +119,7 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
             new KeyMeta(
                 anno.getBoolean(ID),
                 anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                anno.getBoolean(SELECTIVE),
                 valueGetter),
             Key.class, new HashSet<>(), ResolvableType.forClass(dataClass), o -> o);
 
@@ -135,6 +137,7 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
                 new MethodKeyMeta(
                     anno.getBoolean(ID),
                     anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                    anno.getBoolean(SELECTIVE),
                     valueGetter, parameterIndex, multi),
             Key.class);
 
@@ -156,6 +159,7 @@ public class CacheSupportMetaManager implements BeanPostProcessor {
                 new MethodKeyMeta(
                     anno.getBoolean(ID),
                     anno.getString(VALUE).isEmpty() ? pName : anno.getString(VALUE),
+                    anno.getBoolean(SELECTIVE),
                     valueGetter,
                     parameterIndex, multi), Key.class);
 

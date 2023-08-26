@@ -5,6 +5,8 @@ import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheReadMeth
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheWriteMethod;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.IdKey;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.Key;
+import org.checkerframework.checker.units.qual.K;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -44,5 +46,9 @@ public interface UserMapper extends LongIdCacheMapper<UserDO> {
 
     @CacheReadMethod
     List<UserDO> findByAgeOrderByIdDesc(@Key("age") int age);
+
+    @CacheReadMethod
+    List<UserDO> findByAgeAndCity(@Key(value = "age", selective = true) @Param("age") int age,
+                                  @Key(value = "city") @Param("city") String city);
 
 }
