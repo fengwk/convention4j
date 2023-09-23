@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor xsi:schemaLocation="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 http://maven.apache.org/xsd/archetype-descriptor-1.1.0.xsd" name="convention4j-archetype"
+    xmlns="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <requiredProperties>
+        <!-- https://blog.csdn.net/dj7858177/article/details/111948017 -->
+        <!-- https://stackoverflow.com/questions/32580244/gitignore-file-is-not-copied-to-archetype-jar-workarounds -->
+        <requiredProperty key="gitignore">
+            <defaultValue>.gitignore</defaultValue>
+        </requiredProperty>
+    </requiredProperties>
+
+    <fileSets>
+        <fileSet encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>lombok.config</include>
+                <include>__gitignore__</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+    <modules>
+        <module id="share" dir="share" name="share">
+            <fileSets>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/main/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+            </fileSets>
+        </module>
+        <module id="domain" dir="domain" name="domain">
+            <fileSets>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/main/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>**/*.factories</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>**/*.xml</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>**/*.properties</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/test/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+            </fileSets>
+        </module>
+        <module id="infra" dir="infra" name="infra">
+            <modules>
+                <module id="cache-redis" dir="cache-redis" name="cache-redis">
+                    <fileSets>
+                        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                            <directory>src/main/java</directory>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </fileSet>
+                        <fileSet filtered="true" encoding="UTF-8">
+                            <directory>src/main/resources</directory>
+                            <includes>
+                                <include>**/*.factories</include>
+                            </includes>
+                        </fileSet>
+                        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                            <directory>src/test/java</directory>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </fileSet>
+                    </fileSets>
+                </module>
+                <module id="repo-mysql" dir="repo-mysql" name="repo-mysql">
+                    <fileSets>
+                        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                            <directory>src/main/java</directory>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </fileSet>
+                        <fileSet filtered="true" encoding="UTF-8">
+                            <directory>src/main/resources</directory>
+                            <includes>
+                                <include>**/*.factories</include>
+                                <include>**/*.config</include>
+                                <include>**/*.sql</include>
+                            </includes>
+                        </fileSet>
+                        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                            <directory>src/test/java</directory>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </fileSet>
+                        <fileSet filtered="true" encoding="UTF-8">
+                            <directory>src/test/resources</directory>
+                            <includes>
+                                <include>**/*.yml</include>
+                            </includes>
+                        </fileSet>
+                    </fileSets>
+                </module>
+            </modules>
+        </module>
+        <module id="app" dir="app" name="app">
+            <fileSets>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/main/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>**/*.factories</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/test/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/test/resources</directory>
+                    <includes>
+                        <include>**/*.yml</include>
+                    </includes>
+                </fileSet>
+            </fileSets>
+        </module>
+        <module id="web" dir="web" name="web">
+            <fileSets>
+                <fileSet filtered="true" packaged="true" encoding="UTF-8">
+                    <directory>src/main/java</directory>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>**/*.yaml</include>
+                    </includes>
+                </fileSet>
+            </fileSets>
+        </module>
+    </modules>
+</archetype-descriptor>

@@ -1,0 +1,34 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+spring:
+
+  application:
+    name: ${artifactId}
+
+  redis:
+    host: 127.0.0.1
+    port: 6379
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&connectTimeout=3000&socketTimeout=3000&useSSL=false
+    username: root
+    password: a123
+    driver-class-name: com.mysql.jdbc.Driver
+
+convention:
+
+  snowflake-id:
+    initial-timestamp: 1695450643015
+
+  i18n:
+    base-name: string
+    locale: zh_CN
+
+  error-code:
+    i18n:
+      locale: ${convention.i18n.locale}
+
+logging:
+  level:
+    root: info
