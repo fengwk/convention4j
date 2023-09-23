@@ -1,6 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
 import fun.fengwk.convention4j.api.code.HttpStatus;
+import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +33,34 @@ public class ExceptionResultHandlerTest {
     @Test
     public void test3() {
         testService.checkUser(new TestService.User());
+    }
+
+    @Test
+    public void testProxy() {
+        FooService fooService = new FooService();
+        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService);
+        Result<Boolean> result = proxy.foo();
+        assert result != null;
+        assert !result.isSuccess();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProxy2() {
+        FooService fooService = new FooService();
+        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService);
+        proxy.foo2();
+    }
+
+    public static class FooService {
+
+        public Result<Boolean> foo() {
+            throw new IllegalArgumentException("error");
+        }
+
+        public boolean foo2() {
+            throw new IllegalArgumentException("error");
+        }
+
     }
 
 }

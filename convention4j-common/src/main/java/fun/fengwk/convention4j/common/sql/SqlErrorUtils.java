@@ -16,7 +16,6 @@ public class SqlErrorUtils {
      * @param t
      * @return
      */
-    @Nullable
     public static SQLException findSqlException(Throwable t) {
         while (t != null && !(t instanceof SQLException) && t.getCause() != t) {
             t = t.getCause();

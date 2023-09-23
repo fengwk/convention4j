@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.api.result;
 
+import fun.fengwk.convention4j.api.code.ErrorCode;
+
 import java.io.Serializable;
 
 /**
@@ -47,5 +49,11 @@ public interface Result<T> extends Serializable {
      * @return 错误信息表。
      */
     Errors getErrors();
+
+    /**
+     * 获取错误编码。
+     * @return 错误码，如果调用结果是成功则返回null。
+     */
+    ErrorCode getErrorCode();
 
 }

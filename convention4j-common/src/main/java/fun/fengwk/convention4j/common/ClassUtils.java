@@ -38,7 +38,6 @@ public class ClassUtils {
      * 
      * @return
      */
-    @Nullable
     public static ClassLoader getDefaultClassLoader() {
         ClassLoader cl = null;
         try {
@@ -72,7 +71,6 @@ public class ClassUtils {
      * @return 首个找到的注解。
      * @param <A> 注解。
      */
-    @Nullable
     public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass, boolean includeAncestors) {
         if (includeAncestors) {
             return findAnnotationIncludeAncestors(annotatedElement.getAnnotations(), annotationClass);
@@ -81,7 +79,6 @@ public class ClassUtils {
         }
     }
 
-    @Nullable
     private static <A extends Annotation> A findAnnotationIncludeAncestors(Annotation[] annotations, Class<A> annotationClass) {
         for (Annotation annotation : annotations) {
             if (annotation.annotationType() == annotationClass) {
@@ -107,7 +104,6 @@ public class ClassUtils {
      * @param type
      * @return
      */
-    @Nullable
     public static Type boxedIfPrimitiveType(Type type) {
         if (type instanceof Class) {
             Class<?> packClass = BOXED_MAP.get(type);

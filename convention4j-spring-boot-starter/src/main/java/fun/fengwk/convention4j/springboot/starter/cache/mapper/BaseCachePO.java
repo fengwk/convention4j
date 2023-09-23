@@ -7,7 +7,7 @@ import lombok.Data;
  * @author fengwk
  */
 @Data
-public class BaseCacheDO<ID> {
+public class BaseCachePO<ID> {
 
     @IdKey
     private ID id;

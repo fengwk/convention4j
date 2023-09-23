@@ -276,7 +276,6 @@ public enum MySql5xError {
      * @param errorCode
      * @return
      */
-    @Nullable
     public static MySql5xError of(Integer errorCode) {
         return MAP.get(errorCode);
     }
@@ -287,7 +286,6 @@ public enum MySql5xError {
      * @param sqlException
      * @return
      */
-    @Nullable
     public static MySql5xError parse(SQLException sqlException) {
         return sqlException == null ? null : of(sqlException.getErrorCode());
     }
@@ -298,7 +296,6 @@ public enum MySql5xError {
      * @param t
      * @return
      */
-    @Nullable
     public static MySql5xError parse(Throwable t) {
         return parse(SqlErrorUtils.findSqlException(t));
     }
@@ -314,7 +311,6 @@ public enum MySql5xError {
      * @param errorMessage
      * @return
      */
-    @Nullable
     public static DuplicateErrorInfo parseDuplicateErrorInfo(String errorMessage) {
         Matcher matcher = DUPLICATE_REGEX.matcher(errorMessage);
         if (!matcher.find()) {

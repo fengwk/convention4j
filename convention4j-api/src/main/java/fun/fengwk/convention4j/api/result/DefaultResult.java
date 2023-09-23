@@ -1,6 +1,8 @@
 package fun.fengwk.convention4j.api.result;
 
+import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.HttpStatus;
+import fun.fengwk.convention4j.api.code.ImmutableErrorCode;
 
 import java.util.Objects;
 
@@ -47,6 +49,16 @@ public class DefaultResult<T> implements Result<T> {
     @Override
     public Errors getErrors() {
         return errors;
+    }
+
+    @Override
+    public ErrorCode getErrorCode() {
+        Errors errors = getErrors();
+        if (errors == null) {
+            return null;
+        }
+        return new ImmutableErrorCode(
+            getStatus(), errors.getCode(), getMessage());
     }
 
     @Override

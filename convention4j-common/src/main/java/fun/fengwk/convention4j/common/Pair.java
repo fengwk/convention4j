@@ -29,7 +29,6 @@ public class Pair<K, V>  implements Serializable {
         return new Pair<>(null, null);
     }
 
-    @Nullable
     public K getKey() {
         return key;
     }
@@ -38,7 +37,6 @@ public class Pair<K, V>  implements Serializable {
         this.key = key;
     }
 
-    @Nullable
     public V getValue() {
         return value;
     }

@@ -5,7 +5,7 @@ import fun.fengwk.convention4j.springboot.starter.cache.support.GsonStringIdCach
 /**
  * @author fengwk
  */
-public interface StringIdCacheMapper<DO extends BaseCacheDO<String>>
+public interface StringIdCacheMapper<PO extends BaseCachePO<String>>
         // 继承顺序不能变，否则会导致default方法判断失效
-        extends GsonStringIdCacheSupport<DO>, BaseCacheMapper<DO, String> {
+        extends GsonStringIdCacheSupport<PO>, BaseCacheMapper<PO, String> {
 }

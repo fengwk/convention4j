@@ -30,7 +30,6 @@ public class IntBool {
      * @param b
      * @return
      */
-    @Nullable
     public static Integer bool2int(Boolean b) {
         return b == null ? null : bool2int((boolean) b);
     }
@@ -51,7 +50,6 @@ public class IntBool {
      * @param i
      * @return
      */
-    @Nullable
     public static Boolean int2bool(Integer i) {
         return i == null ? null : int2bool((int) i);
     }

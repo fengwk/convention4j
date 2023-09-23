@@ -4,6 +4,7 @@ import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.common.i18n.AggregateResourceBundle;
 
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
@@ -21,7 +22,11 @@ public class I18nErrorCodeMessageManager extends AbstractErrorCodeMessageManager
 
     @Override
     public String getMessage(ErrorCode errorCode) {
-        return resourceBundle.getString(errorCode.getCode());
+        try {
+            return resourceBundle.getString(errorCode.getCode());
+        } catch (MissingResourceException ignore) {
+            return null;
+        }
     }
 
 }

@@ -30,7 +30,6 @@ public class InterpretContext {
         this.varMap = varMap;
     }
 
-    @Nullable
     public String getSql() {
         return sql;
     }
@@ -39,7 +38,6 @@ public class InterpretContext {
         this.sql = sql;
     }
 
-    @Nullable
     public List<Object> getParamList() {
         return paramList;
     }

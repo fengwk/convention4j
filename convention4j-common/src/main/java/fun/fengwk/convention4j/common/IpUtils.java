@@ -107,7 +107,6 @@ public class IpUtils {
      * @return
      * @throws SocketException 连接本地网卡设备发生IO异常。
      */
-    @Nullable
     public static InetAddress getLocalIPv4() throws SocketException {
         if (LOCAL_IPV4 == null) {
             synchronized (IpUtils.class) {
@@ -125,7 +124,6 @@ public class IpUtils {
      * @return
      * @throws SocketException 连接本地网卡设备发生IO异常。
      */
-    @Nullable
     public static InetAddress getLocalIPv6() throws SocketException {
         if (LOCAL_IPV6 == null) {
             synchronized (IpUtils.class) {

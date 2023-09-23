@@ -5,7 +5,6 @@ import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheReadMeth
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheWriteMethod;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.IdKey;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.Key;
-import org.checkerframework.checker.units.qual.K;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
@@ -15,13 +14,13 @@ import java.util.List;
  * @author fengwk
  */
 @AutoMapper
-public interface UserMapper extends LongIdCacheMapper<UserDO> {
+public interface UserMapper extends LongIdCacheMapper<UserPO> {
 
     @CacheWriteMethod
-    int insert(UserDO record);
+    int insert(UserPO record);
 
     @CacheWriteMethod
-    int insertAll(Collection<UserDO> records);
+    int insertAll(Collection<UserPO> records);
 
     @CacheWriteMethod
     int deleteById(@IdKey("id") Long id);
@@ -30,7 +29,7 @@ public interface UserMapper extends LongIdCacheMapper<UserDO> {
     int deleteByIdIn(@IdKey("id") Collection<Long> id);
 
     @CacheWriteMethod
-    int updateByIdSelective(UserDO record);
+    int updateByIdSelective(UserPO record);
 
     @CacheReadMethod
     int countById(@IdKey("id") Long id);
@@ -39,16 +38,16 @@ public interface UserMapper extends LongIdCacheMapper<UserDO> {
     int countByAge(@IdKey("age") Integer age);
 
     @CacheReadMethod(useIdQuery = true)
-    UserDO findById(@IdKey("id") Long id);
+    UserPO findById(@IdKey("id") Long id);
 
     @CacheReadMethod(useIdQuery = true)
-    List<UserDO> findByIdIn(@IdKey("id") Collection<Long> ids);
+    List<UserPO> findByIdIn(@IdKey("id") Collection<Long> ids);
 
     @CacheReadMethod
-    List<UserDO> findByAgeOrderByIdDesc(@Key("age") int age);
+    List<UserPO> findByAgeOrderByIdDesc(@Key("age") int age);
 
     @CacheReadMethod
-    List<UserDO> findByAgeAndCity(@Key(value = "age", selective = true) @Param("age") int age,
+    List<UserPO> findByAgeAndCity(@Key(value = "age", selective = true) @Param("age") int age,
                                   @Key(value = "city") @Param("city") String city);
 
 }

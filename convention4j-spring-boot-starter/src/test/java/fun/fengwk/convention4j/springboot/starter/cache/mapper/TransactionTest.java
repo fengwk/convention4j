@@ -19,7 +19,7 @@ public class TransactionTest {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void test() {
-        UserDO userDO = new UserDO();
+        UserPO userDO = new UserPO();
         userDO.setUsername("username_");
         userDO.setEmail("email_");
         userDO.setMobile("mobile_");
@@ -28,7 +28,7 @@ public class TransactionTest {
         userDO.setCity("hangzhou");
         userDO.setId(idGen.next(getClass()));
         assert userMapper.insert(userDO) > 0;
-        UserDO found = userMapper.findById(userDO.getId());
+        UserPO found = userMapper.findById(userDO.getId());
         found.setPassword("123");
         assert userMapper.updateByIdSelective(userDO) > 0;
         assert userMapper.findById(userDO.getId()) != null;

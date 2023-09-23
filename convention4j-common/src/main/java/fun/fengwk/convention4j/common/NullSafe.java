@@ -1,7 +1,8 @@
 package fun.fengwk.convention4j.common;
 
-import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -51,28 +52,65 @@ public class NullSafe {
      * @param <T>
      * @return
      */
-    @Nullable
     public static <S, T> T map(S obj, Function<S, T> mapper) {
         return obj == null ? null : mapper.apply(obj);
     }
 
     /**
-     * 安全地映射collection到目标类型列表。
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper not null
+     * @param defaultObj
+     * @param <S>
+     * @param <T>
+     * @return
+     */
+    public static <S, T> T map(S obj, Function<S, T> mapper, T defaultObj) {
+        return obj == null ? defaultObj : mapper.apply(obj);
+    }
+
+    /**
+     * 安全地映射Collection到List。
      *
      * @param <S>
      * @param <T>
      * @param collection
      * @param mapper
-     * @param collector
      * @return
      */
-    public static <S, T> List<T> map(Collection<S> collection, Function<S, T> mapper) {
-        return collection == null ? Collections.emptyList() : collection.stream()
-            .filter(Objects::nonNull).map(mapper).filter(Objects::nonNull).collect(Collectors.toList());
+    public static <S, T> List<T> map2List(Collection<S> collection, Function<S, T> mapper) {
+        return map(collection, mapper, Collectors.toList());
     }
 
     /**
-     * 安全地映射collection到目标类型。
+     * 安全地映射Collection到Set。
+     *
+     * @param <S>
+     * @param <T>
+     * @param collection
+     * @param mapper
+     * @return
+     */
+    public static <S, T> Set<T> map2Set(Collection<S> collection, Function<S, T> mapper) {
+        return map(collection, mapper, Collectors.toSet());
+    }
+
+    /**
+     * 安全地映射Collection到Set。
+     *
+     * @param <S>
+     * @param <T>
+     * @param collection
+     * @param mapper
+     * @return
+     */
+    public static <S, T> LinkedHashSet<T> map2LinkedHashSet(Collection<S> collection, Function<S, T> mapper) {
+        return map(collection, mapper, new LinkedHashSetCollector<>());
+    }
+
+    /**
+     * 安全地映射Collection到目标容器。
      *
      * @param <S>
      * @param <T>
@@ -98,7 +136,6 @@ public class NullSafe {
      * @param defaultObj
      * @return
      */
-    @Nullable
     public static <T> T of(T obj, T defaultObj) {
         return obj == null ? defaultObj : obj;
     }
@@ -111,7 +148,6 @@ public class NullSafe {
      * @param defaultObjFactory not null
      * @return
      */
-    @Nullable
     public static <T> T of(T obj, Supplier<T> defaultObjFactory) {
         return obj == null ? defaultObjFactory.get() : obj;
     }
@@ -369,5 +405,37 @@ public class NullSafe {
     public static boolean isFalse(Integer intBool) {
         return isFalse(IntBool.int2bool(intBool));
     }
+
+    static class LinkedHashSetCollector<T> implements Collector<T, LinkedHashSet<T>, LinkedHashSet<T>> {
+
+            @Override
+            public Supplier<LinkedHashSet<T>> supplier() {
+                return LinkedHashSet::new;
+            }
+
+            @Override
+            public BiConsumer<LinkedHashSet<T>, T> accumulator() {
+                return LinkedHashSet::add;
+            }
+
+            @Override
+            public BinaryOperator<LinkedHashSet<T>> combiner() {
+                return (l, r) -> {
+                    l.addAll(r);
+                    return l;
+                };
+            }
+
+            @Override
+            public Function<LinkedHashSet<T>, LinkedHashSet<T>> finisher() {
+                return t -> t;
+            }
+
+            @Override
+            public Set<Characteristics> characteristics() {
+                return Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH));
+            }
+
+        }
 
 }

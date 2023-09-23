@@ -44,7 +44,6 @@ public final class Ref<T> implements Serializable {
         return new Ref<>(null);
     }
 
-    @Nullable
     public T getValue() {
         return value;
     }

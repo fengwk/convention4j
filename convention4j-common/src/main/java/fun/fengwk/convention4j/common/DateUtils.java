@@ -20,7 +20,6 @@ public class DateUtils {
      * @param localDateTime
      * @return
      */
-    @Nullable
     public static Instant toInstant(LocalDateTime localDateTime) {
         if (localDateTime == null) {
             return null;
@@ -34,7 +33,6 @@ public class DateUtils {
      * @param localDateTime
      * @return
      */
-    @Nullable
     public static Long toEpochMilli(LocalDateTime localDateTime) {
         if (localDateTime == null) {
             return null;
@@ -51,7 +49,6 @@ public class DateUtils {
      * @param localDateTime
      * @return
      */
-    @Nullable
     public static Date toDate(LocalDateTime localDateTime) {
         if (localDateTime == null) {
             return null;
@@ -68,7 +65,6 @@ public class DateUtils {
      * @param date
      * @return
      */
-    @Nullable
     public static LocalDateTime toLocalDateTime(Date date) {
         if (date == null) {
             return null;
@@ -83,7 +79,6 @@ public class DateUtils {
      * @param epochMilli
      * @return
      */
-    @Nullable
     public static LocalDateTime toLocalDateTime(Long epochMilli) {
         if (epochMilli == null) {
             return null;
@@ -97,7 +92,6 @@ public class DateUtils {
      * @param instant
      * @return
      */
-    @Nullable
     public static LocalDateTime toLocalDateTime(Instant instant) {
         if (instant == null) {
             return null;

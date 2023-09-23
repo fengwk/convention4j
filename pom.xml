@@ -1,225 +1,241 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>9</version>
-	</parent>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>9</version>
+    </parent>
 
-	<groupId>fun.fengwk.convention4j</groupId>
-	<artifactId>convention4j-parent</artifactId>
-	<version>0.0.8</version>
-	<packaging>pom</packaging>
+    <groupId>fun.fengwk.convention4j</groupId>
+    <artifactId>convention4j-parent</artifactId>
+    <version>0.0.9</version>
+    <packaging>pom</packaging>
 
-	<name>${project.groupId}:${project.artifactId}</name>
-	<description>Convention For Java</description>
-	<url>https://github.com/fengwk/convention4j</url>
-	<licenses>
-		<license>
-			<name>The Apache License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-		</license>
-	</licenses>
-	<scm>
-		<url>git@github.com:fengwk/convention4j.git</url>
-		<connection>scm:git:git@github.com:fengwk/convention4j.git</connection>
-		<developerConnection>scm:git:git@github.com:fengwk/convention4j.git</developerConnection>
-	</scm>
-	<developers>
-		<developer>
-			<name>fengwk</name>
-			<email>759543714@qq.com</email>
-			<url>https://github.com/fengwk</url>
-		</developer>
-	</developers>
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Convention For Java</description>
+    <url>https://github.com/fengwk/convention4j</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <scm>
+        <url>git@github.com:fengwk/convention4j.git</url>
+        <connection>scm:git:git@github.com:fengwk/convention4j.git</connection>
+        <developerConnection>scm:git:git@github.com:fengwk/convention4j.git</developerConnection>
+    </scm>
+    <developers>
+        <developer>
+            <name>fengwk</name>
+            <email>759543714@qq.com</email>
+            <url>https://github.com/fengwk</url>
+        </developer>
+    </developers>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
-	<modules>
+    <modules>
         <module>convention4j-api</module>
-		<module>convention4j-common</module>
-		<module>convention4j-spring-boot-starter-test</module>
-		<module>convention4j-spring-boot-starter</module>
-		<module>convention4j-spring-boot-starter-web</module>
+        <module>convention4j-common</module>
+        <module>convention4j-spring-boot-starter-test</module>
+        <module>convention4j-spring-boot-starter</module>
+        <module>convention4j-spring-boot-starter-web</module>
         <module>convention4j-example</module>
     </modules>
 
-	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
-		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>0.0.8</convention4j.version>
-		<auto-mapper.version>0.0.29</auto-mapper.version>
-		<auto-validation.version>0.0.12</auto-validation.version>
-		<spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
-		<spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
-		<spring-cloud-alibaba-dependencies.version>2.2.7.RELEASE</spring-cloud-alibaba-dependencies.version>
-		<mybatis-spring-boot-starter.version>2.2.2</mybatis-spring-boot-starter.version>
-		<mysql-connector-java.version>5.1.49</mysql-connector-java.version>
-		<resteasy-jaxrs.version>4.0.0.Beta5</resteasy-jaxrs.version>
-		<jwt4j.version>0.0.4</jwt4j.version>
-		<redisson.version>3.17.0</redisson.version>
-		<h2.version>1.4.200</h2.version>
-		<embedded-redis.version>0.6</embedded-redis.version>
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+        <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
+        <convention4j.version>0.0.9</convention4j.version>
+        <auto-mapper.version>0.0.29</auto-mapper.version>
+        <auto-validation.version>0.0.12</auto-validation.version>
+        <spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
+        <spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
+        <spring-cloud-alibaba-dependencies.version>2.2.7.RELEASE</spring-cloud-alibaba-dependencies.version>
+        <mybatis-spring-boot-starter.version>2.2.2</mybatis-spring-boot-starter.version>
+        <mysql-connector-java.version>5.1.49</mysql-connector-java.version>
+        <resteasy-jaxrs.version>4.0.0.Beta5</resteasy-jaxrs.version>
+        <jwt4j.version>0.0.4</jwt4j.version>
+        <redisson.version>3.23.5</redisson.version>
+        <h2.version>1.4.200</h2.version>
+        <embedded-redis.version>0.6</embedded-redis.version>
         <json-path.version>2.8.0</json-path.version>
-		<ognl.version>3.2.21</ognl.version>
-		<jsr305.version>3.0.2</jsr305.version>
-		<junit.version>4.13.2</junit.version>
-		<lombok.version>1.18.22</lombok.version>
-		<auto-service.version>1.0.1</auto-service.version>
-	</properties>
+        <ognl.version>3.2.21</ognl.version>
+        <jsr305.version>3.0.2</jsr305.version>
+        <junit.version>4.13.2</junit.version>
+        <lombok.version>1.18.30</lombok.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <auto-service.version>1.0.1</auto-service.version>
+    </properties>
 
-	<dependencyManagement>
-		<dependencies>
+    <dependencyManagement>
+        <dependencies>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-api</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-common</artifactId>
-				<version>${convention4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-spring-boot-starter-test</artifactId>
-				<version>${convention4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-spring-boot-starter</artifactId>
-				<version>${convention4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-spring-boot-starter-web</artifactId>
-				<version>${convention4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.convention4j</groupId>
-				<artifactId>convention4j-example</artifactId>
-				<version>${convention4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.auto-mapper</groupId>
-				<artifactId>auto-mapper-parent</artifactId>
-				<version>${auto-mapper.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.auto-validation</groupId>
-				<artifactId>auto-validation-parent</artifactId>
-				<version>${auto-validation.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud-dependencies.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring-boot-dependencies.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.alibaba.cloud</groupId>
-				<artifactId>spring-cloud-alibaba-dependencies</artifactId>
-				<version>${spring-cloud-alibaba-dependencies.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.mybatis.spring.boot</groupId>
-				<artifactId>mybatis-spring-boot-starter</artifactId>
-				<version>${mybatis-spring-boot-starter.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>mysql</groupId>
-				<artifactId>mysql-connector-java</artifactId>
-				<version>${mysql-connector-java.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jboss.resteasy</groupId>
-				<artifactId>resteasy-jaxrs</artifactId>
-				<version>${resteasy-jaxrs.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>fun.fengwk.jwt4j</groupId>
-				<artifactId>jwt4j</artifactId>
-				<version>${jwt4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.redisson</groupId>
-				<artifactId>redisson</artifactId>
-				<version>${redisson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.redisson</groupId>
-				<artifactId>redisson-spring-boot-starter</artifactId>
-				<version>${redisson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.h2database</groupId>
-				<artifactId>h2</artifactId>
-				<version>${h2.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.github.kstyrc</groupId>
-				<artifactId>embedded-redis</artifactId>
-				<version>${embedded-redis.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-common</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-boot-starter-test</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-boot-starter</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-boot-starter-web</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-example</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.auto-mapper</groupId>
+                <artifactId>auto-mapper-parent</artifactId>
+                <version>${auto-mapper.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.auto-validation</groupId>
+                <artifactId>auto-validation-parent</artifactId>
+                <version>${auto-validation.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot-starter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-connector-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jaxrs</artifactId>
+                <version>${resteasy-jaxrs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.jwt4j</groupId>
+                <artifactId>jwt4j</artifactId>
+                <version>${jwt4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-data-23</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.kstyrc</groupId>
+                <artifactId>embedded-redis</artifactId>
+                <version>${embedded-redis.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${json-path.version}</version>
             </dependency>
-			<dependency>
-				<groupId>ognl</groupId>
-				<artifactId>ognl</artifactId>
-				<version>${ognl.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.google.code.findbugs</groupId>
-				<artifactId>jsr305</artifactId>
-				<version>${jsr305.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${junit.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.projectlombok</groupId>
-				<artifactId>lombok</artifactId>
-				<version>${lombok.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.google.auto.service</groupId>
-				<artifactId>auto-service</artifactId>
-				<version>${auto-service.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>ognl</groupId>
+                <artifactId>ognl</artifactId>
+                <version>${ognl.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${jsr305.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service</artifactId>
+                <version>${auto-service.version}</version>
+            </dependency>
             <!-- 下面是一些通用依赖的版本控制 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -227,9 +243,9 @@
                 <version>4.4</version>
             </dependency>
         </dependencies>
-	</dependencyManagement>
+    </dependencyManagement>
 
-	<profiles>
+    <profiles>
         <profile>
             <id>sonatype-oss-release</id>
             <build>
@@ -245,8 +261,8 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                	<!-- 忽略没有注释的javadoc -->
-                                	<additionalparam>-Xdoclint:none</additionalparam>
+                                    <!-- 忽略没有注释的javadoc -->
+                                    <additionalparam>-Xdoclint:none</additionalparam>
                                 </configuration>
                             </execution>
                         </executions>

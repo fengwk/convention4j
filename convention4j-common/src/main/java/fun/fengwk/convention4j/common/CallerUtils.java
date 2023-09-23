@@ -20,7 +20,6 @@ public class CallerUtils {
      * @param offset 偏移量，当前调用者为0，再上层调用者为1，以此类推。
      * @return 返回当前函数的调用者对象，如果无法通过传入的类加载器查找到调用类则返回null。
      */
-    @Nullable
     public static Class<?> getCallerClass(ClassLoader cl, int offset) {
         StackTraceElement[] elements = new Throwable().getStackTrace();
         StackTraceElement callerElement = elements[1 + offset];
@@ -37,7 +36,6 @@ public class CallerUtils {
      * @param offset 偏移量，当前调用者为0，再上层调用者为1，以此类推。
      * @return 返回当前函数的调用者对象，如果无法通过默认的类加载器查找到调用类则返回null。
      */
-    @Nullable
     public static Class<?> getCallerClass(int offset) {
         return getCallerClass(ClassUtils.getDefaultClassLoader(), offset + 1);
     }
@@ -50,7 +48,6 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法则返回null。
      */
-    @Nullable
     public static Method getCallerMethod(ClassLoader cl, int offset, Class<?>... parameterTypes) {
         StackTraceElement callerElement = getCallerElement(offset);
         Class<?> callerClass;
@@ -74,7 +71,6 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过默认的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个方法则返回null。
      */
-    @Nullable
     public static Method getCallerMethod(int offset, Class<?>... parameterTypes) {
         return getCallerMethod(ClassUtils.getDefaultClassLoader(), offset + 1, parameterTypes);
     }
@@ -87,7 +83,6 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个构造器则返回null。
      */
-    @Nullable
     public static <T> Constructor<T> getCallerConstructor(ClassLoader cl, int offset, Class<?>... parameterTypes) {
         StackTraceElement callerElement = getCallerElement(offset);
         Class<?> callerClass;
@@ -113,7 +108,6 @@ public class CallerUtils {
      * @param parameterTypes 目标调用者的方法参数列表。
      * @return 返回当前函数的调用者方法，如果无法通过传入的类加载器查找到调用类或者该类载器无权访问调用者类方法或者调用者不是一个构造器则返回null。
      */
-    @Nullable
     public static <T> Constructor<T> getCallerConstructor(int offset, Class<?>... parameterTypes) {
         return getCallerConstructor(ClassUtils.getDefaultClassLoader(), offset + 1, parameterTypes);
     }

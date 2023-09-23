@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.cache.repo;
 
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.*;
-import fun.fengwk.convention4j.springboot.starter.cache.mapper.UserDO;
+import fun.fengwk.convention4j.springboot.starter.cache.mapper.UserPO;
 import fun.fengwk.convention4j.springboot.starter.cache.support.GsonLongIdCacheSupport;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,22 +15,22 @@ import java.util.*;
 @CacheConfig(version = "v1")
 @AllArgsConstructor
 @Repository
-public class UserRepository implements GsonLongIdCacheSupport<UserDO> {
+public class UserRepository implements GsonLongIdCacheSupport<UserPO> {
 
     private final RepoUserMapper userMapper;
 
     @CacheWriteMethod
-    public boolean add(UserDO userDO) {
+    public boolean add(UserPO userDO) {
         return userMapper.insert(userDO) > 0;
     }
 
     @CacheWriteMethod
-    public boolean addAll(Collection<UserDO> userDOs) {
+    public boolean addAll(Collection<UserPO> userDOs) {
         return userMapper.insertAll(userDOs) == userDOs.size();
     }
 
     @CacheWriteMethod
-    public boolean updateByIdSelective(UserDO userDO) {
+    public boolean updateByIdSelective(UserPO userDO) {
         return userMapper.updateByIdSelective(userDO) > 0;
     }
 
@@ -45,37 +45,37 @@ public class UserRepository implements GsonLongIdCacheSupport<UserDO> {
     }
 
     @CacheReadMethod(useIdQuery = true)
-    public UserDO getById(@IdKey("id") long id) {
+    public UserPO getById(@IdKey("id") long id) {
         return userMapper.findById(id);
     }
 
     @CacheReadMethod(useIdQuery = true)
-    public List<UserDO> listByIds(@IdKey("id") Collection<Long> ids) {
+    public List<UserPO> listByIds(@IdKey("id") Collection<Long> ids) {
         return userMapper.findByIdIn(ids);
     }
 
     @CacheReadMethod
-    public List<UserDO> listByAgeOrderByIdDesc(@Key("age") int age) {
+    public List<UserPO> listByAgeOrderByIdDesc(@Key("age") int age) {
         return userMapper.findByAgeOrderByIdDesc(age);
     }
 
     @CacheReadMethod
-    public Set<UserDO> listByAgeOrderByIdDescSet(@Key("age") int age) {
+    public Set<UserPO> listByAgeOrderByIdDescSet(@Key("age") int age) {
         return new HashSet<>(userMapper.findByAgeOrderByIdDesc(age));
     }
 
     @CacheReadMethod
-    public LinkedList<UserDO> listByAgeOrderByIdDescLinkedList(@Key("age") int age) {
+    public LinkedList<UserPO> listByAgeOrderByIdDescLinkedList(@Key("age") int age) {
         return new LinkedList<>(userMapper.findByAgeOrderByIdDesc(age));
     }
 
     @CacheReadMethod
-    public List<UserDO> listByAgeOrderByIdDesc(UserNameAge userNameAge) {
+    public List<UserPO> listByAgeOrderByIdDesc(UserNameAge userNameAge) {
         return userMapper.findByAgeOrderByIdDesc(userNameAge.getAge());
     }
 
     @Override
-    public List<UserDO> doListByIds(Collection<Long> ids) {
+    public List<UserPO> doListByIds(Collection<Long> ids) {
         return userMapper.findByIdIn(ids);
     }
 

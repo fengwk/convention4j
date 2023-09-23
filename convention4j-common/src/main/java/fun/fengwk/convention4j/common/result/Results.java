@@ -70,7 +70,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#OK)}的快捷方式。
+     * success {@link SuccessCodes#OK}的快捷方式。
      * 推荐GET、PUT、PATCH使用。
      *
      * @param <T>
@@ -81,7 +81,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#OK)}的快捷方式。
+     * success {@link SuccessCodes#OK}的快捷方式。
      * 推荐GET、PUT、PATCH使用。
      *
      * @param <T>
@@ -92,7 +92,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#CREATED)}的快捷方式。
+     * success {@link SuccessCodes#CREATED}的快捷方式。
      * 推荐POST使用。
      *
      * @param <T>
@@ -103,7 +103,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#CREATED)}的快捷方式。
+     * success {@link SuccessCodes#CREATED}的快捷方式。
      * 推荐POST使用。
      *
      * @param <T>
@@ -114,7 +114,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#NO_CONTENT)}的快捷方式。
+     * success {@link SuccessCodes#NO_CONTENT}的快捷方式。
      * 推荐DELETE使用。
      *
      * @param <T>
@@ -125,7 +125,7 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#NO_CONTENT)}的快捷方式。
+     * success {@link SuccessCodes#NO_CONTENT}的快捷方式。
      * 推荐DELETE使用。
      *
      * @param <T>

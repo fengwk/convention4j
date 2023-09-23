@@ -11,7 +11,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Data
-public class UserDO extends BaseCacheDO<Long> {
+public class UserPO extends BaseCachePO<Long> {
 
     @Key
     private String username;

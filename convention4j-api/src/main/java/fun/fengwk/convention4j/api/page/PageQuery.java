@@ -29,6 +29,10 @@ public class PageQuery implements Serializable {
         if (pageSize < 0) {
             throw new IllegalArgumentException("pageSize must be greater than or equal to 0");
         }
+        if (pageSize > PageQueryConfig.getMaxPageSize()) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to "
+                + PageQueryConfig.getMaxPageSize());
+        }
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
     }

@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.springboot.starter.web;
 import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
-import fun.fengwk.convention4j.springboot.starter.result.ExceptionHandlerUtils;
+import fun.fengwk.convention4j.springboot.starter.result.ResultExceptionHandlerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.ConversionNotSupportedException;
@@ -70,7 +70,7 @@ public class WebGlobalExceptionHandler {
             headers.setAllow(supportedMethods);
         }
 
-        return new ResponseEntity<>(Results.error(ExceptionHandlerUtils.toErrorCode(NOT_IMPLEMENTED, ex)),
+        return new ResponseEntity<>(Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_IMPLEMENTED, ex)),
                 headers, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
@@ -87,7 +87,7 @@ public class WebGlobalExceptionHandler {
             headers.setAccept(mediaTypes);
         }
 
-        return new ResponseEntity<>(Results.error(ExceptionHandlerUtils.toErrorCode(UNSUPPORTED_MEDIA_TYPE, ex)),
+        return new ResponseEntity<>(Results.error(ResultExceptionHandlerUtils.toErrorCode(UNSUPPORTED_MEDIA_TYPE, ex)),
                 headers, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
@@ -97,7 +97,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleHttpMediaTypeNotAcceptableException(
             HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(NOT_ACCEPTABLE, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_ACCEPTABLE, ex));
     }
 
     // 当url中不存在@RequestMapping方法的方法参数中预期的路径变量时将抛出该异常
@@ -109,7 +109,7 @@ public class WebGlobalExceptionHandler {
 
         webRequest.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST);
 
-        return Results.error(ExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
 
     // 缺少请求入参产生的异常
@@ -118,7 +118,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleMissingServletRequestParameterException(
             MissingServletRequestParameterException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 参数绑定异常
@@ -127,7 +127,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleServletRequestBindingException(
             ServletRequestBindingException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 类型转换异常
@@ -136,7 +136,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleConversionNotSupportedException(
             ConversionNotSupportedException ex, HttpServletRequest request) {
         error(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
 
     // 类型匹配错误
@@ -145,7 +145,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleTypeMismatchException(
             TypeMismatchException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 读反序列化时发生异常，例如违反@RequestBody中required约束时将抛出该异常
@@ -154,7 +154,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 写序列化时发生异常
@@ -163,7 +163,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleHttpMessageNotWritableException(
             HttpMessageNotWritableException ex, HttpServletRequest request) {
         error(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
 
     // 如果在Controller中使用@Valid注释的Bean对象，该校验动作将在SpringMVC过程中处理，抛出MethodArgumentNotValidException异常
@@ -174,9 +174,9 @@ public class WebGlobalExceptionHandler {
         warn(request, ex);
         Map<String, String> errors = convertToErrors(ex);
         if (errors.isEmpty()) {
-            return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+            return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
         } else {
-            return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex), errors);
+            return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex), errors);
         }
     }
 
@@ -186,7 +186,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleMissingServletRequestPartException(
             MissingServletRequestPartException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 在Controller在接收的参数在进行绑定注解校验规则失败时将抛出该异常
@@ -195,7 +195,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleBindException(
             BindException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 找不到对应处理器时将抛出该异常
@@ -204,7 +204,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleNoHandlerFoundException(
             NoHandlerFoundException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(NOT_FOUND, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_FOUND, ex));
     }
 
     // 异步处理超时时抛出该异常
@@ -213,7 +213,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleAsyncRequestTimeoutException(
             AsyncRequestTimeoutException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(SERVICE_UNAVAILABLE, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(SERVICE_UNAVAILABLE, ex));
     }
 
     // 在检验参数注解不通过时抛出该异常
@@ -222,11 +222,11 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleConstraintViolationException(
             ConstraintViolationException ex, HttpServletRequest request) {
         warn(request, ex);
-        Map<String, String> errors = ExceptionHandlerUtils.convertToErrors(ex);
+        Map<String, String> errors = ResultExceptionHandlerUtils.convertToErrors(ex);
         if (errors.isEmpty()) {
-            return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+            return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
         } else {
-            return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex), errors);
+            return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex), errors);
         }
     }
 
@@ -236,7 +236,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleMultipartException(
             MultipartException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     // 异常码抛出捕获
@@ -260,7 +260,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleIllegalArgumentException(
             IllegalArgumentException ex, HttpServletRequest request) {
         warn(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -268,7 +268,7 @@ public class WebGlobalExceptionHandler {
     public Result<Void> handleThrowable(
             Throwable ex, HttpServletRequest request) {
         error(request, ex);
-        return Results.error(ExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
+        return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
 
     private void warn(HttpServletRequest request, Throwable ex) {

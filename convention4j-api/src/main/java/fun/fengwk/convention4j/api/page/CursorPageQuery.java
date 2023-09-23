@@ -23,8 +23,12 @@ public class CursorPageQuery<C> implements Serializable {
     private final int limit;
 
     public CursorPageQuery(C cursor, int limit) {
-        if (limit < 1) {
+        if (limit < 0) {
             throw new IllegalArgumentException("limit must be greater than or equal to 1");
+        }
+        if (limit > PageQueryConfig.getMaxPageSize()) {
+            throw new IllegalArgumentException("pageSize must be less than or equal to "
+                + PageQueryConfig.getMaxPageSize());
         }
         this.cursor = cursor;
         this.limit = limit;
