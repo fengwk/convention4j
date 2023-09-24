@@ -11,4 +11,12 @@
     </parent>
 
     <artifactId>convention4j-api</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 </project>
