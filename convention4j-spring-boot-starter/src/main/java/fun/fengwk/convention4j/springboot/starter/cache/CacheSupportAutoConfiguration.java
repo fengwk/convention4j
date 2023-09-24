@@ -14,7 +14,6 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.data.geo.Metric;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**

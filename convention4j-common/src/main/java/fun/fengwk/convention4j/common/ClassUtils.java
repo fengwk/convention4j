@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common;
 
-import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;

@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache.annotation;
 
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.data.annotation.Id;
 
 import java.lang.annotation.*;
 

@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.common.sql.dynamic.node;
 
 import fun.fengwk.convention4j.common.NullSafe;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 

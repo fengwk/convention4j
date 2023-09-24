@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.common;
 
-import javax.annotation.Nullable;
-
 /**
  * 使用int类型表示bool。
  *

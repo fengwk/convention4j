@@ -5,7 +5,6 @@ import fun.fengwk.convention4j.springboot.starter.cache.util.CacheUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.checkerframework.checker.units.qual.K;
 import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.Array;

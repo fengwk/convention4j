@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common;
 
-import javax.annotation.Nullable;
 import java.net.*;
 import java.util.Enumeration;
 

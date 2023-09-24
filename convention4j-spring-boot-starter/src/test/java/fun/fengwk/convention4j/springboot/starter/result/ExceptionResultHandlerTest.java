@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.springboot.starter.result;
 
 import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import org.junit.Test;
 import org.junit.runner.RunWith;

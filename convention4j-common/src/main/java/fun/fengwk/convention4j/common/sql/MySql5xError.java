@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common.sql;
 
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;

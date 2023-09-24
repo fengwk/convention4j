@@ -1,8 +1,5 @@
 package fun.fengwk.convention4j.api.result;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.ImmutableErrorCode;
-
 import java.util.LinkedHashMap;
 
 /**

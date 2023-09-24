@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache;
 
 import com.google.gson.reflect.TypeToken;
-import fun.fengwk.convention4j.common.ListUtils;
 import fun.fengwk.convention4j.common.gson.GsonUtils;
 import fun.fengwk.convention4j.springboot.starter.cache.adapter.CacheAdapter;
 import fun.fengwk.convention4j.springboot.starter.cache.meta.*;
@@ -13,7 +12,6 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.ResolvableType;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**

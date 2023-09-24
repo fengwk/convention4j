@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common;
 
-import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
