@@ -13,7 +13,7 @@
     <dependencies>
         <dependency>
             <groupId>${groupId}</groupId>
-            <artifactId>${rootArtifactId}-domain</artifactId>
+            <artifactId>${rootArtifactId}-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>

@@ -13,7 +13,7 @@
     <dependencies>
         <dependency>
             <groupId>${groupId}</groupId>
-            <artifactId>${rootArtifactId}-app</artifactId>
+            <artifactId>${rootArtifactId}-core</artifactId>
         </dependency>
         <dependency>
             <groupId>${groupId}</groupId>

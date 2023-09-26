@@ -1,11 +1,11 @@
 #set( $symbol_pound = '#' )
 #set( $symbol_dollar = '$' )
 #set( $symbol_escape = '\' )
-package ${package}.repo.mysql;
+package ${package}.core.domain.service;
 
+import ${package}.core.CoreTestApplication;
 import ${package}.core.domain.model.FooBO;
 import ${package}.core.domain.model.FooCreateBO;
-import ${package}.core.domain.model.FooFactory;
 import ${package}.core.domain.repo.FooRepository;
 import ${package}.share.constant.FooStatus;
 import org.junit.Test;
@@ -13,29 +13,28 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author fengwk
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = RepoMysqlTestApplication.class)
-public class OAuth2TokenRepositoryTest {
+@SpringBootTest(classes = CoreTestApplication.class)
+public class CreateFooServiceTest {
 
     @Autowired
-    private FooFactory fooFactory;
+    private CreateFooService createFooService;
     @Autowired
     private FooRepository fooRepository;
 
-    @Transactional
     @Test
-    public void testCrud() {
+    public void test() {
         FooCreateBO createBO = new FooCreateBO();
         createBO.setName("foo");
         createBO.setStatus(FooStatus.NORMAL);
-        FooBO fooBO = fooFactory.create(createBO);
-        assert fooRepository.insert(fooBO);
-        assert fooRepository.getById(fooBO.getId()) != null;
+        FooBO created = createFooService.create(createBO);
+        assert created != null;
+        FooBO found = fooRepository.getById(created.getId());
+        assert created.equals(found);
     }
 
 }

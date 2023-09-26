@@ -4,36 +4,36 @@
 
     <parent>
         <groupId>${groupId}</groupId>
-        <artifactId>${rootArtifactId}-infra</artifactId>
+        <artifactId>${rootArtifactId}-parent</artifactId>
         <version>${version}</version>
     </parent>
 
-    <artifactId>${rootArtifactId}-repo-mysql</artifactId>
+    <artifactId>${rootArtifactId}-core</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>${groupId}</groupId>
-            <artifactId>${rootArtifactId}-core</artifactId>
+            <artifactId>${rootArtifactId}-share</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-redis</artifactId>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
+            <groupId>fun.fengwk.auto-validation</groupId>
+            <artifactId>auto-validation-validator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
-            <groupId>fun.fengwk.auto-mapper</groupId>
-            <artifactId>auto-mapper-annotation</artifactId>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mapstruct</groupId>

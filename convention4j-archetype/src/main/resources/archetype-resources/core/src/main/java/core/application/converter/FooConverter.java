@@ -1,10 +1,12 @@
 #set( $symbol_pound = '#' )
 #set( $symbol_dollar = '$' )
 #set( $symbol_escape = '\' )
-package ${package}.repo.mysql.converter;
+package ${package}.core.application.converter;
 
 import ${package}.core.domain.model.FooBO;
-import ${package}.repo.mysql.model.FooPO;
+import ${package}.core.domain.model.FooCreateBO;
+import ${package}.share.model.FooCreateDTO;
+import ${package}.share.model.FooDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -16,8 +18,8 @@ public interface FooConverter {
 
     FooConverter INSTANCE = Mappers.getMapper(FooConverter.class);
 
-    FooPO convert(FooBO fooBO);
+    FooCreateBO convert(FooCreateDTO createDTO);
 
-    FooBO convert(FooPO fooPO);
+    FooDTO convert(FooBO fooBO);
 
 }

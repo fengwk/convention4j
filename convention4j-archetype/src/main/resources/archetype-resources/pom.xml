@@ -31,7 +31,7 @@
             </dependency>
             <dependency>
                 <groupId>${groupId}</groupId>
-                <artifactId>${artifactId}-domain</artifactId>
+                <artifactId>${artifactId}-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -47,11 +47,6 @@
             <dependency>
                 <groupId>${groupId}</groupId>
                 <artifactId>${artifactId}-repo-mysql</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${groupId}</groupId>
-                <artifactId>${artifactId}-app</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

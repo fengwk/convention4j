@@ -33,7 +33,7 @@
                 </fileSet>
             </fileSets>
         </module>
-        <module id="domain" dir="domain" name="domain">
+        <module id="core" dir="core" name="core">
             <fileSets>
                 <fileSet filtered="true" packaged="true" encoding="UTF-8">
                     <directory>src/main/java</directory>
@@ -63,6 +63,12 @@
                     <directory>src/test/java</directory>
                     <includes>
                         <include>**/*.java</include>
+                    </includes>
+                </fileSet>
+                <fileSet filtered="true" encoding="UTF-8">
+                    <directory>src/test/resources</directory>
+                    <includes>
+                        <include>**/*.yml</include>
                     </includes>
                 </fileSet>
             </fileSets>
@@ -122,34 +128,6 @@
                     </fileSets>
                 </module>
             </modules>
-        </module>
-        <module id="app" dir="app" name="app">
-            <fileSets>
-                <fileSet filtered="true" packaged="true" encoding="UTF-8">
-                    <directory>src/main/java</directory>
-                    <includes>
-                        <include>**/*.java</include>
-                    </includes>
-                </fileSet>
-                <fileSet filtered="true" encoding="UTF-8">
-                    <directory>src/main/resources</directory>
-                    <includes>
-                        <include>**/*.factories</include>
-                    </includes>
-                </fileSet>
-                <fileSet filtered="true" packaged="true" encoding="UTF-8">
-                    <directory>src/test/java</directory>
-                    <includes>
-                        <include>**/*.java</include>
-                    </includes>
-                </fileSet>
-                <fileSet filtered="true" encoding="UTF-8">
-                    <directory>src/test/resources</directory>
-                    <includes>
-                        <include>**/*.yml</include>
-                    </includes>
-                </fileSet>
-            </fileSets>
         </module>
         <module id="web" dir="web" name="web">
             <fileSets>

@@ -4,7 +4,7 @@
 package ${package}.cache.redis;
 
 import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
-import ${package}.domain.DomainAutoConfiguration;
+import ${package}.core.CoreAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author fengwk
  */
 @EnableTestRedisServer
-@SpringBootApplication(exclude = DomainAutoConfiguration.class)
+@SpringBootApplication(exclude = CoreAutoConfiguration.class)
 public class CacheRedisTestApplication {
 
     public static void main(String[] args) {

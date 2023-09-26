@@ -5,7 +5,7 @@ package ${package}.web.controller;
 
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
-import ${package}.app.service.FooBackendService;
+import ${package}.core.application.service.FooBackendService;
 import ${package}.share.model.FooCreateDTO;
 import ${package}.share.model.FooDTO;
 import lombok.AllArgsConstructor;

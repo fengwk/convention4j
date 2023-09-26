@@ -4,8 +4,8 @@
 package ${package}.repo.mysql;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
-import ${package}.domain.model.FooBO;
-import ${package}.domain.repo.FooRepository;
+import ${package}.core.domain.model.FooBO;
+import ${package}.core.domain.repo.FooRepository;
 import ${package}.repo.mysql.converter.FooConverter;
 import ${package}.repo.mysql.mapper.FooMapper;
 import ${package}.repo.mysql.model.FooPO;
