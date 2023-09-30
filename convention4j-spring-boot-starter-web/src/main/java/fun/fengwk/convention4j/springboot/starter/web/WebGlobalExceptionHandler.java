@@ -2,8 +2,8 @@ package fun.fengwk.convention4j.springboot.starter.web;
 
 import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
 import fun.fengwk.convention4j.common.result.Results;
-import fun.fengwk.convention4j.springboot.starter.result.ResultExceptionHandlerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.ConversionNotSupportedException;

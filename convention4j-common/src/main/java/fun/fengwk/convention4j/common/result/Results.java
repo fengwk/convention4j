@@ -6,6 +6,7 @@ import fun.fengwk.convention4j.api.code.SuccessCodes;
 import fun.fengwk.convention4j.api.result.DefaultResult;
 import fun.fengwk.convention4j.api.result.Errors;
 import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.NullSafe;
 
 import java.util.Map;
 
@@ -51,6 +52,7 @@ public class Results {
     public static <T> Result<T> error(ErrorCode errorCode) {
         Errors errors = new Errors();
         errors.setCode(errorCode.getCode());
+        errors.putAll(errorCode.getErrorContext());
         return new DefaultResult<>(errorCode.getStatus(), errorCode.getMessage(), null, errors);
     }
     
@@ -65,6 +67,7 @@ public class Results {
     public static <T> Result<T> error(ErrorCode errorCode, Map<String, ?> errors) {
         Errors finalErrors = new Errors();
         finalErrors.setCode(errorCode.getCode());
+        finalErrors.putAll(errorCode.getErrorContext());
         finalErrors.putAll(errors);
         return new DefaultResult<>(errorCode.getStatus(), errorCode.getMessage(), null, finalErrors);
     }

@@ -69,8 +69,8 @@ public class CacheSupportMethodHandler {
         List<String> lv1CacheKeyList = new ArrayList<>();
         for (Object data : dataList) {
             for (CacheReadMethodMeta readMethodMeta : supportMeta.getCacheReadMethodMetas()) {
-                for (Map<String, Object> keyMap : readMethodMeta.buildKeyMapByData(data)) {
-                    String lv1CacheKey = readMethodMeta.buildLv1CacheKey(keyMap);
+                for (Map<String, Object> keyMapFromData : readMethodMeta.buildKeyMapByData(data)) {
+                    String lv1CacheKey = readMethodMeta.buildLv1CacheKey(keyMapFromData);
                     lv1CacheKeyList.add(lv1CacheKey);
                 }
             }

@@ -64,7 +64,7 @@
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
         <convention4j.version>0.0.13-SNAPSHOT</convention4j.version>
-        <auto-mapper.version>0.0.29</auto-mapper.version>
+        <auto-mapper.version>0.0.31</auto-mapper.version>
         <auto-validation.version>0.0.13</auto-validation.version>
         <spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
         <spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
@@ -245,6 +245,19 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <profiles>
         <profile>

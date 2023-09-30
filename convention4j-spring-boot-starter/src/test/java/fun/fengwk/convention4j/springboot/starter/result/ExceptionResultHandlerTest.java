@@ -2,7 +2,9 @@ package fun.fengwk.convention4j.springboot.starter.result;
 
 import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 /**
  * @author fengwk
  */
+@Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 public class ExceptionResultHandlerTest {
@@ -37,7 +40,7 @@ public class ExceptionResultHandlerTest {
     @Test
     public void testProxy() {
         FooService fooService = new FooService();
-        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService);
+        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService, log);
         Result<Boolean> result = proxy.foo();
         assert result != null;
         assert !result.isSuccess();
@@ -46,7 +49,7 @@ public class ExceptionResultHandlerTest {
     @Test(expected = IllegalArgumentException.class)
     public void testProxy2() {
         FooService fooService = new FooService();
-        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService);
+        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService, log);
         proxy.foo2();
     }
 

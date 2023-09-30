@@ -41,6 +41,7 @@ public class KeyMeta {
             }
 
             // 从每个根对象中获取的元素个数必须相等，此处进行检查
+            // TODO 尚未支持类似 arg1:string arg2:list 的情况
             if (sizeCheck != -1 && sizeCheck != keyValues.size()) {
                 throw new CacheParseException("Multi property size must be equal");
             }

@@ -38,7 +38,6 @@ public class EnumNameTest {
 
     @Test
     public void test2() {
-        Locale.setDefault(Locale.ENGLISH);
         TestBean th = new TestBean();
         th.setType("t0");
         th.setTypeList(Arrays.asList(TestType.t1.name(), TestType.t2.name()));

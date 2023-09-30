@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.api.code;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -10,11 +11,13 @@ public class ImmutableErrorCode implements ErrorCode {
     private final int status;
     private final String code;
     private final String message;
+    private final Map<String, Object> errorContext;
 
-    public ImmutableErrorCode(int status, String code, String message) {
+    public ImmutableErrorCode(int status, String code, String message, Map<String, Object> errorContext) {
         this.status = status;
         this.code = code;
         this.message = message;
+        this.errorContext = errorContext;
     }
 
     @Override
@@ -28,6 +31,11 @@ public class ImmutableErrorCode implements ErrorCode {
     }
 
     @Override
+    public Map<String, Object> getErrorContext() {
+        return errorContext;
+    }
+
+    @Override
     public String getMessage() {
         return message;
     }
@@ -37,12 +45,12 @@ public class ImmutableErrorCode implements ErrorCode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ImmutableErrorCode that = (ImmutableErrorCode) o;
-        return status == that.status && Objects.equals(code, that.code) && Objects.equals(message, that.message);
+        return status == that.status && Objects.equals(code, that.code) && Objects.equals(message, that.message) && Objects.equals(errorContext, that.errorContext);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, code, message);
+        return Objects.hash(status, code, message, errorContext);
     }
 
     @Override
@@ -51,7 +59,7 @@ public class ImmutableErrorCode implements ErrorCode {
             "status=" + status +
             ", code='" + code + '\'' +
             ", message='" + message + '\'' +
+            ", errorContext=" + errorContext +
             '}';
     }
-
 }

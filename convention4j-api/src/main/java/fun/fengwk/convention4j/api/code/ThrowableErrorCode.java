@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.api.code;
 
+import java.util.Map;
+
 /**
  * 错误码异常。
  *
@@ -33,6 +35,11 @@ public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
     @Override
     public String getCode() {
         return errorCode.getCode();
+    }
+
+    @Override
+    public Map<String, Object> getErrorContext() {
+        return errorCode.getErrorContext();
     }
 
     @Override

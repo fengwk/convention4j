@@ -58,7 +58,7 @@ public class DefaultResult<T> implements Result<T> {
             return null;
         }
         return new ImmutableErrorCode(
-            getStatus(), errors.getCode(), getMessage());
+            getStatus(), errors.getCode(), getMessage(), errors.withoutCode());
     }
 
     @Override

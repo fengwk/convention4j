@@ -1,13 +1,13 @@
-package fun.fengwk.convention4j.springboot.starter.result;
+package fun.fengwk.convention4j.common.result;
 
 import fun.fengwk.convention4j.api.code.ConventionErrorCode;
 import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.result.Results;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
 import org.springframework.aop.framework.ProxyFactory;
 
 import javax.validation.ConstraintViolation;
@@ -23,12 +23,11 @@ import static fun.fengwk.convention4j.api.code.CommonErrorCodes.*;
 /**
  * @author fengwk
  */
-@Slf4j
 public class ResultExceptionHandlerUtils {
 
     private ResultExceptionHandlerUtils() {}
 
-    public static <T> T getProxy(T target) {
+    public static <T> T getProxy(T target, Logger log) {
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.setTarget(target);
         proxyFactory.addAdvice(new MethodInterceptor() {
@@ -39,7 +38,7 @@ public class ResultExceptionHandlerUtils {
                     try {
                         return invocation.proceed();
                     } catch (Throwable ex) {
-                        return handleError(ex);
+                        return handleError(ex, log);
                     }
                 } else {
                     return invocation.proceed();
@@ -49,9 +48,9 @@ public class ResultExceptionHandlerUtils {
         return (T) proxyFactory.getProxy();
     }
 
-    public static Result<?> handleError(Throwable ex) {
+    public static Result<?> handleError(Throwable ex, Logger log) {
         if (ex instanceof ConstraintViolationException) {
-            warn(ex);
+            warn(log, ex);
             Map<String, String> errors = ResultExceptionHandlerUtils.convertToErrors((ConstraintViolationException) ex);
             ErrorCode errorCode = ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex);
             if (errors.isEmpty()) {
@@ -62,33 +61,39 @@ public class ResultExceptionHandlerUtils {
         } else if (ex instanceof ErrorCode) {
             ErrorCode exErrorCode = (ErrorCode) ex;
             if (HttpStatus.is4xx(exErrorCode)) {
-                warn(ex);
+                warn(log, ex);
             } else {
-                errorUseShortFormat(ex);
+                errorUseShortFormat(log, ex);
             }
             return Results.error((ErrorCode) ex);
         } else if (ex instanceof IllegalArgumentException) {
-            warn(ex);
+            warn(log, ex);
             return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
         }  else if (ex instanceof UnsupportedOperationException) {
-            error(ex);
+            error(log, ex);
             return Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_IMPLEMENTED, ex));
         } else {
-            error(ex);
+            error(log, ex);
             return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
         }
     }
 
-    private static void warn(Throwable ex) {
-        log.warn("{} catch exception, error: {}", ResultExceptionHandler.class.getSimpleName(), String.valueOf(ex));
+    private static void warn(Logger log, Throwable ex) {
+        if (log != null) {
+            log.warn("{} catch exception, error: {}", ResultExceptionHandlerUtils.class.getSimpleName(), String.valueOf(ex));
+        }
     }
 
-    private static void errorUseShortFormat(Throwable ex) {
-        log.error("{} catch exception, error: {}", ResultExceptionHandler.class.getSimpleName(), String.valueOf(ex));
+    private static void errorUseShortFormat(Logger log, Throwable ex) {
+        if (log != null) {
+            log.error("{} catch exception, error: {}", ResultExceptionHandlerUtils.class.getSimpleName(), String.valueOf(ex));
+        }
     }
 
-    private static void error(Throwable ex) {
-        log.error("{} catch exception", ResultExceptionHandler.class.getSimpleName(), ex);
+    private static void error(Logger log, Throwable ex) {
+        if (log != null) {
+            log.error("{} catch exception", ResultExceptionHandlerUtils.class.getSimpleName(), ex);
+        }
     }
 
     /**

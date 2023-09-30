@@ -68,11 +68,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>fun.fengwk.convention4j</groupId>
 			<artifactId>convention4j-spring-boot-starter-test</artifactId>
 			<scope>test</scope>

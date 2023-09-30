@@ -106,13 +106,16 @@ public class CacheReadMethodMeta extends CacheMethodMeta {
     public List<Map<String, Object>> buildKeyMapByData(Object data) {
         List<Object[]> kvsList = new ArrayList<>();
         for (MethodKeyMeta keyMeta : cacheKeyMetas) {
+            // 获取与当前keyMeta对应的data中的keyMeta
             KeyMeta dataKeyMeta = toDataKeyMetaMap.get(keyMeta.getName());
+            // 从data中获取value
             Object value = dataKeyMeta.getValue(data);
+            // 构建keyName到dataValue的映射
             Object[] kvs = new Object[] { keyMeta.getName(), value, keyMeta.isSelective() };
             kvsList.add(kvs);
         }
         List<Map<String, Object>> keyMapList = new ArrayList<>();
-        collectKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
+        flatKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
         return keyMapList;
     }
 
@@ -124,26 +127,29 @@ public class CacheReadMethodMeta extends CacheMethodMeta {
             kvsList.add(kvs);
         }
         List<Map<String, Object>> keyMapList = new ArrayList<>();
-        collectKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
+        flatKeyMapList(kvsList, 0, new HashMap<>(), keyMapList);
         return keyMapList;
     }
 
-    private void collectKeyMapList(List<Object[]> kvsList, int idx,
-                                   Map<String, Object> curLinkMap, List<Map<String, Object>> collector) {
+    // Object[] { keyName, value, selective }
+    private void flatKeyMapList(List<Object[]> kvsList, int idx,
+                                Map<String, Object> curLinkMap, List<Map<String, Object>> collector) {
         if (idx == kvsList.size()) {
             collector.add(curLinkMap);
             return;
         }
         Object[] kvs = kvsList.get(idx);
+        // kvs[2]为selective选项
         if ((boolean) kvs[2]) {
+            // 如果当前kvs是selective需要同时考虑到当前value为null和非null的情况
             curLinkMap.put((String) kvs[0], kvs[1]);
             Map<String, Object> newLinkMap = new HashMap<>(curLinkMap);
             newLinkMap.put((String) kvs[0], null);
-            collectKeyMapList(kvsList, idx + 1, curLinkMap, collector);
-            collectKeyMapList(kvsList, idx + 1, newLinkMap, collector);
+            flatKeyMapList(kvsList, idx + 1, curLinkMap, collector);
+            flatKeyMapList(kvsList, idx + 1, newLinkMap, collector);
         } else {
             curLinkMap.put((String) kvs[0], kvs[1]);
-            collectKeyMapList(kvsList, idx + 1, curLinkMap, collector);
+            flatKeyMapList(kvsList, idx + 1, curLinkMap, collector);
         }
     }
 

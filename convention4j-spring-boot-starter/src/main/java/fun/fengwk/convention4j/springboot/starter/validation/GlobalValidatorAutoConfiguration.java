@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.starter.validator;
+package fun.fengwk.convention4j.springboot.starter.validation;
 
 import fun.fengwk.autovalidation.validator.GlobalValidator;
 import org.slf4j.Logger;

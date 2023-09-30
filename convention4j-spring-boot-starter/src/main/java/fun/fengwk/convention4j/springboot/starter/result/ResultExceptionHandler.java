@@ -1,6 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.result;
 
 import fun.fengwk.convention4j.api.result.Result;
+import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,10 +14,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author fengwk
  */
+@Slf4j
 @Aspect
 public class ResultExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(ResultExceptionHandler.class);
 
     // 拦截所有返回Result及其子类的方法
     @Around("@within(fun.fengwk.convention4j.springboot.starter.result.AutoResultExceptionHandler) " +
@@ -24,7 +25,7 @@ public class ResultExceptionHandler {
         try {
             return (Result<?>) joinPoint.proceed();
         } catch (Throwable err) {
-            return ResultExceptionHandlerUtils.handleError(err);
+            return ResultExceptionHandlerUtils.handleError(err, log);
         }
     }
 
