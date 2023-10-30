@@ -61,19 +61,24 @@ public class ConventionCheckerValidator implements ConstraintValidator<Checker, 
         try {
             checker.check(value);
             return true;
-        } catch (Throwable ex) {
-            Result<?> result = ResultExceptionHandlerUtils.handleError(ex, null);
-            ErrorCode errorCode = result.getErrorCode();
-            Errors errors = result.getErrors();
-            if (errors != null) {
-                for (Map.Entry<String, Object> entry : errors.withoutCode().entrySet()) {
-                    ValidationUtils.addMessageParameter(context, entry.getKey(), entry.getValue());
-                }
-            }
+        } catch (ValidationException ex) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(errorCode.getMessage()).addConstraintViolation();
-            return false;
+            Map<String, Object> messageParameters = NullSafe.of(ex.getMessageParameters());
+            List<String> propertyNodes = NullSafe.of(ex.getPropertyNodes());
+            for (Map.Entry<String, Object> entry : messageParameters.entrySet()) {
+                ValidationUtils.addMessageParameter(context, entry.getKey(), entry.getValue());
+            }
+            ConstraintValidatorContext.ConstraintViolationBuilder builder = context.buildConstraintViolationWithTemplate(ex.getMessage());
+            for (String propertyNode : propertyNodes) {
+                builder.addPropertyNode(propertyNode).addBeanNode();
+            }
+            builder.addConstraintViolation();
+        } catch (Throwable ex) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate(ex.getMessage())
+                .addConstraintViolation();
         }
+        return false;
     }
 
     private <T> ConventionChecker<T> getChecker(Class<T> valueClass) {

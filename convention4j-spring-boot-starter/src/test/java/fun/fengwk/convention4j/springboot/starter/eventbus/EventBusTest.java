@@ -18,8 +18,8 @@ public class EventBusTest {
     @Autowired
     private EventBus eventBus;
 
-//    @Autowired
-//    private MyListener myListener;
+    @Autowired
+    private MyListener myListener;
 
     @Test
     public void test() {
@@ -29,8 +29,8 @@ public class EventBusTest {
         myEvent.setName("fengwk");
         eventBus.post(myEvent);
 
-//        assert myListener.getIntegerEvent().equals(123);
-//        assert myListener.getMyEvent().equals(myEvent);
+        assert myListener.getIntegerEvent().equals(123);
+        assert myListener.getMyEvent().equals(myEvent);
     }
 
 }

@@ -2,12 +2,13 @@ package fun.fengwk.convention4j.springboot.starter.eventbus;
 
 import com.google.common.eventbus.Subscribe;
 import lombok.Data;
+import org.springframework.stereotype.Component;
 
 /**
  * @author fengwk
  */
 @Data
-//@Component
+@Component
 public class MyListener implements EventListener {
 
     private Integer integerEvent;

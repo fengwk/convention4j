@@ -1,15 +1,15 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
+import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
-import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheSupportMetrics;
+import fun.fengwk.convention4j.springboot.starter.cache.annotation.meta.CacheAnnotationMetaReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -29,20 +29,20 @@ public class UserMapperCacheSupportTest {
     @Autowired
     private TransactionTest transactionTest;
     @Autowired
-    private CacheSupportMetrics cacheSupportMetrics;
+    private CacheManagerMetrics cacheManagerMetrics;
 //    @Autowired
 //    private CacheAdapterMetrics cacheAdapterMetrics;
 
     @Test
     public void test() throws NoSuchMethodException {
-        Method methodInsert = UserMapper.class.getMethod("insert", UserPO.class);
-        Method methodInertAll = UserMapper.class.getMethod("insertAll", Collection.class);
-        Method methodUpdateByIdSelective = UserMapper.class.getMethod("updateByIdSelective", UserPO.class);
-        Method methodFindById = UserMapper.class.getMethod("findById", Long.class);
-        Method methodFindByAgeOrderByIdDesc = UserMapper.class.getMethod("findByAgeOrderByIdDesc", int.class);
-        Method methodFindByIdIn = UserMapper.class.getMethod("findByIdIn", Collection.class);
-        Method methodDeleteById = UserMapper.class.getMethod("deleteById", Long.class);
-        Method methodDeleteByIdIn = UserMapper.class.getMethod("deleteByIdIn", Collection.class);
+        String methodInsert = UserMapper.class.getMethod("insert", UserPO.class).toString();
+        String methodInertAll = UserMapper.class.getMethod("insertAll", Collection.class).toString();
+        String methodUpdateByIdSelective = UserMapper.class.getMethod("updateByIdSelective", UserPO.class).toString();
+        String methodFindById = UserMapper.class.getMethod("findById", Long.class).toString();
+        String methodFindByAgeOrderByIdDesc = UserMapper.class.getMethod("findByAgeOrderByIdDesc", int.class).toString();
+        String methodFindByIdIn = UserMapper.class.getMethod("findByIdIn", Collection.class).toString();
+        String methodDeleteById = UserMapper.class.getMethod("deleteById", Long.class).toString();
+        String methodDeleteByIdIn = UserMapper.class.getMethod("deleteByIdIn", Collection.class).toString();
 
         UserPO userPO1 = new UserPO();
         userPO1.setUsername("username");
@@ -53,34 +53,25 @@ public class UserMapperCacheSupportTest {
         userPO1.setCity("hangzhou");
         userPO1.setId(idGen.next(getClass()));
         assert userMapper.insert(userPO1) > 0;
-        assert cacheSupportMetrics.getCallCount(methodInsert) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodInsert) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodInsert) == 0L;
 
         UserPO found = userMapper.findById(userPO1.getId());
-        assert cacheSupportMetrics.getCallCount(methodInsert) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodInsert) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodInsert) == 0L;
+        assert cacheManagerMetrics.getReadCount(methodFindById) == 1L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindById) == 0L;
         assert Objects.equals(userPO1, found);
 
         UserPO updatePO = new UserPO();
         updatePO.setId(userPO1.getId());
         updatePO.setPassword("password_update");
         assert userMapper.updateByIdSelective(updatePO) > 0;
-        assert cacheSupportMetrics.getCallCount(methodUpdateByIdSelective) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodUpdateByIdSelective) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodUpdateByIdSelective) == 1L;
 
         found = userMapper.findById(userPO1.getId());
-        assert cacheSupportMetrics.getCallCount(methodFindById) == 2L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindById) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindById) == 0L;
+        assert cacheManagerMetrics.getReadCount(methodFindById) == 2L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindById) == 0L;
         assert Objects.equals(updatePO.getPassword(), found.getPassword());
 
         userMapper.findById(userPO1.getId());
-        assert cacheSupportMetrics.getCallCount(methodFindById) == 3L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindById) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindById) == 1L;
+        assert cacheManagerMetrics.getReadCount(methodFindById) == 3L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindById) == 1L;
 
         UserPO userPO2 = new UserPO();
         userPO2.setUsername("username_2");
@@ -91,9 +82,6 @@ public class UserMapperCacheSupportTest {
         userPO2.setCity("hangzhou");
         userPO2.setId(idGen.next(getClass()));
         assert userMapper.insert(userPO2) > 0;
-        assert cacheSupportMetrics.getCallCount(methodInsert) == 2L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodInsert) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodInsert) == 0L;
 
         UserPO userPO3 = new UserPO();
         userPO3.setUsername("username_3");
@@ -113,52 +101,36 @@ public class UserMapperCacheSupportTest {
         userPO4.setId(idGen.next(getClass()));
         List<UserPO> user34List = Arrays.asList(userPO3, userPO4);
         assert userMapper.insertAll(user34List) > 0;
-        assert cacheSupportMetrics.getCallCount(methodInertAll) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodInertAll) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodInertAll) == 0L;
 
         userMapper.findById(userPO1.getId());
-        assert cacheSupportMetrics.getCallCount(methodFindById) == 4L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindById) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindById) == 2L;
+        assert cacheManagerMetrics.getReadCount(methodFindById) == 4L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindById) == 2L;
 
         assert userMapper.findByAgeOrderByIdDesc(18).size() == 2;
-        assert cacheSupportMetrics.getCallCount(methodFindByAgeOrderByIdDesc) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByAgeOrderByIdDesc) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByAgeOrderByIdDesc) == 0L;
+        assert cacheManagerMetrics.getReadCount(methodFindByAgeOrderByIdDesc) == 1L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByAgeOrderByIdDesc) == 0L;
         assert userMapper.findByAgeOrderByIdDesc(18).size() == 2;
-        assert cacheSupportMetrics.getCallCount(methodFindByAgeOrderByIdDesc) == 2L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByAgeOrderByIdDesc) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByAgeOrderByIdDesc) == 1L;
+        assert cacheManagerMetrics.getReadCount(methodFindByAgeOrderByIdDesc) == 2L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByAgeOrderByIdDesc) == 1L;
 
         assert userMapper.findByIdIn(Arrays.asList(userPO1.getId(), userPO2.getId(), userPO3.getId(), userPO4.getId())).size() == 4;
-        assert cacheSupportMetrics.getCallCount(methodFindByIdIn) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByIdIn) == 1L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByIdIn) == 0L;
+        assert cacheManagerMetrics.getReadCount(methodFindByIdIn) == 1L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByIdIn) == 0L;
         assert userMapper.findByIdIn(Arrays.asList(userPO1.getId(), userPO2.getId(), userPO3.getId(), userPO4.getId())).size() == 4;
-        assert cacheSupportMetrics.getCallCount(methodFindByIdIn) == 2L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByIdIn) == 1L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByIdIn) == 1L;
+        assert cacheManagerMetrics.getReadCount(methodFindByIdIn) == 2L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByIdIn) == 1L;
 
         assert userMapper.deleteById(userPO1.getId()) > 0;
-        assert cacheSupportMetrics.getCallCount(methodDeleteById) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodDeleteById) == 0L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodDeleteById) == 1L;
 
         assert userMapper.findByIdIn(Arrays.asList(userPO1.getId(), userPO2.getId(), userPO3.getId(), userPO4.getId())).size() == 3;
-        assert cacheSupportMetrics.getCallCount(methodFindByIdIn) == 3L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByIdIn) == 2L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByIdIn) == 1L;
+        assert cacheManagerMetrics.getReadCount(methodFindByIdIn) == 3L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByIdIn) == 1L;
 
         assert userMapper.deleteByIdIn(Arrays.asList(userPO1.getId(), userPO2.getId(), userPO4.getId())) > 0;
-        assert cacheSupportMetrics.getCallCount(methodDeleteByIdIn) == 1L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodDeleteByIdIn) == 1L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodDeleteByIdIn) == 0L;
 
         assert userMapper.findByIdIn(Arrays.asList(userPO1.getId(), userPO2.getId(), userPO3.getId(), userPO4.getId())).size() == 1;
-        assert cacheSupportMetrics.getCallCount(methodFindByIdIn) == 4L;
-        assert cacheSupportMetrics.getPartialCacheHitCount(methodFindByIdIn) == 3L;
-        assert cacheSupportMetrics.getFullCacheHitCount(methodFindByIdIn) == 1L;
+        assert cacheManagerMetrics.getReadCount(methodFindByIdIn) == 4L;
+        assert cacheManagerMetrics.getReadHitCount(methodFindByIdIn) == 1L;
 
         transactionTest.test();
 

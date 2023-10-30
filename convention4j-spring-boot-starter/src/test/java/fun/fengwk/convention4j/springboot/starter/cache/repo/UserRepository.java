@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.springboot.starter.cache.repo;
 
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.*;
 import fun.fengwk.convention4j.springboot.starter.cache.mapper.UserPO;
-import fun.fengwk.convention4j.springboot.starter.cache.support.GsonLongIdCacheSupport;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.stereotype.Repository;
@@ -12,79 +11,78 @@ import java.util.*;
 /**
  * @author fengwk
  */
-@CacheConfig(version = "v1")
+@CacheSupport(objClass = UserPO.class)
 @AllArgsConstructor
 @Repository
-public class UserRepository implements GsonLongIdCacheSupport<UserPO> {
+public class UserRepository {
 
-    private final RepoUserMapper userMapper;
+    private final RepoUserMapper repoUserMapper;
 
-    @CacheWriteMethod
-    public boolean add(UserPO userDO) {
-        return userMapper.insert(userDO) > 0;
+    @WriteMethod
+    public boolean add(@EvictObject UserPO userDO) {
+        return repoUserMapper.insert(userDO) > 0;
     }
 
-    @CacheWriteMethod
-    public boolean addAll(Collection<UserPO> userDOs) {
-        return userMapper.insertAll(userDOs) == userDOs.size();
+    @WriteMethod
+    public boolean addAll(@EvictObject Collection<UserPO> userDOs) {
+        return repoUserMapper.insertAll(userDOs) == userDOs.size();
     }
 
-    @CacheWriteMethod
-    public boolean updateByIdSelective(UserPO userDO) {
-        return userMapper.updateByIdSelective(userDO) > 0;
+    @WriteMethod(objQueryMethod = "doListByIds")
+    public boolean updateByIdSelective(@EvictIndex("id") UserPO userDO) {
+        return repoUserMapper.updateByIdSelective(userDO) > 0;
     }
 
-    @CacheWriteMethod
-    public boolean deleteById(@IdKey("id") long id) {
-        return userMapper.deleteById(id) > 0;
+    @WriteMethod(objQueryMethod = "doListByIds")
+    public boolean deleteById(@EvictIndex long id) {
+        return repoUserMapper.deleteById(id) > 0;
     }
 
-    @CacheWriteMethod
-    public boolean deleteByIds(@IdKey("id") Collection<Long> ids) {
-        return userMapper.deleteByIdIn(ids) > 0;
+    @WriteMethod(objQueryMethod = "doListByIds")
+    public boolean deleteByIds(@EvictIndex Collection<Long> ids) {
+        return repoUserMapper.deleteByIdIn(ids) > 0;
     }
 
-    @CacheReadMethod(useIdQuery = true)
-    public UserPO getById(@IdKey("id") long id) {
-        return userMapper.findById(id);
+    @ReadMethod
+    public UserPO getById(@ListenKey("id") long id) {
+        return repoUserMapper.findById(id);
     }
 
-    @CacheReadMethod(useIdQuery = true)
-    public List<UserPO> listByIds(@IdKey("id") Collection<Long> ids) {
-        return userMapper.findByIdIn(ids);
+    @ReadMethod
+    public List<UserPO> listByIds(@ListenKey("id") Collection<Long> ids) {
+        return repoUserMapper.findByIdIn(ids);
     }
 
-    @CacheReadMethod
-    public List<UserPO> listByAgeOrderByIdDesc(@Key("age") int age) {
-        return userMapper.findByAgeOrderByIdDesc(age);
+    @ReadMethod
+    public List<UserPO> listByAgeOrderByIdDesc(@ListenKey("age") int age) {
+        return repoUserMapper.findByAgeOrderByIdDesc(age);
     }
 
-    @CacheReadMethod
-    public Set<UserPO> listByAgeOrderByIdDescSet(@Key("age") int age) {
-        return new HashSet<>(userMapper.findByAgeOrderByIdDesc(age));
+    @ReadMethod
+    public Set<UserPO> listByAgeOrderByIdDescSet(@ListenKey("age") int age) {
+        return new HashSet<>(repoUserMapper.findByAgeOrderByIdDesc(age));
     }
 
-    @CacheReadMethod
-    public LinkedList<UserPO> listByAgeOrderByIdDescLinkedList(@Key("age") int age) {
-        return new LinkedList<>(userMapper.findByAgeOrderByIdDesc(age));
+    @ReadMethod
+    public LinkedList<UserPO> listByAgeOrderByIdDescLinkedList(@ListenKey("age") int age) {
+        return new LinkedList<>(repoUserMapper.findByAgeOrderByIdDesc(age));
     }
 
-    @CacheReadMethod
+    @ReadMethod
     public List<UserPO> listByAgeOrderByIdDesc(UserNameAge userNameAge) {
-        return userMapper.findByAgeOrderByIdDesc(userNameAge.getAge());
+        return repoUserMapper.findByAgeOrderByIdDesc(userNameAge.getAge());
     }
 
-    @Override
     public List<UserPO> doListByIds(Collection<Long> ids) {
-        return userMapper.findByIdIn(ids);
+        return repoUserMapper.findByIdIn(ids);
     }
 
     @Data
     public static class UserNameAge {
-        @Key
+
         private int age;
-        @Key
         private String username;
+
     }
 
 }

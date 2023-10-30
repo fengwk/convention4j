@@ -1,77 +1,78 @@
 package fun.fengwk.convention4j.springboot.starter.cache;
 
-import fun.fengwk.convention4j.springboot.starter.cache.adapter.CacheAdapter;
-import fun.fengwk.convention4j.springboot.starter.cache.adapter.StringRedisTemplateCacheAdapter;
-import fun.fengwk.convention4j.springboot.starter.cache.adapter.TransactionCacheAdapter;
-import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheAdapterMetrics;
-import fun.fengwk.convention4j.springboot.starter.cache.metrics.CacheSupportMetrics;
-import fun.fengwk.convention4j.springboot.starter.cache.metrics.LogCacheSupportMetrics;
+import fun.fengwk.convention4j.common.cache.facade.CacheFacade;
+import fun.fengwk.convention4j.common.cache.facade.StringRedisTemplateCacheFacade;
+import fun.fengwk.convention4j.common.cache.facade.TransactionCacheFacade;
+import fun.fengwk.convention4j.common.cache.metrics.CacheFacadeMetrics;
+import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
+import fun.fengwk.convention4j.common.cache.metrics.LogCacheManagerMetrics;
+import fun.fengwk.convention4j.springboot.starter.cache.registry.DefaultCacheManagerRegistry;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author fengwk
  */
+@EnableTransactionManagement
 @EnableAspectJAutoProxy
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 @Configuration
 public class CacheSupportAutoConfiguration {
 
     @ConditionalOnBean(StringRedisTemplate.class)
+    @ConditionalOnMissingBean(CacheFacade.class)
     @Bean
-    public CacheAdapter cacheAdapter(StringRedisTemplate redisTemplate) {
-        return new StringRedisTemplateCacheAdapter(redisTemplate);
+    public CacheFacade cacheFacade(StringRedisTemplate redisTemplate) {
+        return new StringRedisTemplateCacheFacade(redisTemplate);
     }
 
-    @ConditionalOnBean(CacheAdapter.class)
+    @ConditionalOnBean(CacheFacade.class)
     @Bean
-    public CacheAdapterMetrics cacheAdapterMetrics(CacheAdapter cacheAdapter) {
-        return new CacheAdapterMetrics(cacheAdapter);
+    public CacheFacadeMetrics cacheFacadeMetrics(CacheFacade cacheFacade) {
+        return new CacheFacadeMetrics(cacheFacade);
     }
 
-    @ConditionalOnBean(CacheAdapterMetrics.class)
+    @ConditionalOnBean(CacheFacadeMetrics.class)
     @Bean
-    public TransactionCacheAdapter transactionCacheAdapter(CacheAdapterMetrics cacheAdapterMetrics) {
-        return new TransactionCacheAdapter(cacheAdapterMetrics);
+    public TransactionCacheFacade transactionCacheFacade(CacheFacadeMetrics cacheFacadeMetrics) {
+        return new TransactionCacheFacade(cacheFacadeMetrics);
     }
 
-    @ConditionalOnBean(CacheAdapter.class)
+    @ConditionalOnBean(CacheFacade.class)
+    @ConditionalOnMissingBean(CacheManagerMetrics.class)
     @Bean
-    public CacheSupportMetrics cacheSupportMetrics() {
-        return new LogCacheSupportMetrics();
+    public CacheManagerMetrics cacheManagerMetrics() {
+        return new LogCacheManagerMetrics();
     }
 
-    @ConditionalOnBean(CacheAdapter.class)
+    @ConditionalOnBean({ CacheFacade.class, CacheManagerMetrics.class })
     @Bean
-    public CacheSupportMethodHandler cacheSupportMethodHandler(
-        @Qualifier("transactionCacheAdapter") CacheAdapter cacheAdapter, CacheSupportMetrics cacheSupportMetrics) {
-        return new CacheSupportMethodHandler(cacheAdapter, cacheSupportMetrics);
+    public DefaultCacheManagerRegistry defaultCacheManagerRegistry(BeanFactory beanFactory,
+        @Qualifier("transactionCacheFacade") CacheFacade cacheFacade, CacheManagerMetrics cacheManagerMetrics) {
+        return new DefaultCacheManagerRegistry(beanFactory, cacheFacade, cacheManagerMetrics);
     }
 
-    @ConditionalOnBean(CacheSupportMethodHandler.class)
-    @Bean
-    public CacheSupportMetaManager cacheSupportMetaManager() {
-        return new CacheSupportMetaManager();
-    }
-
-    @ConditionalOnBean({ CacheSupportMethodHandler.class, CacheSupportMetaManager.class })
+    @ConditionalOnBean(DefaultCacheManagerRegistry.class)
     @Bean
     public CacheSupportMethodInterceptor cacheSupportMethodInterceptor(
-            CacheSupportMethodHandler cacheManager, CacheSupportMetaManager metaInfoManager) {
-        return new CacheSupportMethodInterceptor(cacheManager, metaInfoManager);
+        DefaultCacheManagerRegistry defaultCacheManagerRegistry) {
+        return new CacheSupportMethodInterceptor(defaultCacheManagerRegistry);
     }
 
     @ConditionalOnBean(CacheSupportMethodInterceptor.class)
     @Bean
     public DefaultPointcutAdvisor cacheSupportPointcutAdvisor(
-            CacheSupportMethodInterceptor cacheSupportMethodInterceptor){
+        CacheSupportMethodInterceptor cacheSupportMethodInterceptor){
         DefaultPointcutAdvisor cacheSupportPointcutAdvisor = new DefaultPointcutAdvisor();
         cacheSupportPointcutAdvisor.setPointcut(new CacheSupportPointcut());
         cacheSupportPointcutAdvisor.setAdvice(cacheSupportMethodInterceptor);

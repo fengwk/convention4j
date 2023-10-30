@@ -2,7 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.cache.repo;
 
 import fun.fengwk.automapper.annotation.AutoMapper;
 import fun.fengwk.convention4j.springboot.starter.cache.mapper.UserPO;
-import fun.fengwk.convention4j.springboot.starter.mapper.BaseMapper;
+import fun.fengwk.convention4j.springboot.starter.mybatis.BaseMapper;
 
 import java.util.Collection;
 import java.util.List;

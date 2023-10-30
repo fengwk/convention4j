@@ -3,7 +3,7 @@
 #set( $symbol_escape = '\' )
 package ${package}.repo.mysql;
 
-import fun.fengwk.convention4j.springboot.starter.mapper.BaseMapperScan;
+import fun.fengwk.convention4j.springboot.starter.mybatis.BaseMapperScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 

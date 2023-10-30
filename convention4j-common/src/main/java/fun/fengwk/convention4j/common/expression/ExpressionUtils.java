@@ -12,8 +12,6 @@ import java.util.Map;
 public class ExpressionUtils {
 
     private static final String NULL_VALUE = "";
-    private static final ThreadLocal<OgnlExpressionParser<Object>> EXPR_TL
-        = ThreadLocal.withInitial(() -> new OgnlExpressionParser<>(NULL_VALUE));
 
     private ExpressionUtils() {}
 
@@ -31,7 +29,8 @@ public class ExpressionUtils {
         if (ctx == null) {
             ctx = Collections.emptyMap();
         }
-        return EXPR_TL.get().parse(expr, ctx);
+        OgnlExpressionParser<Object> parser = new OgnlExpressionParser<>(NULL_VALUE);
+        return parser.parse(expr, ctx);
     }
 
     /**

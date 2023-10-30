@@ -67,7 +67,56 @@ public class NullSafe {
      * @return
      */
     public static <S, T> T map(S obj, Function<S, T> mapper, T defaultObj) {
-        return obj == null ? defaultObj : mapper.apply(obj);
+        if (obj == null) {
+            return defaultObj;
+        }
+        T target = mapper.apply(obj);
+        if (target == null) {
+            return defaultObj;
+        }
+        return target;
+    }
+
+    /**
+     * 将非空的obj转换为List。
+     *
+     * @param objs
+     * @return
+     * @param <T>
+     */
+    @SafeVarargs
+    public static <T> List<T> wrap2List(T...objs) {
+        if (objs == null || objs.length == 0) {
+            return Collections.emptyList();
+        }
+        List<T> list = new ArrayList<>();
+        for (T obj : objs) {
+            if (obj != null) {
+                list.add(obj);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 将非空的obj转换为Set
+     *
+     * @param objs
+     * @return
+     * @param <T>
+     */
+    @SafeVarargs
+    public static <T> Set<T> wrap2Set(T...objs) {
+        if (objs == null || objs.length == 0) {
+            return Collections.emptySet();
+        }
+        Set<T> set = new HashSet<>();
+        for (T obj : objs) {
+            if (obj != null) {
+                set.add(obj);
+            }
+        }
+        return set;
     }
 
     /**

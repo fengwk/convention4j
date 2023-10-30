@@ -14,10 +14,10 @@ public class StudentNameChecker implements ConventionChecker<String> {
     @Override
     public void check(String name) {
         if (name.length() < 10) {
-            Map<String, Object> errorContext = new HashMap<>();
-            errorContext.put("min", 10);
-            errorContext.put("max", 100);
-            throw new ValidationException(ValidationMessageTemplate.SIZE, errorContext);
+            Map<String, Object> messageParameters = new HashMap<>();
+            messageParameters.put("min", 10);
+            messageParameters.put("max", 100);
+            throw new ValidationException("ff" + ValidationMessageTemplate.SIZE, messageParameters, "qwe");
         }
     }
 

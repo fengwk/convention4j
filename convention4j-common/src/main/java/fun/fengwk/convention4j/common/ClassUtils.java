@@ -100,18 +100,15 @@ public class ClassUtils {
     /**
      * 如果是基本类型则进行装包。
      * 
-     * @param type
+     * @param clazz
      * @return
      */
-    public static Type boxedIfPrimitiveType(Type type) {
-        if (type instanceof Class) {
-            Class<?> packClass = BOXED_MAP.get(type);
-            if (packClass != null) {
-                return packClass;
-            }
+    public static Class<?> boxedIfPrimitiveType(Class<?> clazz) {
+        Class<?> packClass = BOXED_MAP.get(clazz);
+        if (packClass != null) {
+            return packClass;
         }
-        
-        return type;
+        return clazz;
     }
     
 }

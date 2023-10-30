@@ -1,10 +1,10 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
 import fun.fengwk.automapper.annotation.AutoMapper;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheReadMethod;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheWriteMethod;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.IdKey;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.Key;
+import fun.fengwk.automapper.annotation.Selective;
+import fun.fengwk.convention4j.springboot.starter.cache.annotation.EvictIndex;
+import fun.fengwk.convention4j.springboot.starter.cache.annotation.EvictObject;
+import fun.fengwk.convention4j.springboot.starter.cache.annotation.ListenKey;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
@@ -14,40 +14,40 @@ import java.util.List;
  * @author fengwk
  */
 @AutoMapper
-public interface UserMapper extends LongIdCacheMapper<UserPO> {
+public interface UserMapper extends CacheableMapper<UserPO, Long> {
 
-    @CacheWriteMethod
-    int insert(UserPO record);
+    @MapperWriteMethod
+    int insert(@EvictObject UserPO record);
 
-    @CacheWriteMethod
-    int insertAll(Collection<UserPO> records);
+    @MapperWriteMethod
+    int insertAll(@EvictObject Collection<UserPO> records);
 
-    @CacheWriteMethod
-    int deleteById(@IdKey("id") Long id);
+    @MapperWriteMethod
+    int deleteById(@EvictIndex Long id);
 
-    @CacheWriteMethod
-    int deleteByIdIn(@IdKey("id") Collection<Long> id);
+    @MapperWriteMethod
+    int deleteByIdIn(@EvictIndex Collection<Long> id);
 
-    @CacheWriteMethod
-    int updateByIdSelective(UserPO record);
+    @MapperWriteMethod
+    int updateByIdSelective(@EvictIndex("id") UserPO record);
 
-    @CacheReadMethod
-    int countById(@IdKey("id") Long id);
+    @MapperReadMethod
+    int countById(@ListenKey("id") Long id);
 
-    @CacheReadMethod
-    int countByAge(@IdKey("age") Integer age);
+    @MapperReadMethod
+    int countByAge(@ListenKey("age") Integer age);
 
-    @CacheReadMethod(useIdQuery = true)
-    UserPO findById(@IdKey("id") Long id);
+    @MapperReadMethod
+    UserPO findById(@ListenKey("id") Long id);
 
-    @CacheReadMethod(useIdQuery = true)
-    List<UserPO> findByIdIn(@IdKey("id") Collection<Long> ids);
+    @MapperReadMethod
+    List<UserPO> findByIdIn(@ListenKey("id") Collection<Long> ids);
 
-    @CacheReadMethod
-    List<UserPO> findByAgeOrderByIdDesc(@Key("age") int age);
+    @MapperReadMethod
+    List<UserPO> findByAgeOrderByIdDesc(@ListenKey("age") int age);
 
-    @CacheReadMethod
-    List<UserPO> findByAgeAndCity(@Key(value = "age", selective = true) @Param("age") int age,
-                                  @Key(value = "city") @Param("city") String city);
+    @MapperReadMethod
+    List<UserPO> findByAgeAndCity(@ListenKey(value = "age", required = false)  @Param("age") @Selective Integer age,
+                                  @ListenKey(value = "city", required = false)  @Param("city") @Selective String city);
 
 }

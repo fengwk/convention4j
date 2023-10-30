@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.cache;
 
-import fun.fengwk.convention4j.springboot.starter.cache.meta.CacheReadMethodMeta;
-import fun.fengwk.convention4j.springboot.starter.cache.meta.CacheSupportMeta;
-import fun.fengwk.convention4j.springboot.starter.cache.meta.CacheWriteMethodMeta;
+import fun.fengwk.convention4j.common.cache.exception.CacheExecuteException;
+import fun.fengwk.convention4j.springboot.starter.cache.registry.DefaultCacheManager;
+import fun.fengwk.convention4j.springboot.starter.cache.registry.DefaultCacheManagerRegistry;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
@@ -13,38 +13,33 @@ import java.lang.reflect.Method;
  */
 public class CacheSupportMethodInterceptor implements MethodInterceptor {
 
-    private final CacheSupportMethodHandler cacheSupportMethodHandler;
-    private final CacheSupportMetaManager supportMetaManager;
+    private final DefaultCacheManagerRegistry defaultCacheManagerRegistry;
 
-    public CacheSupportMethodInterceptor(
-            CacheSupportMethodHandler cacheSupportMethodHandler, CacheSupportMetaManager supportMetaManager) {
-        this.cacheSupportMethodHandler = cacheSupportMethodHandler;
-        this.supportMetaManager = supportMetaManager;
+    public CacheSupportMethodInterceptor(DefaultCacheManagerRegistry indexCacheManagerRegistry) {
+        this.defaultCacheManagerRegistry = indexCacheManagerRegistry;
     }
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
-        // 获取仓库元信息
-        CacheSupportMeta supportMeta = supportMetaManager.getSupportMeta(invocation.getThis());
-        // 如果没有仓库元信息，则不走缓存
-        if (supportMeta == null) {
-            return invocation.proceed();
-        }
-
-        // 决定走缓存还是不走缓存
-        Method method = invocation.getMethod();
-        CacheWriteMethodMeta writeMethodMeta = supportMeta.getWriteMethodMeta(method);
-        if (writeMethodMeta != null) {
-            // 清理缓存
-            return cacheSupportMethodHandler.handleCacheWriteMethod(invocation, supportMeta, writeMethodMeta);
-        } else {
-            CacheReadMethodMeta readMethodMeta = supportMeta.getReadMethodMeta(method);
-            if (readMethodMeta != null) {
-                // 读取缓存
-                return cacheSupportMethodHandler.handleCacheReadMethod(invocation, supportMeta, readMethodMeta);
-            } else {
-                return invocation.proceed();
+        DefaultCacheManager<?> cacheManager = defaultCacheManagerRegistry.getCacheManager(invocation.getThis());
+        if (cacheManager != null) {
+            Method method = invocation.getMethod();
+            if (cacheManager.isReadMethod(method)) {
+                return cacheManager.read(method, params -> doInvoke(invocation),
+                    invocation.getArguments(), method.getGenericReturnType());
+            } else if (cacheManager.isWriteMethod(method)) {
+                return cacheManager.write(method, params -> doInvoke(invocation),
+                    invocation.getArguments());
             }
+        }
+        return invocation.proceed();
+    }
+
+    private Object doInvoke(MethodInvocation invocation) {
+        try {
+            return invocation.proceed();
+        } catch (Throwable err) {
+            throw new CacheExecuteException(err);
         }
     }
 

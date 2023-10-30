@@ -1,8 +1,10 @@
 package fun.fengwk.convention4j.springboot.starter.eventbus;
 
 import com.google.common.eventbus.EventBus;
+import fun.fengwk.convention4j.common.NullSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +30,8 @@ public class EventBusAutoConfiguration {
     }
 
     @Bean
-    public EventBus eventBus(List<EventListener> eventListeners, DeadEventListener deadEventListener) {
+    public EventBus eventBus(ObjectProvider<List<EventListener>> eventListenersProvider, DeadEventListener deadEventListener) {
+        List<EventListener> eventListeners = NullSafe.of(eventListenersProvider.getIfAvailable());
         EventBus eventBus = new EventBus();
         // 集成监听器
         for (EventListener eventListener : eventListeners) {
