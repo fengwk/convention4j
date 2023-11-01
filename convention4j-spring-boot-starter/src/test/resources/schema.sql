@@ -31,3 +31,10 @@ create table if not exists repo_user
     index idx_repo_user_age(age),
     index idx_repo_user_city(city)
 ) engine=InnoDB default charset=utf8mb4 comment='repo用户表';
+
+create table if not exists student
+(
+    id              bigint unsigned not null auto_increment comment '主键',
+    info            text,
+    primary key (id)
+) engine=InnoDB default charset=utf8mb4 comment='student';

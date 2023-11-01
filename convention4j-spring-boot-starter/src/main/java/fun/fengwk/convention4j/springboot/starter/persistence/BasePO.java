@@ -10,6 +10,9 @@ import lombok.Data;
 @Data
 public abstract class BasePO<ID> {
 
+    /**
+     * 主键。
+     */
     private ID id;
 
 }
