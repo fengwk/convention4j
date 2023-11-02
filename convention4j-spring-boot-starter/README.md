@@ -21,7 +21,7 @@ Convention For Java Spring Boot Starter为SpringBoot项目提供支持，并且�
 <dependency>
     <groupId>fun.fengwk.auto-validation</groupId>
     <artifactId>auto-validation-processor</artifactId>
-    <version>0.0.13-SNAPSHOT</version>
+    <version>0.0.13</version>
 </dependency>
 ```
 
