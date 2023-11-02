@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Collections;
+
 /**
  * @author fengwk
  */
@@ -22,6 +24,7 @@ public class JsonHandlerTest {
         Student student = new Student();
         StudentInfo studentInfo = new StudentInfo();
         student.setInfo(studentInfo);
+        student.setInfos(Collections.singletonList(studentInfo));
         studentInfo.setName("fwk");
         studentInfo.setAge(12);
         assert studentMapper.insert(student) == 1;

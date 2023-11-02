@@ -36,5 +36,6 @@ create table if not exists student
 (
     id              bigint unsigned not null auto_increment comment '主键',
     info            text,
+    infos           text,
     primary key (id)
 ) engine=InnoDB default charset=utf8mb4 comment='student';

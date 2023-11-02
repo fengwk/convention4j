@@ -64,7 +64,7 @@
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
         <convention4j.version>0.0.13-SNAPSHOT</convention4j.version>
-        <auto-mapper.version>0.0.35</auto-mapper.version>
+        <auto-mapper.version>0.0.36</auto-mapper.version>
         <auto-validation.version>0.0.13</auto-validation.version>
         <spring-cloud-dependencies.version>Hoxton.SR12</spring-cloud-dependencies.version>
         <spring-boot-dependencies.version>2.3.12.RELEASE</spring-boot-dependencies.version>
