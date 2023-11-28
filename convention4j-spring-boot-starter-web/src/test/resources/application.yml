@@ -11,3 +11,12 @@ convention:
   error-code:
     i18n:
       locale: ${convention.i18n.locale}
+
+springdoc:
+
+  swagger-ui:
+    path: /swagger-ui.html
+
+  api-docs:
+    path: /api-docs
+    enabled: true

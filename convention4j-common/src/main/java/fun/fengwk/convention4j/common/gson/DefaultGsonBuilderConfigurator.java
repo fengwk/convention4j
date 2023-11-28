@@ -7,6 +7,7 @@ import fun.fengwk.convention4j.api.page.CursorPage;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.OrderedObject;
+import fun.fengwk.convention4j.common.result.Results;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,6 +38,7 @@ public class DefaultGsonBuilderConfigurator implements GsonBuilderConfigurator {
         builder.registerTypeAdapter(Result.class, new ResultTypeAdapter());
         builder.registerTypeAdapter(CursorPage.class, new CursorPageTypeAdapter());
         builder.registerTypeAdapter(Page.class, new PageTypeAdapter());
+        builder.registerTypeAdapter(Void.class, new VoidGsonTypeAdapter());
     }
 
 }

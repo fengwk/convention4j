@@ -6,12 +6,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 规约持久化对象。
+ * 规约数据层对象。
  *
  * @author fengwk
  */
 @Data
-public class ConventionPO<ID> extends BasePO<ID> {
+public abstract class ConventionDO<ID> extends BaseDO<ID> {
 
     /**
      * 创建时间。
@@ -28,10 +28,5 @@ public class ConventionPO<ID> extends BasePO<ID> {
      */
     @UpdateIncrement
     private Long version;
-
-    /**
-     * 逻辑删除位，0-未删除，1-已删除。
-     */
-    private Integer deleted;
 
 }

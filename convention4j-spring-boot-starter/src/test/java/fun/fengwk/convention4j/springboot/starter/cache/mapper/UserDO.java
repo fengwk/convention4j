@@ -1,13 +1,13 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
-import fun.fengwk.convention4j.springboot.starter.persistence.BasePO;
+import fun.fengwk.convention4j.springboot.starter.persistence.BaseDO;
 import lombok.Data;
 
 /**
  * @author fengwk
  */
 @Data
-public class UserPO extends BasePO<Long> {
+public class UserDO extends BaseDO<Long> {
 
     private String username;
     private String email;

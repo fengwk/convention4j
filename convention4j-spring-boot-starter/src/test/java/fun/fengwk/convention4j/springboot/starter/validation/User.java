@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common.validation.group;
+package fun.fengwk.convention4j.springboot.starter.validation;
 
 import fun.fengwk.convention4j.api.validation.group.FullUpdate;
 import jakarta.validation.constraints.NotEmpty;

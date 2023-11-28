@@ -4,7 +4,6 @@ import com.google.auto.service.AutoService;
 import fun.fengwk.convention4j.common.validation.ConventionChecker;
 import fun.fengwk.convention4j.common.validation.ConventionCheckerProvider;
 import fun.fengwk.convention4j.common.validation.VersionCheckerList;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
 

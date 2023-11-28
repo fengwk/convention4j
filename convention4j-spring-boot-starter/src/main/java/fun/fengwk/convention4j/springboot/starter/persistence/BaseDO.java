@@ -4,12 +4,12 @@ import fun.fengwk.automapper.annotation.Id;
 import lombok.Data;
 
 /**
- * 基础的持久化对象。
+ * 基础的数据层对象。
  *
  * @author fengwk
  */
 @Data
-public abstract class BasePO<ID> {
+public abstract class BaseDO<ID> {
 
     /**
      * 主键。

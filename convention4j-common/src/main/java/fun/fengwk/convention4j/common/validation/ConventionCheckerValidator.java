@@ -1,18 +1,17 @@
 package fun.fengwk.convention4j.common.validation;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.result.Errors;
-import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.api.validation.Checker;
 import fun.fengwk.convention4j.common.ClassUtils;
 import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.OrderedObject;
-import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 /**

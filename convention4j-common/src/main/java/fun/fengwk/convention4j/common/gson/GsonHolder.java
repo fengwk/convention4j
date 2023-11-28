@@ -7,7 +7,7 @@ import com.google.gson.Gson;
  */
 public class GsonHolder {
 
-    private static volatile Gson instance = DefaultGsonBuilderFactory.builder().create();
+    private static volatile Gson instance = GsonBuilderFactory.builder().create();
     
     private GsonHolder() {}
 

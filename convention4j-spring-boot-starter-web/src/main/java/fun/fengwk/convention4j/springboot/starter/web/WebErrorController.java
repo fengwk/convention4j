@@ -3,6 +3,9 @@ package fun.fengwk.convention4j.springboot.starter.web;
 import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.error.ErrorController;
@@ -10,10 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * @see org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController
@@ -53,11 +52,6 @@ public class WebErrorController implements ErrorController {
         catch (Exception ex) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
-    }
-
-    @Override
-    public String getErrorPath() {
-        return null;
     }
 
 }

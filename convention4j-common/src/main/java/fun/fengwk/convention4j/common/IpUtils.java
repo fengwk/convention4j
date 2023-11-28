@@ -63,7 +63,12 @@ public class IpUtils {
         if (addr == null || addr.isEmpty()) {
             return false;
         }
-        return sun.net.util.IPAddressUtil.isIPv4LiteralAddress(addr);
+        try {
+            InetAddress inetAddress = Inet4Address.getByName(addr);
+            return inetAddress instanceof Inet4Address;
+        } catch (UnknownHostException ignore) {
+            return false;
+        }
     }
     
     /**
@@ -77,7 +82,12 @@ public class IpUtils {
         if (addr == null || addr.isEmpty()) {
             return false;
         }
-        return sun.net.util.IPAddressUtil.isIPv6LiteralAddress(addr);
+        try {
+            InetAddress inetAddress = Inet6Address.getByName(addr);
+            return inetAddress instanceof Inet6Address;
+        } catch (UnknownHostException ignore) {
+            return false;
+        }
     }
     
     /**

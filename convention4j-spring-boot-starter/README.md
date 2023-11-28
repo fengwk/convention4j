@@ -4,7 +4,7 @@ Convention For Java Spring Boot Starter为SpringBoot项目提供支持，并且�
 
 # 快速开始
 
-## Auto Validation
+## Auto Validation (@Deprecated)
 
 集成Spring校验器到`GlobalValidator`中，使用时要先引入依赖：
 

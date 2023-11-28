@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
-import fun.fengwk.convention4j.springboot.starter.persistence.BasePO;
+import fun.fengwk.convention4j.springboot.starter.persistence.BaseDO;
 import fun.fengwk.convention4j.springboot.starter.mybatis.BaseMapper;
 
 import java.util.Collection;
@@ -12,7 +12,7 @@ import java.util.List;
  * @author fengwk
  */
 @MapperCacheSupport
-public interface CacheableMapper<PO extends BasePO<ID>, ID> extends BaseMapper {
+public interface CacheableMapper<DO extends BaseDO<ID>, ID> extends BaseMapper {
 
     /**
      * 通过id集合批量查询。
@@ -20,6 +20,6 @@ public interface CacheableMapper<PO extends BasePO<ID>, ID> extends BaseMapper {
      * @param ids id集合。
      * @return PO集合。
      */
-    List<PO> findForUpdateByIdIn(Collection<ID> ids);
+    List<DO> findForUpdateByIdIn(Collection<ID> ids);
 
 }

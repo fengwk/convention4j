@@ -14,13 +14,13 @@ import java.util.List;
  * @author fengwk
  */
 @AutoMapper
-public interface UserMapper extends CacheableMapper<UserPO, Long> {
+public interface UserMapper extends CacheableMapper<UserDO, Long> {
 
     @MapperWriteMethod
-    int insert(@EvictObject UserPO record);
+    int insert(@EvictObject UserDO record);
 
     @MapperWriteMethod
-    int insertAll(@EvictObject Collection<UserPO> records);
+    int insertAll(@EvictObject Collection<UserDO> records);
 
     @MapperWriteMethod
     int deleteById(@EvictIndex Long id);
@@ -29,7 +29,7 @@ public interface UserMapper extends CacheableMapper<UserPO, Long> {
     int deleteByIdIn(@EvictIndex Collection<Long> id);
 
     @MapperWriteMethod
-    int updateByIdSelective(@EvictIndex("id") UserPO record);
+    int updateByIdSelective(@EvictIndex("id") UserDO record);
 
     @MapperReadMethod
     int countById(@ListenKey("id") Long id);
@@ -38,16 +38,16 @@ public interface UserMapper extends CacheableMapper<UserPO, Long> {
     int countByAge(@ListenKey("age") Integer age);
 
     @MapperReadMethod
-    UserPO findById(@ListenKey("id") Long id);
+    UserDO findById(@ListenKey("id") Long id);
 
     @MapperReadMethod
-    List<UserPO> findByIdIn(@ListenKey("id") Collection<Long> ids);
+    List<UserDO> findByIdIn(@ListenKey("id") Collection<Long> ids);
 
     @MapperReadMethod
-    List<UserPO> findByAgeOrderByIdDesc(@ListenKey("age") int age);
+    List<UserDO> findByAgeOrderByIdDesc(@ListenKey("age") int age);
 
     @MapperReadMethod
-    List<UserPO> findByAgeAndCity(@ListenKey(value = "age", required = false)  @Param("age") @Selective Integer age,
+    List<UserDO> findByAgeAndCity(@ListenKey(value = "age", required = false)  @Param("age") @Selective Integer age,
                                   @ListenKey(value = "city", required = false)  @Param("city") @Selective String city);
 
 }

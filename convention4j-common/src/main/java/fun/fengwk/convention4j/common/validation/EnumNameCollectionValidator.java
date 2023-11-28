@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.common.validation;
 
 import com.google.auto.service.AutoService;
+import jakarta.validation.ConstraintValidator;
 
-import javax.validation.ConstraintValidator;
 import java.util.Collection;
 import java.util.Set;
 

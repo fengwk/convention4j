@@ -3,7 +3,6 @@ package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.meta.CacheAnnotationMetaReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +34,16 @@ public class UserMapperCacheSupportTest {
 
     @Test
     public void test() throws NoSuchMethodException {
-        String methodInsert = UserMapper.class.getMethod("insert", UserPO.class).toString();
+        String methodInsert = UserMapper.class.getMethod("insert", UserDO.class).toString();
         String methodInertAll = UserMapper.class.getMethod("insertAll", Collection.class).toString();
-        String methodUpdateByIdSelective = UserMapper.class.getMethod("updateByIdSelective", UserPO.class).toString();
+        String methodUpdateByIdSelective = UserMapper.class.getMethod("updateByIdSelective", UserDO.class).toString();
         String methodFindById = UserMapper.class.getMethod("findById", Long.class).toString();
         String methodFindByAgeOrderByIdDesc = UserMapper.class.getMethod("findByAgeOrderByIdDesc", int.class).toString();
         String methodFindByIdIn = UserMapper.class.getMethod("findByIdIn", Collection.class).toString();
         String methodDeleteById = UserMapper.class.getMethod("deleteById", Long.class).toString();
         String methodDeleteByIdIn = UserMapper.class.getMethod("deleteByIdIn", Collection.class).toString();
 
-        UserPO userPO1 = new UserPO();
+        UserDO userPO1 = new UserDO();
         userPO1.setUsername("username");
         userPO1.setEmail("email");
         userPO1.setMobile("mobile");
@@ -54,12 +53,12 @@ public class UserMapperCacheSupportTest {
         userPO1.setId(idGen.next(getClass()));
         assert userMapper.insert(userPO1) > 0;
 
-        UserPO found = userMapper.findById(userPO1.getId());
+        UserDO found = userMapper.findById(userPO1.getId());
         assert cacheManagerMetrics.getReadCount(methodFindById) == 1L;
         assert cacheManagerMetrics.getReadHitCount(methodFindById) == 0L;
         assert Objects.equals(userPO1, found);
 
-        UserPO updatePO = new UserPO();
+        UserDO updatePO = new UserDO();
         updatePO.setId(userPO1.getId());
         updatePO.setPassword("password_update");
         assert userMapper.updateByIdSelective(updatePO) > 0;
@@ -73,7 +72,7 @@ public class UserMapperCacheSupportTest {
         assert cacheManagerMetrics.getReadCount(methodFindById) == 3L;
         assert cacheManagerMetrics.getReadHitCount(methodFindById) == 1L;
 
-        UserPO userPO2 = new UserPO();
+        UserDO userPO2 = new UserDO();
         userPO2.setUsername("username_2");
         userPO2.setEmail("email_2");
         userPO2.setMobile("mobile_2");
@@ -83,7 +82,7 @@ public class UserMapperCacheSupportTest {
         userPO2.setId(idGen.next(getClass()));
         assert userMapper.insert(userPO2) > 0;
 
-        UserPO userPO3 = new UserPO();
+        UserDO userPO3 = new UserDO();
         userPO3.setUsername("username_3");
         userPO3.setEmail("email_3");
         userPO3.setMobile("mobile_3");
@@ -91,7 +90,7 @@ public class UserMapperCacheSupportTest {
         userPO3.setAge(20);
         userPO3.setCity("hangzhou");
         userPO3.setId(idGen.next(getClass()));
-        UserPO userPO4 = new UserPO();
+        UserDO userPO4 = new UserDO();
         userPO4.setUsername("username_4");
         userPO4.setEmail("email_4");
         userPO4.setMobile("mobile_4");
@@ -99,7 +98,7 @@ public class UserMapperCacheSupportTest {
         userPO4.setAge(19);
         userPO4.setCity("hangzhou");
         userPO4.setId(idGen.next(getClass()));
-        List<UserPO> user34List = Arrays.asList(userPO3, userPO4);
+        List<UserDO> user34List = Arrays.asList(userPO3, userPO4);
         assert userMapper.insertAll(user34List) > 0;
 
         userMapper.findById(userPO1.getId());
@@ -136,7 +135,7 @@ public class UserMapperCacheSupportTest {
 
         long id5 = idGen.next(getClass());
         assert userMapper.countById(id5) == 0;
-        UserPO userPO5 = new UserPO();
+        UserDO userPO5 = new UserDO();
         userPO5.setUsername("username_5");
         userPO5.setEmail("email_5");
         userPO5.setMobile("mobile_5");
@@ -148,7 +147,7 @@ public class UserMapperCacheSupportTest {
         assert userMapper.countById(id5) > 0;
 
         assert userMapper.countByAge(55) == 1;
-        UserPO userPO6 = new UserPO();
+        UserDO userPO6 = new UserDO();
         userPO6.setUsername("username_6");
         userPO6.setEmail("email_6");
         userPO6.setMobile("mobile_6");

@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.common.validation;
 
 import fun.fengwk.convention4j.api.validation.EnumName;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import java.util.HashSet;
 import java.util.Set;
 

@@ -11,6 +11,7 @@ import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -22,7 +23,7 @@ public class CacheInitializationUtils {
     private CacheInitializationUtils() {}
 
     public static boolean isReturnTypeOrMultiReturnType(Type returnType, Class<?> declaringClass, Class<?> targetClass) {
-        returnType = resolveVariableType(returnType, declaringClass);
+        returnType = resolveVariableType(returnType, declaringClass, Collections.emptyMap());
         ResolvableType rt = ResolvableType.forType(returnType);
         Class<?> returnClass = rt.resolve();
         if (returnClass == null) {
@@ -43,7 +44,7 @@ public class CacheInitializationUtils {
     }
 
     public static boolean isParameterTypeOrMultiParameterType(Type parameterType, Class<?> declaringClass, Class<?> classType) {
-        parameterType = resolveVariableType(parameterType, declaringClass);
+        parameterType = resolveVariableType(parameterType, declaringClass, Collections.emptyMap());
         ResolvableType rt = ResolvableType.forType(parameterType);
         Class<?> parameterClass = rt.resolve();
         if (parameterClass == null) {
@@ -112,23 +113,27 @@ public class CacheInitializationUtils {
         }
     }
 
-    public static Type resolveVariableType(Type type, Class<?> clazz) {
+    public static Type resolveVariableType(Type type, Class<?> clazz, Map<Type, Type> variableTypeMap) {
         if (type == null) {
             return null;
-        } else if (type instanceof Class) {
+        }
+        if (variableTypeMap.containsKey(type)) {
+            type = variableTypeMap.get(type);
+        }
+        if (type instanceof Class) {
             return type;
         } else if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) type;
             Type[] actualTypeArguments = pt.getActualTypeArguments();
             Type[] newActualTypeArguments = new Type[actualTypeArguments.length];
             for (int i = 0; i < actualTypeArguments.length; i++) {
-                newActualTypeArguments[i] = resolveVariableType(actualTypeArguments[i], clazz);
+                newActualTypeArguments[i] = resolveVariableType(actualTypeArguments[i], clazz, variableTypeMap);
             }
-            Type newOwnerType = resolveVariableType(pt.getOwnerType(), clazz);
-            Type newRawType = resolveVariableType(pt.getRawType(), clazz);
+            Type newOwnerType = resolveVariableType(pt.getOwnerType(), clazz, variableTypeMap);
+            Type newRawType = resolveVariableType(pt.getRawType(), clazz, variableTypeMap);
             return new ParameterizedTypeImpl(newActualTypeArguments, newOwnerType, newRawType);
         } else if (type instanceof GenericArrayType) {
-            Type componentType = resolveVariableType(((GenericArrayType) type).getGenericComponentType(), clazz);
+            Type componentType = resolveVariableType(((GenericArrayType) type).getGenericComponentType(), clazz, variableTypeMap);
             return new GenericArrayTypeImpl(componentType);
         } else if (type instanceof TypeVariable) {
             GenericDeclaration gd = ((TypeVariable<?>) type).getGenericDeclaration();
@@ -149,10 +154,10 @@ public class CacheInitializationUtils {
         } else if (type instanceof WildcardType) {
             Type upperBound = resolveBounds(((WildcardType) type).getUpperBounds());
             if (upperBound != null) {
-                return resolveVariableType(upperBound, clazz);
+                return resolveVariableType(upperBound, clazz, variableTypeMap);
             }
             Type lowerBound = resolveBounds(((WildcardType) type).getLowerBounds());
-            return lowerBound == null ? Object.class : resolveVariableType(lowerBound, clazz);
+            return lowerBound == null ? Object.class : resolveVariableType(lowerBound, clazz, variableTypeMap);
         } else {
             throw new IllegalStateException(String.format("Unsupported resolve variable type '%s'", type));
         }

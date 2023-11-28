@@ -186,7 +186,7 @@ public class DefaultCacheManagerRegistry implements BeanPostProcessor {
                             propertyPath = new PropertyPath(paramClass.getComponentType(), evictIndexValue[j]);
                             multi = true;
                         } else {
-                            propertyPath = new PropertyPath(paramClass, evictIndexValue[j]);
+                            propertyPath = new PropertyPath(parameter.getParameterizedType(), evictIndexValue[j]);
                             multi = false;
                         }
 

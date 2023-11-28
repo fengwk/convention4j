@@ -1,5 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  fun.fengwk.convention4j.springboot.starter.web.WebAutoConfiguration
-
 org.springframework.context.ApplicationContextInitializer=\
   fun.fengwk.convention4j.springboot.starter.web.WebEnvironmentInitializer

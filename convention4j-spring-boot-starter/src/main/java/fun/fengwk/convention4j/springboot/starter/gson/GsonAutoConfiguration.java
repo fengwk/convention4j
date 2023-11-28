@@ -18,6 +18,9 @@ public class GsonAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(GsonAutoConfiguration.class);
 
+    /**
+     * @see org.springframework.boot.autoconfigure.http.GsonHttpMessageConvertersConfiguration
+     */
     @ConditionalOnMissingBean
     @Bean
     public Gson gson() {

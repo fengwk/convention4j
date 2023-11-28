@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
-import javax.validation.constraints.Max;
+import jakarta.validation.constraints.Max;
 
 /**
  * @author fengwk

@@ -10,7 +10,7 @@ import java.util.*;
  * 
  * @author fengwk
  */
-public class DefaultGsonBuilderFactory {
+public class GsonBuilderFactory {
 
     private static final List<GsonBuilderConfigurator> CONFIGURATORS;
 
@@ -44,7 +44,7 @@ public class DefaultGsonBuilderFactory {
         CONFIGURATORS = OrderedObject.sort(configurators);
     }
 
-    private DefaultGsonBuilderFactory() {}
+    private GsonBuilderFactory() {}
     
     public static GsonBuilder builder() {
         GsonBuilder builder = new GsonBuilder();
