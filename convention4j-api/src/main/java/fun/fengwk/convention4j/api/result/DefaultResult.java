@@ -2,9 +2,11 @@ package fun.fengwk.convention4j.api.result;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.HttpStatus;
-import fun.fengwk.convention4j.api.code.ImmutableErrorCode;
+import fun.fengwk.convention4j.api.code.ImmutableResolvedErrorCode;
 
+import java.io.Serial;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * 
@@ -12,6 +14,7 @@ import java.util.Objects;
  */
 public class DefaultResult<T> implements Result<T> {
     
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final int status;
@@ -57,8 +60,15 @@ public class DefaultResult<T> implements Result<T> {
         if (errors == null) {
             return null;
         }
-        return new ImmutableErrorCode(
+        // 返回一个ResolvedErrorCode，尊重错误码的解析避免被重复解析
+        return new ImmutableResolvedErrorCode(
             getStatus(), errors.getCode(), getMessage(), errors.withoutCode());
+    }
+
+    @Override
+    public <R> Result<R> map(Function<T, R> mapper) {
+        R r = data == null ? null : mapper.apply(data);
+        return new DefaultResult<>(status, message, r, errors);
     }
 
     @Override

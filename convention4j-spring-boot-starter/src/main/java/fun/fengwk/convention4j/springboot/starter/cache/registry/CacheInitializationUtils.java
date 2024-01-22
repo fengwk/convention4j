@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache.registry;
 
 import fun.fengwk.convention4j.common.ClassUtils;
-import fun.fengwk.convention4j.common.cache.exception.CacheInitializationException;
 import fun.fengwk.convention4j.common.reflect.GenericArrayTypeImpl;
 import fun.fengwk.convention4j.common.reflect.ParameterizedTypeImpl;
 import lombok.extern.slf4j.Slf4j;

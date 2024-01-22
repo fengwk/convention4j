@@ -546,12 +546,13 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                             try {
                                 // 从[FROM..TO)区间中申请workerId
                                 workerId = applyIdleWorkerId(FROM, TO);
+                                log.info("Successfully applied for workId '{}'", workerId);
                                 // 通知已申请到workerId
                                 appliedWorkerId.signalAll();
                                 // 如果申请workerId成功，那么等待一个续约周期后将进入续约流程
                                 waitMs = RENEW_INTERVAL;
                             } catch (Exception ex) {
-                                log.error("applyIdleWorkerId error", ex);
+                                log.error("Apply workerId error", ex);
                                 // 如果发生异常，需要等待一段时间后重试
                                 waitMs = APPLY_ERROR_INTERVAL;
                             }
@@ -559,7 +560,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                             // 如果workerId存在，尝试续约
                             try {
                                 if (renewWorkerId(workerId) == null) {
-                                    log.warn("renewWorkerId fail, oldWorkerId: {}", workerId);
+                                    log.warn("Renew workerId '{}' fail", workerId);
                                     // 续约失败，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
                                     workerId = null;
                                 } else {
@@ -567,7 +568,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                                     waitMs = RENEW_INTERVAL;
                                 }
                             } catch (Exception ex) {
-                                log.error("renewWorkerId error", ex);
+                                log.error("Renew workerId error", ex);
                                 // 发生异常，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
                                 workerId = null;
                             }

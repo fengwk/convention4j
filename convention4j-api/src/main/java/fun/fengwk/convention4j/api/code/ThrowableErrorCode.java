@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.api.code;
 
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -9,6 +10,7 @@ import java.util.Map;
  */
 public class ThrowableErrorCode extends RuntimeException implements ErrorCode {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final ErrorCode errorCode;

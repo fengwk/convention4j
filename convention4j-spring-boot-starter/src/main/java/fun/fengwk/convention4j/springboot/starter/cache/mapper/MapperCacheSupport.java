@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper;
 
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.CacheSupport;
-import fun.fengwk.convention4j.springboot.starter.cache.annotation.provider.NonWriteTransactionSupport;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.provider.WriteTransactionSupport;
 import fun.fengwk.convention4j.springboot.starter.cache.mapper.provider.MapperObjectClassProvider;
 import fun.fengwk.convention4j.springboot.starter.cache.mapper.provider.MapperWriteTransactionSupport;

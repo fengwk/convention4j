@@ -13,9 +13,9 @@ public class I18nErrorCodeFactoryTest {
 
     @Test
     public void test1() throws IOException {
-        I18nErrorCodeMessageManager i18nErrorCodeMessageManager = new I18nErrorCodeMessageManager(
+        I18nErrorCodeMessageResolver i18nErrorCodeMessageResolver = new I18nErrorCodeMessageResolver(
             Locale.SIMPLIFIED_CHINESE, I18nErrorCodeFactoryTest.class.getClassLoader());
-        String message = i18nErrorCodeMessageManager.getMessage(CommonErrorCodes.BAD_REQUEST);
+        String message = i18nErrorCodeMessageResolver.resolveMessage(CommonErrorCodes.BAD_REQUEST);
         assert "错误的请求".equals(message);
     }
 

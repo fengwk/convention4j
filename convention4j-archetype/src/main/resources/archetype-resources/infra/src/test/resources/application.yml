@@ -1,0 +1,30 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+spring:
+
+  application:
+    # 应用名称
+    name: ${artifactId}
+
+  data:
+    # 测试的redis服务
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+  datasource:
+    # 使用h2驱动
+    driver-class-name: org.h2.Driver
+    # 使用这个jdbc连接将会以MySQL模式连接到h2内存数据库
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    # 指定的默认的用户名SA，防止h2出现认证异常
+    # 详见，org.h2.engine.Database.setMasterUser
+    username: SA
+
+convention:
+  snowflake-id:
+    # 雪花id开始时间，固定不可变
+    initial-timestamp: 1702214261706
+    # 测试必须指定workId，测试使用的内嵌redis不支持lua脚本
+    worker-id: 0

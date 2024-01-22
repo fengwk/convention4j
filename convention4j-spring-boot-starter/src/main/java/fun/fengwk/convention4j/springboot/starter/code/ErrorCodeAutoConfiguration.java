@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.api.code.ErrorCodeMessageManager;
 import fun.fengwk.convention4j.api.code.ErrorCodeMessageManagerHolder;
-import fun.fengwk.convention4j.common.code.I18nErrorCodeMessageManager;
+import fun.fengwk.convention4j.api.code.ErrorCodeMessageResolver;
+import fun.fengwk.convention4j.common.code.I18nErrorCodeMessageResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -20,7 +20,7 @@ import java.util.Locale;
  * @author fengwk
  */
 @EnableConfigurationProperties(ErrorCodeProperties.class)
-@ConditionalOnClass(ErrorCodeMessageManager.class)
+@ConditionalOnClass(ErrorCodeMessageResolver.class)
 @Configuration
 public class ErrorCodeAutoConfiguration {
     
@@ -28,22 +28,22 @@ public class ErrorCodeAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean
-    public ErrorCodeMessageManager i18nErrorCodeFactory(ErrorCodeProperties codeProperties, ResourceLoader resourceLoader) {
+    public ErrorCodeMessageResolver errorCodeMessageResolver(ErrorCodeProperties codeProperties, ResourceLoader resourceLoader) {
         ClassLoader classLoader = resourceLoader.getClassLoader();
         if (classLoader == null) {
             classLoader = ClassUtils.getDefaultClassLoader();
         }
 
         Locale locale = codeProperties.getI18n().getLocale();
-        I18nErrorCodeMessageManager errorCodeMessageManager = new I18nErrorCodeMessageManager(
+        I18nErrorCodeMessageResolver errorCodeMessageResolver = new I18nErrorCodeMessageResolver(
             codeProperties.getI18n().getLocale(), classLoader);
 
-        ErrorCodeMessageManagerHolder.setInstance(errorCodeMessageManager);
+        ErrorCodeMessageManagerHolder.setInstance(errorCodeMessageResolver);
 
         log.info("{} autoconfiguration successfully, i18n.locale: {} ",
-                errorCodeMessageManager.getClass().getSimpleName(), locale);
+                errorCodeMessageResolver.getClass().getSimpleName(), locale);
         
-        return errorCodeMessageManager;
+        return errorCodeMessageResolver;
     }
     
 }

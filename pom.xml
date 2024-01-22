@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>0.0.14-SNAPSHOT</version>
+    <version>0.0.14</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -53,6 +53,7 @@
         <module>convention4j-spring-boot-starter-test</module>
         <module>convention4j-spring-boot-starter</module>
         <module>convention4j-spring-boot-starter-web</module>
+        <module>convention4j-oauth2</module>
         <module>convention4j-example</module>
         <module>convention4j-archetype</module>
     </modules>
@@ -63,9 +64,9 @@
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>0.0.14-SNAPSHOT</convention4j.version>
+        <convention4j.version>0.0.14</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
-        <auto-mapper.version>0.0.38</auto-mapper.version>
+        <auto-mapper.version>0.0.43</auto-mapper.version>
         <spring-boot-dependencies.version>3.0.2</spring-boot-dependencies.version>
         <spring-cloud-dependencies.version>2022.0.0</spring-cloud-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2022.0.0.0</spring-cloud-alibaba-dependencies.version>
@@ -113,6 +114,26 @@
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-spring-boot-starter-web</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-oauth2-share</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-oauth2-sdk</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-oauth2-core</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-oauth2-infra</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>
@@ -185,7 +206,7 @@
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
-                <artifactId>redisson-spring-data-30</artifactId>
+                <artifactId>redisson-spring-data-31</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
             <dependency>
@@ -257,9 +278,15 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- 必须优先加载lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>fun.fengwk.auto-mapper</groupId>
+            <artifactId>auto-mapper-processor</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -271,9 +298,59 @@
 
     <profiles>
         <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.11</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>sonatype-oss-release</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.11</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>

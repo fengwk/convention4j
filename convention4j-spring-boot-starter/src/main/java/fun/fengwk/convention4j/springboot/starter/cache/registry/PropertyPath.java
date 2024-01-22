@@ -11,7 +11,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
 
-import static fun.fengwk.convention4j.springboot.starter.cache.registry.CacheInitializationUtils.*;
+import static fun.fengwk.convention4j.springboot.starter.cache.registry.CacheInitializationUtils.resolveVariableType;
 
 /**
  * Java bean property path.

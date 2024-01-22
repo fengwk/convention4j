@@ -17,7 +17,7 @@ public class ErrorCodeAutoConfigurationTest {
 
     @Test
     public void test() {
-        ErrorCode errorCode1 = TestErrorCodes.TEST.create();
+        ErrorCode errorCode1 = TestErrorCodes.TEST.resolve();
         ErrorCode errorCode2 = TestErrorCodes.TEST.create("test error");
         assert errorCode1.getCode().equals("TEST_1");
         assert errorCode1.getMessage().equals("测试错误") || errorCode1.getMessage().equals("test error");

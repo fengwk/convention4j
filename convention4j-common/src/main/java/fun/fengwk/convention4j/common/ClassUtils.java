@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.common;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 

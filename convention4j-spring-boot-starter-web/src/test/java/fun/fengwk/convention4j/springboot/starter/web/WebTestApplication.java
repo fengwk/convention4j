@@ -46,5 +46,10 @@ public class WebTestApplication {
         service.hello3(data);
         return Results.ok("hello");
     }
-    
+
+    @RequestMapping("/hello4")
+    public Result<String> hello4(@RequestParam("uri") String uri) {
+        return Results.ok(uri);
+    }
+
 }

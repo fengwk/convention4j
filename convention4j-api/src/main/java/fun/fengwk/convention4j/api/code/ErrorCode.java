@@ -29,11 +29,10 @@ public interface ErrorCode extends Status {
      * @return 错误码异常。
      */
     default ThrowableErrorCode asThrowable() {
-        ErrorCode errorCode = this;
-        if (this instanceof ErrorCodePrototypeFactory) {
-            errorCode = ((ErrorCodePrototypeFactory) this).create();
+        if (this instanceof ThrowableErrorCode) {
+            return (ThrowableErrorCode) this;
         }
-        return new ThrowableErrorCode(errorCode);
+        return new ThrowableErrorCode(this);
     }
 
     /**
@@ -42,11 +41,7 @@ public interface ErrorCode extends Status {
      * @return 错误码异常。
      */
     default ThrowableErrorCode asThrowable(Throwable cause) {
-        ErrorCode errorCode = this;
-        if (this instanceof ErrorCodePrototypeFactory) {
-            errorCode = ((ErrorCodePrototypeFactory) this).create();
-        }
-        return new ThrowableErrorCode(errorCode, cause);
+        return new ThrowableErrorCode(this, cause);
     }
 
 }

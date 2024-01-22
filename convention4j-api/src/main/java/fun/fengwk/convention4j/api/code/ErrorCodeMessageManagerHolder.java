@@ -7,15 +7,15 @@ package fun.fengwk.convention4j.api.code;
  */
 public class ErrorCodeMessageManagerHolder {
 
-    private static volatile ErrorCodeMessageManager instance;
+    private static volatile ErrorCodeMessageResolver instance;
 
     private ErrorCodeMessageManagerHolder() {}
 
-    public static ErrorCodeMessageManager getInstance() {
+    public static ErrorCodeMessageResolver getInstance() {
         return instance;
     }
 
-    public static void setInstance(ErrorCodeMessageManager instance) {
+    public static void setInstance(ErrorCodeMessageResolver instance) {
         ErrorCodeMessageManagerHolder.instance = instance;
     }
 

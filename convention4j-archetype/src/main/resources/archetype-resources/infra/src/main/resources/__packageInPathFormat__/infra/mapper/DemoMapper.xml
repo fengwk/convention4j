@@ -1,0 +1,19 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="${package}.infra.mapper.DemoMapper">
+    
+    <update id="createTableIfNotExists">
+        create table if not exists demo (
+            id             bigint unsigned not null auto_increment comment '主键',
+            name           varchar(16) not null comment '名称',
+            create_time    datetime(3) not null default current_timestamp(3) comment '创建时间',
+            update_time    datetime(3) not null default current_timestamp(3) on update current_timestamp(3) comment '更新时间',
+            version        bigint not null default '0' comment '数据版本号',
+            primary key (id)
+        ) engine=InnoDB default charset=utf8mb4 comment='demo表';
+    </update>
+
+</mapper>

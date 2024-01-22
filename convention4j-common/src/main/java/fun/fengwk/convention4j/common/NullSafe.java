@@ -41,7 +41,8 @@ import java.util.stream.Collectors;
  */
 public class NullSafe {
 
-    private NullSafe() {}
+    private NullSafe() {
+    }
 
     /**
      * 当obj不为null时进行映射操作。
@@ -60,7 +61,7 @@ public class NullSafe {
      * 当obj不为null时进行映射操作。
      *
      * @param obj
-     * @param mapper not null
+     * @param mapper     not null
      * @param defaultObj
      * @param <S>
      * @param <T>
@@ -78,14 +79,178 @@ public class NullSafe {
     }
 
     /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1 not null
+     * @param mapper2 not null
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @return
+     */
+    public static <S, T1, T2> T2 map2(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2) {
+        T1 t1 = map(obj, mapper1);
+        return map(t1, mapper2);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1    not null
+     * @param mapper2    not null
+     * @param defaultObj
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @return
+     */
+    public static <S, T1, T2> T2 map2(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2, T2 defaultObj) {
+        T1 t1 = map(obj, mapper1);
+        return map(t1, mapper2, defaultObj);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1 not null
+     * @param mapper2 not null
+     * @param mapper3 not null
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @return
+     */
+    public static <S, T1, T2, T3> T3 map3(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                         Function<T2, T3> mapper3) {
+        T2 t2 = map2(obj, mapper1, mapper2);
+        return map(t2, mapper3);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1    not null
+     * @param mapper2    not null
+     * @param mapper3    not null
+     * @param defaultObj
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @return
+     */
+    public static <S, T1, T2, T3> T3 map3(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                         Function<T2, T3> mapper3, T3 defaultObj) {
+        T2 t2 = map2(obj, mapper1, mapper2);
+        return map(t2, mapper3, defaultObj);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1 not null
+     * @param mapper2 not null
+     * @param mapper3 not null
+     * @param mapper4 not null
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @param <T4>
+     * @return
+     */
+    public static <S, T1, T2, T3, T4> T4 map4(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                             Function<T2, T3> mapper3, Function<T3, T4> mapper4) {
+        T3 t3 = map3(obj, mapper1, mapper2, mapper3);
+        return map(t3, mapper4);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1    not null
+     * @param mapper2    not null
+     * @param mapper3    not null
+     * @param mapper4    not null
+     * @param defaultObj
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @param <T4>
+     * @return
+     */
+    public static <S, T1, T2, T3, T4> T4 map4(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                             Function<T2, T3> mapper3, Function<T3, T4> mapper4, T4 defaultObj) {
+        T3 t3 = map3(obj, mapper1, mapper2, mapper3);
+        return map(t3, mapper4, defaultObj);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1 not null
+     * @param mapper2 not null
+     * @param mapper3 not null
+     * @param mapper4 not null
+     * @param mapper5 not null
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @param <T4>
+     * @param <T5>
+     * @return
+     */
+    public static <S, T1, T2, T3, T4, T5> T5 map5(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                                 Function<T2, T3> mapper3, Function<T3, T4> mapper4,
+                                                 Function<T4, T5> mapper5) {
+        T4 t4 = map4(obj, mapper1, mapper2, mapper3, mapper4);
+        return map(t4, mapper5);
+    }
+
+    /**
+     * 当obj不为null时进行映射操作。
+     *
+     * @param obj
+     * @param mapper1    not null
+     * @param mapper2    not null
+     * @param mapper3    not null
+     * @param mapper4    not null
+     * @param mapper5    not null
+     * @param defaultObj
+     * @param <S>
+     * @param <T1>
+     * @param <T2>
+     * @param <T3>
+     * @param <T4>
+     * @param <T5>
+     * @return
+     */
+    public static <S, T1, T2, T3, T4, T5> T5 map5(S obj, Function<S, T1> mapper1, Function<T1, T2> mapper2,
+                                                 Function<T2, T3> mapper3, Function<T3, T4> mapper4,
+                                                 Function<T4, T5> mapper5, T5 defaultObj) {
+        T4 t4 = map4(obj, mapper1, mapper2, mapper3, mapper4);
+        return map(t4, mapper5, defaultObj);
+    }
+
+    /**
      * 将非空的obj转换为List。
      *
      * @param objs
-     * @return
      * @param <T>
+     * @return
      */
     @SafeVarargs
-    public static <T> List<T> wrap2List(T...objs) {
+    public static <T> List<T> wrap2List(T... objs) {
         if (objs == null || objs.length == 0) {
             return Collections.emptyList();
         }
@@ -102,11 +267,11 @@ public class NullSafe {
      * 将非空的obj转换为Set
      *
      * @param objs
-     * @return
      * @param <T>
+     * @return
      */
     @SafeVarargs
-    public static <T> Set<T> wrap2Set(T...objs) {
+    public static <T> Set<T> wrap2Set(T... objs) {
         if (objs == null || objs.length == 0) {
             return Collections.emptySet();
         }
@@ -457,34 +622,34 @@ public class NullSafe {
 
     static class LinkedHashSetCollector<T> implements Collector<T, LinkedHashSet<T>, LinkedHashSet<T>> {
 
-            @Override
-            public Supplier<LinkedHashSet<T>> supplier() {
-                return LinkedHashSet::new;
-            }
-
-            @Override
-            public BiConsumer<LinkedHashSet<T>, T> accumulator() {
-                return LinkedHashSet::add;
-            }
-
-            @Override
-            public BinaryOperator<LinkedHashSet<T>> combiner() {
-                return (l, r) -> {
-                    l.addAll(r);
-                    return l;
-                };
-            }
-
-            @Override
-            public Function<LinkedHashSet<T>, LinkedHashSet<T>> finisher() {
-                return t -> t;
-            }
-
-            @Override
-            public Set<Characteristics> characteristics() {
-                return Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH));
-            }
-
+        @Override
+        public Supplier<LinkedHashSet<T>> supplier() {
+            return LinkedHashSet::new;
         }
+
+        @Override
+        public BiConsumer<LinkedHashSet<T>, T> accumulator() {
+            return LinkedHashSet::add;
+        }
+
+        @Override
+        public BinaryOperator<LinkedHashSet<T>> combiner() {
+            return (l, r) -> {
+                l.addAll(r);
+                return l;
+            };
+        }
+
+        @Override
+        public Function<LinkedHashSet<T>, LinkedHashSet<T>> finisher() {
+            return t -> t;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH));
+        }
+
+    }
 
 }

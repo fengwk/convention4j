@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.springboot.starter.mybatis;
 
 import fun.fengwk.automapper.annotation.AutoMapper;
 
-import java.util.Collection;
 import java.util.List;
 
 /**

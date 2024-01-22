@@ -1,12 +1,17 @@
 package fun.fengwk.convention4j.springboot.test.starter.repo;
 
+import fun.fengwk.convention4j.api.page.Page;
+import fun.fengwk.convention4j.api.page.PageQuery;
 import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.page.Pages;
 import org.springframework.beans.BeanUtils;
+import org.springframework.core.ResolvableType;
 import org.springframework.util.ReflectionUtils;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -74,7 +79,9 @@ public abstract class AbstractTestRepository<ENTITY, ID> {
     protected int doUpdate(Predicate<ENTITY> predicate, Function<ENTITY, Boolean> updater) {
         int updated = 0;
         for (ENTITY entity : doList(predicate)) {
+            ID id = getId(entity);
             if (updater.apply(entity)) {
+                entityMap.remove(id);
                 entityMap.put(getId(entity), entity);
                 updated++;
             }
@@ -115,12 +122,38 @@ public abstract class AbstractTestRepository<ENTITY, ID> {
             .filter(predicate).map(this::copy).collect(Collectors.toList());
     }
 
+    protected List<ENTITY> doList(Predicate<ENTITY> predicate, Comparator<ENTITY> order) {
+        return entityMap.values().stream()
+            .sorted(order).filter(predicate).map(this::copy).collect(Collectors.toList());
+    }
+
+    protected long doCount(Predicate<ENTITY> predicate) {
+        return entityMap.values().stream()
+            .filter(predicate).map(this::copy).count();
+    }
+
+    protected Page<ENTITY> doPage(PageQuery pageQuery, Predicate<ENTITY> predicate) {
+        long offset = Pages.queryOffset(pageQuery);
+        int limit = Pages.queryLimit(pageQuery);
+        List<ENTITY> result = doList(predicate).stream().skip(offset).limit(limit).toList();
+        long count = doCount(predicate);
+        return Pages.page(pageQuery, result, count);
+    }
+
+    protected Page<ENTITY> doPage(PageQuery pageQuery, Predicate<ENTITY> predicate, Comparator<ENTITY> order) {
+        long offset = Pages.queryOffset(pageQuery);
+        int limit = Pages.queryLimit(pageQuery);
+        List<ENTITY> result = doList(predicate, order).stream().skip(offset).limit(limit).toList();
+        long count = doCount(predicate);
+        return Pages.page(pageQuery, result, count);
+    }
+
     private ENTITY copy(ENTITY entity) {
         if (entity == null) {
             return null;
         }
-        return (ENTITY) GsonUtils.fromJson(
-            GsonUtils.toJson(entity), entity.getClass());
+        return GsonUtils.fromJson(GsonUtils.toJson(entity),
+            ResolvableType.forClass(getClass()).as(AbstractTestRepository.class).getGeneric(0).getType());
     }
 
     private void copyProperties(ENTITY from, ENTITY to) {

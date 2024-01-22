@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.common.validation;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
 
 /**
  * @author fengwk

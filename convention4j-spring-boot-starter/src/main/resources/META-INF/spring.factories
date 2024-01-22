@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationContextInitializer=\
+  fun.fengwk.convention4j.springboot.starter.scan.ScanFilterInitializer

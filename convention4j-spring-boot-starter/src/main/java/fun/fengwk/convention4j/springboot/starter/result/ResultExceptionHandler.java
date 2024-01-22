@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 异常结果处理，如果方法的返回类型是{@link Result}，那么将会把异常处理为Result结果。

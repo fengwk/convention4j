@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.api.code;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.Objects;
 
@@ -7,6 +8,9 @@ import java.util.Objects;
  * @author fengwk
  */
 public class ImmutableErrorCode implements ErrorCode {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final int status;
     private final String code;

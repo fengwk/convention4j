@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.i18n;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Locale;
@@ -8,6 +9,7 @@ import java.util.Locale;
  * 
  * @author fengwk
  */
+@Data
 @ConfigurationProperties(prefix = "convention.i18n")
 public class I18nProperties {
     
@@ -21,20 +23,4 @@ public class I18nProperties {
      */
     private Locale locale = Locale.getDefault();
     
-    public String getBaseName() {
-        return baseName;
-    }
-    
-    public void setBaseName(String baseName) {
-        this.baseName = baseName;
-    }
-    
-    public Locale getLocale() {
-        return locale;
-    }
-    
-    public void setLocale(Locale locale) {
-        this.locale = locale;
-    }
-
 }

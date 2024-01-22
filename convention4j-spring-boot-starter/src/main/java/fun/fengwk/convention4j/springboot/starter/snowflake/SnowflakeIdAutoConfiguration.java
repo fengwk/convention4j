@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.snowflake;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.common.idgen.snowflakes.*;
+import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -41,9 +42,11 @@ public class SnowflakeIdAutoConfiguration {
     @ConditionalOnBean(StringRedisTemplate.class)
     @ConditionalOnMissingBean
     @Bean
-    public WorkerIdClient redisWorkerIdClient(StringRedisTemplate redisTemplate) {
+    public WorkerIdClient redisWorkerIdClient(StringRedisTemplate redisTemplate) throws LifeCycleException {
         WorkerIdClient workerIdClient = new RedisWorkerIdClient(new RedisTemplateScriptExecutor(redisTemplate));
-        log.info("{} created", RedisWorkerIdClient.class.getSimpleName());
+        workerIdClient.init();
+        workerIdClient.start();
+        log.info("{} running", RedisWorkerIdClient.class.getSimpleName());
         return workerIdClient;
     }
 

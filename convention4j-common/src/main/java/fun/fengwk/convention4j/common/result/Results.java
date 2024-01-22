@@ -1,12 +1,13 @@
 package fun.fengwk.convention4j.common.result;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.ResolvedErrorCode;
 import fun.fengwk.convention4j.api.code.Status;
 import fun.fengwk.convention4j.api.code.SuccessCodes;
 import fun.fengwk.convention4j.api.result.DefaultResult;
 import fun.fengwk.convention4j.api.result.Errors;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.code.PrototypeErrorCodeWrapper;
 
 import java.util.Map;
 
@@ -50,6 +51,9 @@ public class Results {
      * @return
      */
     public static <T> Result<T> error(ErrorCode errorCode) {
+        if (!(errorCode instanceof ResolvedErrorCode)) {
+            errorCode = new PrototypeErrorCodeWrapper(errorCode).resolve();
+        }
         Errors errors = new Errors();
         errors.setCode(errorCode.getCode());
         errors.putAll(errorCode.getErrorContext());
@@ -65,6 +69,10 @@ public class Results {
      * @return
      */
     public static <T> Result<T> error(ErrorCode errorCode, Map<String, ?> errors) {
+        if (!(errorCode instanceof ResolvedErrorCode)) {
+            errorCode = new PrototypeErrorCodeWrapper(errorCode)
+                .resolve((Map<String, Object>) errors);
+        }
         Errors finalErrors = new Errors();
         finalErrors.setCode(errorCode.getCode());
         finalErrors.putAll(errorCode.getErrorContext());

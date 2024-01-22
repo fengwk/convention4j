@@ -100,14 +100,15 @@ convention:
     
 spring:
   # 默认情况下使用该redis配置的客户端实现动态workerId获取
-  redis:
-    password: a123
-    sentinel:
-      master: mymaster
-      nodes:
-        - redis.fengwk.fun:26379
-        - redis.fengwk.fun:26380
-        - redis.fengwk.fun:26381
+  data:
+    redis:
+      password: a123
+      sentinel:
+        master: mymaster
+        nodes:
+          - redis.fengwk.  fun:26379
+          - redis.fengwk.fun:26380
+          - redis.fengwk.fun:26381
 ```
 
 ## i18n

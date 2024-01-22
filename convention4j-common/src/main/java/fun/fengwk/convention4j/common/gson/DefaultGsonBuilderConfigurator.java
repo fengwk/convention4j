@@ -7,7 +7,6 @@ import fun.fengwk.convention4j.api.page.CursorPage;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.OrderedObject;
-import fun.fengwk.convention4j.common.result.Results;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

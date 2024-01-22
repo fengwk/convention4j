@@ -1,9 +1,7 @@
 package fun.fengwk.convention4j.common.cache.key;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import lombok.Data;
 
-import java.util.Map;
 import java.util.TreeMap;
 
 /**

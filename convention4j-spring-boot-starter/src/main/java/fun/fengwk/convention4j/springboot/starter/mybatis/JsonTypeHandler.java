@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.mybatis;
 
 import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.reflect.TypeResolver;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
-import org.springframework.core.ResolvableType;
 
 import java.lang.reflect.Type;
 import java.sql.CallableStatement;
@@ -29,15 +29,15 @@ public class JsonTypeHandler<T> extends BaseTypeHandler<T> {
     private final Type type;
 
     public JsonTypeHandler() {
-        this.type = ResolvableType.forClass(getClass())
-            .as(JsonTypeHandler.class).getGeneric(0).getType();
+        this.type = new TypeResolver(getClass()).as(JsonTypeHandler.class)
+            .asParameterizedType().getActualTypeArguments()[0];
     }
 
     public JsonTypeHandler(Class<T> javaClass) {
         if (javaClass == Object.class) {
             // 如果mybatis无法解析类型则尝试使用类泛型解析
-            this.type = ResolvableType.forClass(getClass())
-                .as(JsonTypeHandler.class).getGeneric(0).getType();
+            this.type = new TypeResolver(getClass()).as(JsonTypeHandler.class)
+                .asParameterizedType().getActualTypeArguments()[0];
         } else {
             this.type = javaClass;
         }

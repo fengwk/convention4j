@@ -19,7 +19,11 @@ public class ResultTypeAdapter implements GsonTypeAdapter<Result<?>> {
 
     @Override
     public JsonElement serialize(Result<?> src, Type typeOfSrc, JsonSerializationContext context) {
-        return context.serialize(src, DefaultResult.class);
+        JsonElement jsonElement = context.serialize(src, DefaultResult.class);
+//        if (jsonElement != null && jsonElement.isJsonObject()) {
+//            jsonElement.getAsJsonObject().remove("errorCode");
+//        }
+        return jsonElement;
     }
 
     @Override

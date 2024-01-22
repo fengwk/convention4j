@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>0.0.14-SNAPSHOT</version>
+        <version>0.0.14</version>
     </parent>
 
     <artifactId>convention4j-spring-boot-starter-test</artifactId>
@@ -58,11 +58,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>fun.fengwk.auto-mapper</groupId>
-            <artifactId>auto-mapper-processor</artifactId>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

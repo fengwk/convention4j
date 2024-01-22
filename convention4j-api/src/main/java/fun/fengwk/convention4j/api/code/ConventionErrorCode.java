@@ -6,12 +6,12 @@ import java.util.Map;
 /**
  * @author fengwk
  */
-public interface ConventionErrorCode extends DomainErrorCode, ErrorCodePrototypeFactory {
+public interface ConventionErrorCode extends DomainErrorCode, PrototypeErrorCode {
 
     /**
      * 获取http状态码。
      *
-     * @return
+     * @return http状态码。
      */
     HttpStatus getHttpStatus();
 

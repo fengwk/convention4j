@@ -1,0 +1,17 @@
+spring:
+
+  application:
+    name: convention4j-oauth2
+
+  mvc:
+    converters:
+      preferred-json-mapper: gson
+
+convention:
+
+  error-code:
+    i18n:
+      locale: zh_CN
+
+#  oauth2:
+#    rest-prefix: /api

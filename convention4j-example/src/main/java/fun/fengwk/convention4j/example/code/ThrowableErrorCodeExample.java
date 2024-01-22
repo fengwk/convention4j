@@ -13,7 +13,7 @@ public class ThrowableErrorCodeExample {
     private static final Logger log = LoggerFactory.getLogger(ThrowableErrorCodeExample.class);
 
     public static void main(String[] args) {
-        ErrorCode errorCode = ExampleErrorCodes.EXAMPLE_ERROR.create(MapUtils.newMap("name", "fengwk"));
+        ErrorCode errorCode = ExampleErrorCodes.EXAMPLE_ERROR.resolveWithContext(MapUtils.newMap("name", "fengwk"));
         log.warn("发生了示例错误, 上下文信息是balabala...");
         throw errorCode.asThrowable();
     }

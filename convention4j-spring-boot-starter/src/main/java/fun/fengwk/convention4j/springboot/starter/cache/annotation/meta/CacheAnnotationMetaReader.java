@@ -4,7 +4,6 @@ import fun.fengwk.convention4j.common.cache.exception.CacheInitializationExcepti
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.*;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.provider.ObjectClassProvider;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.provider.WriteTransactionSupport;
-import fun.fengwk.convention4j.springboot.starter.cache.registry.CacheInitializationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 

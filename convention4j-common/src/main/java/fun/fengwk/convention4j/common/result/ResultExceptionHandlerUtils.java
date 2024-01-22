@@ -57,12 +57,11 @@ public class ResultExceptionHandlerUtils {
             } else {
                 return Results.error(errorCode, errors);
             }
-        } else if (ex instanceof ErrorCode) {
-            ErrorCode exErrorCode = (ErrorCode) ex;
+        } else if (ex instanceof ErrorCode exErrorCode) {
             if (HttpStatus.is4xx(exErrorCode)) {
-                warn(log, ex);
+                warn(log, exErrorCode);
             } else {
-                errorUseShortFormat(log, ex);
+                errorUseShortFormat(log, exErrorCode);
             }
             return Results.error((ErrorCode) ex);
         } else if (ex instanceof IllegalArgumentException) {
@@ -77,21 +76,27 @@ public class ResultExceptionHandlerUtils {
         }
     }
 
-    private static void warn(Logger log, Throwable ex) {
+    private static void warn(Logger log, ErrorCode errorCode) {
         if (log != null) {
-            log.warn("{} catch exception, error: {}", ResultExceptionHandlerUtils.class.getSimpleName(), String.valueOf(ex));
+            log.warn("Catch exception, code: {}, message: {}", errorCode.getCode(), errorCode.getMessage());
         }
     }
 
-    private static void errorUseShortFormat(Logger log, Throwable ex) {
+    private static void errorUseShortFormat(Logger log, ErrorCode errorCode) {
         if (log != null) {
-            log.error("{} catch exception, error: {}", ResultExceptionHandlerUtils.class.getSimpleName(), String.valueOf(ex));
+            log.error("Catch exception, code: {}, message: {}", errorCode.getCode(), errorCode.getMessage());
+        }
+    }
+
+    private static void warn(Logger log, Throwable ex) {
+        if (log != null) {
+            log.warn("Catch exception, error: {}", String.valueOf(ex));
         }
     }
 
     private static void error(Logger log, Throwable ex) {
         if (log != null) {
-            log.error("{} catch exception", ResultExceptionHandlerUtils.class.getSimpleName(), ex);
+            log.error("Catch exception", ex);
         }
     }
 
@@ -137,13 +142,13 @@ public class ResultExceptionHandlerUtils {
         for (Path.Node node : path) {
             ElementKind kind = node.getKind();
             if (kind == ElementKind.PARAMETER || kind == ElementKind.PROPERTY || kind == ElementKind.RETURN_VALUE) {
-                if (property.length() > 0) {
+                if (!property.isEmpty()) {
                     property.append('.');
                 }
                 property.append(node.getName());
             }
         }
-        return property.length() > 0 ? property.toString() : path.toString();
+        return !property.isEmpty() ? property.toString() : path.toString();
     }
 
 }

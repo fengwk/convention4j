@@ -1,0 +1,59 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+spring:
+
+  application:
+    # 应用名称
+    name: ${artifactId}
+
+  mvc:
+    converters:
+      # spring mvc使用的json转换器，使用规约指定的gson
+      preferred-json-mapper: gson
+
+  data:
+    # redis连接配置
+    redis:
+      # 替换为redis {host}
+      host: {host}
+      # 替换为redis {port}
+      port: {port}
+      # 替换为redis {password}
+      password: {password}
+
+  # mysql连接配置
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    # 替换为mysql {host}、{port}、{database}
+    url: jdbc:mysql://{host}:{port}/{database}?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&connectTimeout=3000&socketTimeout=3000&useSSL=false
+    # 替换为mysql {username}
+    username: {username}
+    # 替换为mysql {password}
+    password: {password}
+
+convention:
+  snowflake-id:
+    # 雪花id开始时间，固定不可变
+    initial-timestamp: 1702214261706
+
+  i18n:
+    # i18n properties文件名称
+    base-name: string
+    # 使用语言
+    locale: zh_CN
+
+  error-code:
+    i18n:
+      # 错误码i18n语言，与i18n.locale保持一致
+      locale: ${convention.i18n.locale}
+
+# springdoc配置，如需使用同时要启用pom.xml文件中的springdoc-openapi-starter-webmvc-ui依赖
+#springdoc:
+#
+#  swagger-ui:
+#    path: /swagger-ui.html
+#
+#  api-docs:
+#    path: /api-docs
+#    enabled: true

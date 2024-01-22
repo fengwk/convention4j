@@ -5,7 +5,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>0.0.14-SNAPSHOT</version>
+        <version>0.0.14</version>
     </parent>
 
     <groupId>${groupId}</groupId>
@@ -14,12 +14,11 @@
     <packaging>pom</packaging>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <${artifactId}.share>${version}</${artifactId}.share>
+        <${artifactId}.version>${version}</${artifactId}.version>
     </properties>
 
     <dependencyManagement>
@@ -27,82 +26,23 @@
             <dependency>
                 <groupId>${groupId}</groupId>
                 <artifactId>${artifactId}-share</artifactId>
-                <version>${${artifactId}.share}</version>
+                <version>${${artifactId}.version}</version>
             </dependency>
             <dependency>
                 <groupId>${groupId}</groupId>
                 <artifactId>${artifactId}-core</artifactId>
-                <version>${project.version}</version>
+                <version>${${artifactId}.version}</version>
             </dependency>
             <dependency>
                 <groupId>${groupId}</groupId>
                 <artifactId>${artifactId}-infra</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${groupId}</groupId>
-                <artifactId>${artifactId}-cache-redis</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${groupId}</groupId>
-                <artifactId>${artifactId}-repo-mysql</artifactId>
-                <version>${project.version}</version>
+                <version>${${artifactId}.version}</version>
             </dependency>
             <dependency>
                 <groupId>${groupId}</groupId>
                 <artifactId>${artifactId}-web</artifactId>
-                <version>${project.version}</version>
+                <version>${${artifactId}.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <!-- 必须优先加载lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>fun.fengwk.auto-mapper</groupId>
-            <artifactId>auto-mapper-processor</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <!-- 单测报告 -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

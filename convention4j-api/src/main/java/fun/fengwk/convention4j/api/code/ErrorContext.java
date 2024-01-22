@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.api.code;
 
-import fun.fengwk.convention4j.api.result.Errors;
-
 import java.util.Map;
 
 /**

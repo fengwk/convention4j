@@ -208,7 +208,7 @@ public class DefaultCacheManagerRegistry implements BeanPostProcessor {
                     String objQueryMethodName = writeMethodMeta.getObjQueryMethod();
                     Map<Integer, Integer> methodParamIdx2EvictIdxMap = new HashMap<>();
                     Map<Integer, Function<Object, ?>> methodParamIdx2ValueAdapterMap = new HashMap<>();
-                    Method objQueryMethod = findObjQueryMethodName(cacheSupportClass,
+                    Method objQueryMethod = findObjQueryMethod(cacheSupportClass,
                         objQueryMethodName, objClass, evictIndexClasses,
                         methodParamIdx2EvictIdxMap, methodParamIdx2ValueAdapterMap);
                     if (objQueryMethod == null) {
@@ -243,10 +243,10 @@ public class DefaultCacheManagerRegistry implements BeanPostProcessor {
         return true;
     }
 
-    private Method findObjQueryMethodName(Class<?> cacheSupportClass, String objQueryMethodName,
-                                          Class<?> objClass, Class<?>[] evictIndexClasses,
-                                          Map<Integer, Integer> methodParamIdx2EvictIdxMap,
-                                          Map<Integer, Function<Object, ?>> methodParamIdx2ValueAdapterMap) {
+    private Method findObjQueryMethod(Class<?> cacheSupportClass, String objQueryMethodName,
+                                      Class<?> objClass, Class<?>[] evictIndexClasses,
+                                      Map<Integer, Integer> methodParamIdx2EvictIdxMap,
+                                      Map<Integer, Function<Object, ?>> methodParamIdx2ValueAdapterMap) {
         for (Method method : ReflectionUtils.getAllDeclaredMethods(cacheSupportClass)) {
             // 仅处理public方法，非公开方法可能会在Spring代理中出现null值情况
             if (!Modifier.isPublic(method.getModifiers())) {

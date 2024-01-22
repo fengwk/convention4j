@@ -16,12 +16,12 @@ public abstract class ConventionDO<ID> extends BaseDO<ID> {
     /**
      * 创建时间。
      */
-    private LocalDateTime gmtCreate;
+    private LocalDateTime createTime;
 
     /**
      * 修改时间。
      */
-    private LocalDateTime gmtModified;
+    private LocalDateTime updateTime;
 
     /**
      * 数据版本号。
