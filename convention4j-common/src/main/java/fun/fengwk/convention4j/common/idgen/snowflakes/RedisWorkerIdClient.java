@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common.idgen.snowflakes;
 
+import fun.fengwk.convention4j.common.ClassUtils;
 import fun.fengwk.convention4j.common.lifecycle.AbstractLifeCycle;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleState;
@@ -141,7 +142,8 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      * @throws IOException
      */
     private static String getLua(String classpath) throws IOException {
-        InputStream input = ClassLoader.getSystemResourceAsStream(classpath);
+        ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
+        InputStream input = classLoader.getResourceAsStream(classpath);
         if (input == null) {
             throw new AssertionError("cannot found " + classpath + ".");
         }
@@ -153,7 +155,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
             out.write(buf, 0, len);
         }
         input.close();
-        return out.toString(StandardCharsets.UTF_8.name());
+        return out.toString(StandardCharsets.UTF_8);
     }
 
     /**
@@ -494,18 +496,23 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
 
         @Override
         public void run() {
+            log.info("ApplyWorkerIdTask thread start");
             try {
-                while (!Thread.currentThread().isInterrupted()) {
+                Thread currentThread = Thread.currentThread();
+                while (!currentThread.isInterrupted()) {
                     try {
                         if (!doRun()) {
+                            log.info("ApplyWorkerIdTask thread ending");
                             break;
                         }
                     } catch (InterruptedException ignore) {
-                        Thread.currentThread().interrupt();
+                        log.info("ApplyWorkerIdTask thread interrupted");
+                        currentThread.interrupt();
                     }
                 }
             } finally {
                 applyWorkerIdThreadCdl.countDown();
+                log.info("ApplyWorkerIdTask thread exit");
             }
         }
 
@@ -518,7 +525,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                 while ((state = getState()) != STARTED) {
                     resetWorkerId();
 
-                    if (state == STOPPED || state == FAILED) {
+                    if (state.getCode() >= CLOSING.getCode()) {
                         return false;
                     }
 
@@ -533,7 +540,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
             // 读锁锁定lifeCycle，使每次迭代时状态不会发生改变
             getLifeCycleRwLock().readLock().lockInterruptibly();
             try {
-                if ((state = getState()) == STOPPED || state == FAILED) {
+                if ((state = getState()).getCode() >= CLOSING.getCode()) {
                     return false;
                 }
 
