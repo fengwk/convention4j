@@ -134,7 +134,8 @@ public interface OAuth2Client {
                 String supportPath = supportUri.getPath();
                 String supportFragment = supportUri.getFragment();
                 if (Objects.equals(scheme, supportScheme) && Objects.equals(userInfo, supportUserInfo)
-                    && Objects.equals(host, supportHost) && Objects.equals(port, supportPort)
+                    && new AntPattern(supportHost).match(host)
+                    && Objects.equals(port, supportPort)
                     && new AntPattern(supportPath).match(path)
                     && (supportFragment == null || new AntPattern(supportFragment).match(fragment))) {
                     return true;

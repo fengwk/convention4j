@@ -11,9 +11,11 @@ import fun.fengwk.convention4j.oauth2.share.model.StandardOAuth2ClientDTO;
 import fun.fengwk.convention4j.oauth2.share.model.StandardOAuth2ClientUpdateDTO;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -103,6 +105,7 @@ public abstract class StandardOAuth2ClientBackendServiceImpl<
         if (createDTO == null) {
             return null;
         }
+        checkRedirectUris(createDTO.getRedirectUris());
         CLIENT client = newClient();
         client.setClientId(createDTO.getClientId());
         client.setName(createDTO.getName());
@@ -151,6 +154,7 @@ public abstract class StandardOAuth2ClientBackendServiceImpl<
             updated = true;
         }
         if (!Objects.equals(updateDTO.getRedirectUris(), client.getRedirectUris())) {
+            checkRedirectUris(updateDTO.getRedirectUris());
             client.setRedirectUris(updateDTO.getRedirectUris());
             updated = true;
         }
@@ -210,6 +214,19 @@ public abstract class StandardOAuth2ClientBackendServiceImpl<
         dto.setUpdateTime(client.getUpdateTime());
         dto.setCreateTime(client.getCreateTime());
         return dto;
+    }
+
+    private void checkRedirectUris(Set<String> redirectUris) {
+        if (redirectUris != null) {
+            for (String redirectUri : redirectUris) {
+                try {
+                    UriComponentsBuilder.fromUriString(redirectUri);
+                } catch (IllegalArgumentException ex) {
+                    log.warn("invalid redirectUri, redirectUri: {}", redirectUri);
+                    throw OAuth2ErrorCodes.INVALID_REDIRECT_URI.asThrowable();
+                }
+            }
+        }
     }
 
 }
