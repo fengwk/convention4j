@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.result;
 import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.ResolvedErrorCode;
 import fun.fengwk.convention4j.api.code.Status;
-import fun.fengwk.convention4j.api.code.SuccessCodes;
+import fun.fengwk.convention4j.api.code.SuccessCode;
 import fun.fengwk.convention4j.api.result.DefaultResult;
 import fun.fengwk.convention4j.api.result.Errors;
 import fun.fengwk.convention4j.api.result.Result;
@@ -81,69 +81,121 @@ public class Results {
     }
 
     /**
-     * success {@link SuccessCodes#OK}的快捷方式。
-     * 推荐GET、PUT、PATCH使用。
+     * success {@link SuccessCode#OK}的快捷方式。
+     * 推荐GET、PUT、PATCH、DELETE使用。
      *
      * @param <T>
      * @return
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.1">200 OK</a>
      */
     public static <T> Result<T> ok() {
-        return success(SuccessCodes.OK);
+        return success(SuccessCode.OK);
     }
 
     /**
-     * success {@link SuccessCodes#OK}的快捷方式。
-     * 推荐GET、PUT、PATCH使用。
+     * success {@link SuccessCode#OK}的快捷方式。
+     * 推荐GET、PUT、PATCH、DELETE使用。
      *
      * @param <T>
      * @return
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.1">200 OK</a>
      */
     public static <T> Result<T> ok(T data) {
-        return success(SuccessCodes.OK, data);
+        return success(SuccessCode.OK, data);
     }
 
     /**
-     * success {@link SuccessCodes#CREATED}的快捷方式。
+     * success {@link SuccessCode#CREATED}的快捷方式。
      * 推荐POST使用。
      *
      * @param <T>
      * @return
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.2">201 Created</a>
      */
     public static <T> Result<T> created() {
-        return success(SuccessCodes.CREATED);
+        return success(SuccessCode.CREATED);
     }
 
     /**
-     * success {@link SuccessCodes#CREATED}的快捷方式。
+     * success {@link SuccessCode#CREATED}的快捷方式。
      * 推荐POST使用。
      *
      * @param <T>
      * @return
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.2">201 Created</a>
      */
     public static <T> Result<T> created(T data) {
-        return success(SuccessCodes.CREATED, data);
+        return success(SuccessCode.CREATED, data);
     }
 
     /**
-     * success {@link SuccessCodes#NO_CONTENT}的快捷方式。
-     * 推荐DELETE使用。
+     * success {@link SuccessCode#ACCEPTED}的快捷方式。
+     * 通常用于异步处理请求的接受，表示执行尚未完成，但已经被接受。
+     *
+     * @return
+     * @param <T>
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.3">202 Accepted</a>
+     */
+    public static <T> Result<T> accepted() {
+        return success(SuccessCode.ACCEPTED);
+    }
+
+    /**
+     * success {@link SuccessCode#ACCEPTED}的快捷方式。
+     * 通常用于异步处理请求的接受，表示执行尚未完成，但已经被接受。
+     *
+     * @return
+     * @param <T>
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.3">202 Accepted</a>
+     */
+    public static <T> Result<T> accepted(T data) {
+        return success(SuccessCode.ACCEPTED, data);
+    }
+
+    /**
+     * success {@link SuccessCode#NON_AUTHORITATIVE_INFORMATION}的快捷方式。
+     *
+     * @return
+     * @param <T>
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.4">Non-Authoritative Information</a>
+     */
+    public static <T> Result<T> nonAuthoritativeInformation() {
+        return success(SuccessCode.NON_AUTHORITATIVE_INFORMATION);
+    }
+
+    /**
+     * success {@link SuccessCode#NON_AUTHORITATIVE_INFORMATION}的快捷方式。
+     *
+     * @return
+     * @param <T>
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.4">Non-Authoritative Information</a>
+     */
+    public static <T> Result<T> nonAuthoritativeInformation(T data) {
+        return success(SuccessCode.NON_AUTHORITATIVE_INFORMATION, data);
+    }
+
+    /**
+     * success {@link SuccessCode#NO_CONTENT}的快捷方式。
+     * 不推荐在HTTP协议中返回该Result，在标准的HTTP协议中该Result不应当返回荷载因此会导致该Result内容丢失。
      *
      * @param <T>
      * @return
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.5">204 No Content</a>
+     * @see <a href="https://github.com/reactor/reactor-netty/issues/1057">Netty Server handles HTTP 204(no content) with response body #1057</a>
      */
     public static <T> Result<T> noContent() {
-        return success(SuccessCodes.NO_CONTENT);
+        return success(SuccessCode.NO_CONTENT);
     }
 
     /**
-     * success {@link SuccessCodes#NO_CONTENT}的快捷方式。
-     * 推荐DELETE使用。
+     * success {@link SuccessCode#RESET_CONTENT}的快捷方式。
      *
-     * @param <T>
      * @return
+     * @param <T>
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.6">205 Reset Content</a>
      */
-    public static <T> Result<T> noContent(T data) {
-        return success(SuccessCodes.NO_CONTENT, data);
+    public static <T> Result<T> resetContent(T data) {
+        return success(SuccessCode.RESET_CONTENT, data);
     }
 
 }

@@ -2,7 +2,7 @@ package fun.fengwk.convention4j.springboot.test.starter.repo;
 
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.page.PageQuery;
-import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.page.Pages;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ResolvableType;
@@ -10,6 +10,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -152,8 +153,8 @@ public abstract class AbstractTestRepository<ENTITY, ID> {
         if (entity == null) {
             return null;
         }
-        return GsonUtils.fromJson(GsonUtils.toJson(entity),
-            ResolvableType.forClass(getClass()).as(AbstractTestRepository.class).getGeneric(0).getType());
+        Type type = ResolvableType.forClass(getClass()).as(AbstractTestRepository.class).getGeneric(0).getType();
+        return JsonUtils.fromJson(JsonUtils.toJson(entity), type);
     }
 
     private void copyProperties(ENTITY from, ENTITY to) {

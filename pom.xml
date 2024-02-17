@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>0.0.18</version>
+    <version>0.0.19</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -56,6 +56,7 @@
         <module>convention4j-oauth2</module>
         <module>convention4j-example</module>
         <module>convention4j-archetype</module>
+        <module>convention4j-spring-cloud-starter</module>
     </modules>
 
     <properties>
@@ -64,12 +65,13 @@
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>0.0.18</convention4j.version>
+        <convention4j.version>0.0.19</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.44</auto-mapper.version>
-        <spring-boot-dependencies.version>3.0.2</spring-boot-dependencies.version>
-        <spring-cloud-dependencies.version>2022.0.0</spring-cloud-dependencies.version>
+        <spring-boot-dependencies.version>3.0.13</spring-boot-dependencies.version>
+        <spring-cloud-dependencies.version>2022.0.5</spring-cloud-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2022.0.0.0</spring-cloud-alibaba-dependencies.version>
+        <spring-cloud-starter-openfeign.version>4.0.6</spring-cloud-starter-openfeign.version>
         <mybatis-spring-boot-starter.version>3.0.2</mybatis-spring-boot-starter.version>
         <mysql-connector-java.version>5.1.49</mysql-connector-java.version>
         <resteasy-jaxrs.version>3.15.6.Final</resteasy-jaxrs.version>
@@ -87,6 +89,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <auto-service.version>1.1.1</auto-service.version>
         <commons-collections4.version>4.4</commons-collections4.version>
+        <transmittable-thread-local.version>2.14.4</transmittable-thread-local.version>
     </properties>
 
     <dependencyManagement>
@@ -113,6 +116,11 @@
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-cloud-starter</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-spring-boot-starter-web</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
@@ -123,12 +131,7 @@
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
-                <artifactId>convention4j-oauth2-sdk</artifactId>
-                <version>${convention4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>fun.fengwk.convention4j</groupId>
-                <artifactId>convention4j-oauth2-core</artifactId>
+                <artifactId>convention4j-oauth2-server</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>
@@ -273,6 +276,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons-collections4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>transmittable-thread-local</artifactId>
+                <version>${transmittable-thread-local.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

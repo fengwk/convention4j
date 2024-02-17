@@ -1,32 +1,20 @@
 package fun.fengwk.convention4j.oauth2.infra.repo;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
-import fun.fengwk.convention4j.oauth2.core.OAuth2Properties;
-import fun.fengwk.convention4j.oauth2.core.model.OAuth2Token;
-import fun.fengwk.convention4j.oauth2.core.repo.OAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.infra.mapper.OAuth2TokenMapper;
 import fun.fengwk.convention4j.oauth2.infra.model.OAuth2TokenDO;
-import jakarta.annotation.PostConstruct;
+import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
+import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Repository;
 
 /**
  * @author fengwk
  */
 @AllArgsConstructor
-@Repository
 public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
 
-    private final OAuth2Properties oauth2Properties;
     private final NamespaceIdGenerator<Long> idGenerator;
     private final OAuth2TokenMapper oauth2TokenMapper;
-
-    @PostConstruct
-    public void init() {
-        if (oauth2Properties.isAutoInitInfra()) {
-            oauth2TokenMapper.createTableIfNotExists();
-        }
-    }
 
     @Override
     public long generateId() {
@@ -34,13 +22,13 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
     }
 
     @Override
-    public boolean add(OAuth2Token oauth2Token) {
+    public boolean add(OAuth2Token oauth2Token, int authorizeExpireSeconds) {
         OAuth2TokenDO oauth2TokenDO = convert(oauth2Token);
         return oauth2TokenMapper.insertSelective(oauth2TokenDO) > 0;
     }
 
     @Override
-    public boolean updateById(OAuth2Token oauth2Token) {
+    public boolean updateById(OAuth2Token oauth2Token, int authorizeExpireSeconds) {
         OAuth2TokenDO oauth2TokenDO = convert(oauth2Token);
         return oauth2TokenMapper.updateById(oauth2TokenDO) > 0;
     }

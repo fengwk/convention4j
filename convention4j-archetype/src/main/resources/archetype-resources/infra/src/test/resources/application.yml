@@ -5,7 +5,7 @@ spring:
 
   application:
     # 应用名称
-    name: ${artifactId}
+    name: ${rootArtifactId}
 
   data:
     # 测试的redis服务
@@ -21,6 +21,12 @@ spring:
     # 指定的默认的用户名SA，防止h2出现认证异常
     # 详见，org.h2.engine.Database.setMasterUser
     username: SA
+
+  # 测试时关闭nacos配置
+  cloud:
+    nacos:
+      config:
+        enabled: false
 
 convention:
   snowflake-id:

@@ -17,7 +17,7 @@
         </dependency>
         <dependency>
             <groupId>fun.fengwk.convention4j</groupId>
-            <artifactId>convention4j-spring-boot-starter</artifactId>
+            <artifactId>convention4j-spring-cloud-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>fun.fengwk.convention4j</groupId>

@@ -81,12 +81,8 @@ convention:
 
 ```xml
 <dependency>
-    <groupId>org.springframework.data</groupId>
-    <artifactId>spring-data-redis</artifactId>
-</dependency>
-<dependency>
-    <groupId>redis.clients</groupId>
-    <artifactId>jedis</artifactId>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
 </dependency>
 ```
 

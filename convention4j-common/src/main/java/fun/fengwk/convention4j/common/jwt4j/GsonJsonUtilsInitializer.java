@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.jwt4j;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.common.gson.GsonHolder;
+import fun.fengwk.convention4j.common.json.gson.GsonHolder;
 import fun.fengwk.jwt4j.JWT;
 import fun.fengwk.jwt4j.JsonUtilsInitializer;
 import fun.fengwk.jwt4j.support.GsonJsonUtilsAdapter;

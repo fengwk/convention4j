@@ -1,0 +1,22 @@
+create table if not exists oauth2_token (
+    id                   bigint unsigned not null comment '用户系统id',
+    client_id            varchar(64) not null comment '客户端id',
+    subject_id           varchar(64) not null comment '主体id',
+    scope                varchar(128) not null comment '作用域',
+    token_type           varchar(64) not null comment '令牌类型',
+    access_token         varchar(128) not null comment '访问令牌',
+    refresh_token        varchar(128) not null comment '刷新令牌',
+    sso_id               varchar(128) not null comment '单点登陆id',
+    last_refresh_time    datetime(3) not null comment '最后一次刷新的时间',
+    authorize_time       datetime(3) not null comment '授权的时间',
+    create_time          datetime(3) not null default current_timestamp(3) comment '创建时间',
+    update_time          datetime(3) not null default current_timestamp(3) on update current_timestamp(3) comment '更新时间',
+    version              bigint not null default '0' comment '数据版本号',
+    primary key (id),
+    unique uk_accessToken (access_token),
+    unique uk_refreshToken (refresh_token),
+    unique uk_ssoId (sso_id),
+    index idx_clientId_subjectId (client_id, subject_id),
+    index idx_subjectId (subject_id),
+    index idx_authorizeTime (authorize_time)
+) engine=InnoDB default charset=utf8mb4 comment='oauth2令牌表';

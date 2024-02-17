@@ -6,12 +6,13 @@ package ${package}.infra;
 import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import ${package}.core.CoreAutoConfiguration;
 
 /**
  * @author fengwk
  */
 @EnableTestRedisServer
-@SpringBootApplication
+@SpringBootApplication(exclude = CoreAutoConfiguration.class)
 public class InfraTestApplication {
 
     public static void main(String[] args) {

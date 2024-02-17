@@ -3,5 +3,6 @@
 Archetype of [convention4j](https://github.com/fengwk/convention4j), use the following command to quickly build the application:
 
 ```shell
-mvn archetype:generate -DarchetypeGroupId=fun.fengwk.convention4j -DarchetypeArtifactId=convention4j-archetype -DarchetypeVersion=0.0.18
+mvn archetype:generate -DarchetypeGroupId=fun.fengwk.convention4j -DarchetypeArtifactId=convention4j-archetype -DarchetypeVersion=0.0.19
+chmod +x <project-dir>/app/**
 ```

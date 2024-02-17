@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.oauth2.infra.repo;
 
-import fun.fengwk.convention4j.oauth2.core.model.AuthenticationCode;
-import fun.fengwk.convention4j.oauth2.infra.OAuth2InfraPresetTestApplication;
+import fun.fengwk.convention4j.oauth2.infra.OAuth2InfraTestApplication;
+import fun.fengwk.convention4j.oauth2.server.model.AuthenticationCode;
 import fun.fengwk.convention4j.oauth2.share.constant.ResponseType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +14,7 @@ import java.util.Objects;
 /**
  * @author fengwk
  */
-@SpringBootTest(classes = OAuth2InfraPresetTestApplication.class)
+@SpringBootTest(classes = OAuth2InfraTestApplication.class)
 @RunWith(SpringRunner.class)
 public class RedisAuthenticationCodeRepositoryTest {
 

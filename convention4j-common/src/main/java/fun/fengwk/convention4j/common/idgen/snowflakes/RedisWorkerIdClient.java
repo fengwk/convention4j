@@ -44,7 +44,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
     /**
      * redis中存储所有workerId的hash结构的key。
      */
-    private static final String WORKER_HASH_KEY = "REDIS_WORKER_ID_CLIENT_WORKER_HASH";
+    private static final String WORKER_HASH_KEY = "REDIS_WORKER_ID_CLIENT:%s";
 
     /**
      * 锁过期时间，默认60秒。设置过期时间是为了防止异常情况下锁一直被占有得不到释放。
@@ -84,6 +84,11 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      * redis脚本执行器。
      */
     private final RedisScriptExecutor scriptExecutor;
+
+    /**
+     * 当前客户端的命名空间，可以用于应用隔离。
+     */
+    private final String namespace;
 
     /**
      * 当前客户端的唯一标识。
@@ -130,7 +135,8 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      *
      * @param scriptExecutor not null
      */
-    public RedisWorkerIdClient(RedisScriptExecutor scriptExecutor) {
+    public RedisWorkerIdClient(String namespace, RedisScriptExecutor scriptExecutor) {
+        this.namespace = Objects.requireNonNull(namespace, "namespace cannot be null");
         this.scriptExecutor = Objects.requireNonNull(scriptExecutor, "scriptExecutor cannot be null");
     }
 
@@ -178,10 +184,11 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
         if (from >= to) {
             return null;
         }
-
+        String workerHashKey = String.format(WORKER_HASH_KEY, namespace);
+        log.info("Apply idle workerId from '{}' to '{}' in '{}'", from, to, workerHashKey);
         return scriptExecutor.execute(
                 LUA_APPLY_IDLE_WORKER_ID,
-                Collections.singletonList(WORKER_HASH_KEY),
+                Collections.singletonList(workerHashKey),
                 Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(from), String.valueOf(to - 1)),
                 Long.class);
     }
@@ -193,9 +200,10 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      * @return
      */
     private Long renewWorkerId(long workerId) throws Exception {
+        String workerHashKey = String.format(WORKER_HASH_KEY, namespace);
         return scriptExecutor.execute(
                 LUA_RENEW_WORKER_ID,
-                Collections.singletonList(WORKER_HASH_KEY),
+                Collections.singletonList(workerHashKey),
                 Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(workerId)),
                 Long.class);
     }

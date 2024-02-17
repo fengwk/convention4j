@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.oauth2.infra.repo;
 
-import fun.fengwk.convention4j.oauth2.core.model.OAuth2Token;
-import fun.fengwk.convention4j.oauth2.infra.OAuth2InfraPresetTestApplication;
+import fun.fengwk.convention4j.oauth2.infra.OAuth2InfraTestApplication;
+import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,12 +10,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
+
+import static org.junit.Assert.*;
 
 /**
  * @author fengwk
  */
-@SpringBootTest(classes = OAuth2InfraPresetTestApplication.class)
+@SpringBootTest(classes = OAuth2InfraTestApplication.class)
 @RunWith(SpringRunner.class)
 public class MysqlOAuth2TokenRepositoryTest {
 
@@ -37,13 +38,13 @@ public class MysqlOAuth2TokenRepositoryTest {
         LocalDateTime time = LocalDateTime.of(2024, 1, 23, 12, 0, 0, 0);
         oauth2Token.setLastRefreshTime(time);
         oauth2Token.setAuthorizeTime(time);
-        assert mysqlOAuth2TokenRepository.add(oauth2Token);
+        assertTrue(mysqlOAuth2TokenRepository.add(oauth2Token, 0));
 
         OAuth2Token found = mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken());
-        assert Objects.equals(found, oauth2Token);
+        assertEquals(oauth2Token, found);
 
         found = mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken());
-        assert Objects.equals(found, oauth2Token);
+        assertEquals(oauth2Token, found);
 
         oauth2Token.setId(1L);
         oauth2Token.setClientId("cid_update");
@@ -53,13 +54,18 @@ public class MysqlOAuth2TokenRepositoryTest {
         oauth2Token.setAccessToken("accessTokenUpdate");
         oauth2Token.setRefreshToken("refreshTokenUpdate");
 
-        assert mysqlOAuth2TokenRepository.updateById(oauth2Token);
+        assertTrue(mysqlOAuth2TokenRepository.updateById(oauth2Token, 0));
 
         found = mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken());
-        assert Objects.equals(found, oauth2Token);
+        assertEquals(oauth2Token, found);
 
         found = mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken());
-        assert Objects.equals(found, oauth2Token);
+        assertEquals(oauth2Token, found);
+
+        assertTrue(mysqlOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
+        assertNull(mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
+        assertNull(mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
+        assertNull(mysqlOAuth2TokenRepository.getBySsoId(oauth2Token.getSsoId()));
     }
 
 }

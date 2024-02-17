@@ -9,7 +9,7 @@ import fun.fengwk.convention4j.common.cache.key.IndexCacheKeyPrefix;
 import fun.fengwk.convention4j.common.cache.key.IndexVersionKey;
 import fun.fengwk.convention4j.common.cache.key.KeyUtils;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
-import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
@@ -156,7 +156,7 @@ public abstract class AbstractIndexCacheManager<O, I> extends CacheManager<O> {
                 String indexCacheZipKey = index2IndexCacheZipKeyMap.get(index);
                 String objJson = objJsonMap.get(indexCacheZipKey);
                 if (objJson != null) {
-                    O obj = GsonUtils.fromJson(objJson, objClass);
+                    O obj = JsonUtils.fromJson(objJson, objClass);
                     objMap.put(index, obj);
                 } else {
                     missedIndexList.add(index);
@@ -175,7 +175,7 @@ public abstract class AbstractIndexCacheManager<O, I> extends CacheManager<O> {
             // 记录到missedDataJsonMap，后续写入缓存
             String indexCacheZipKey = index2IndexCacheZipKeyMap.get(missedIndex);
             // 此处将缓存空对象为"null"
-            String dataJson = GsonUtils.toJson(found);
+            String dataJson = JsonUtils.toJson(found);
             missedDataJsonMap.put(indexCacheZipKey, dataJson);
         }
         // 写入缺失的data数据到缓存

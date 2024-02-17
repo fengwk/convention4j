@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.cache.mapper.provider;
 
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.provider.WriteTransactionSupport;
+import fun.fengwk.convention4j.springboot.starter.transaction.TransactionExecutor;
 import lombok.AllArgsConstructor;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.function.Supplier;
 
@@ -12,18 +12,11 @@ import java.util.function.Supplier;
 @AllArgsConstructor
 public class MapperWriteTransactionSupport implements WriteTransactionSupport {
 
-    private final TransactionTemplate transactionTemplate;
+    private final TransactionExecutor transactionExecutor;
 
     @Override
     public <T> T transactionalWrite(Supplier<T> writer) {
-        return transactionTemplate.execute(status -> {
-            try {
-                return writer.get();
-            } catch (Exception ex) {
-                status.setRollbackOnly();
-                throw ex;
-            }
-        });
+        return transactionExecutor.executeWithRequired(writer::get);
     }
 
 }

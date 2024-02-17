@@ -2,7 +2,8 @@ fun.fengwk.convention4j.springboot.starter.validation.SpringConventionCheckerAut
 fun.fengwk.convention4j.springboot.starter.snowflake.SnowflakeIdAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.i18n.I18nAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.code.ErrorCodeAutoConfiguration
-fun.fengwk.convention4j.springboot.starter.gson.GsonAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.json.JacksonAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.json.GsonAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.eventbus.EventBusAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.result.ResultAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.cache.CacheSupportAutoConfiguration

@@ -1,0 +1,14 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+spring:
+
+  application:
+    # 应用名称
+    name: ${rootArtifactId}
+
+  # 测试时关闭nacos配置
+  cloud:
+    nacos:
+      config:
+        enabled: false

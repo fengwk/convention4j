@@ -20,6 +20,10 @@
             <artifactId>${rootArtifactId}-infra</artifactId>
         </dependency>
         <dependency>
+            <groupId>fun.fengwk.gateway</groupId>
+            <artifactId>gateway-share</artifactId>
+        </dependency>
+        <dependency>
             <groupId>fun.fengwk.convention4j</groupId>
             <artifactId>convention4j-spring-boot-starter-web</artifactId>
         </dependency>

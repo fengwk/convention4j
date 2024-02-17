@@ -5,12 +5,17 @@ spring:
 
   application:
     # 应用名称
-    name: ${artifactId}
+    name: ${rootArtifactId}
+
+  profiles:
+    active: dev
 
   mvc:
     converters:
       # spring mvc使用的json转换器，使用规约指定的gson
-      preferred-json-mapper: gson
+      # jackson JacksonHttpMessageConvertersConfiguration
+      # gson GsonHttpMessageConvertersConfiguration
+      preferred-json-mapper: jackson
 
   data:
     # redis连接配置
@@ -32,6 +37,59 @@ spring:
     # 替换为mysql {password}
     password: {password}
 
+  config:
+    # NacosConfigDataMissingEnvironmentPostProcessor
+    # 指定nacos使用配置文件的dataId
+    import: 'nacos:${spring.application.name}.yml'
+
+  cloud:
+    discovery:
+      # 当这个选项被启用后nacos的loadbalancer将会被激活
+      # @ConditionalOnDiscoveryEnabled
+      enabled: true
+    # nacos配置，注意另外需配置spring.cloud.config.import
+    nacos:
+      # NacosConfigProperties
+      config:
+        server-addr: vps-nacos:8848
+        namespace: ${spring.profiles.active}
+      # NacosDiscoveryProperties
+      discovery:
+        server-addr: ${spring.cloud.nacos.config.server-addr}
+        namespace: ${spring.cloud.nacos.config.namespace}
+
+    loadbalancer:
+      nacos:
+        # 启用nacos的loadbalancer
+        # @ConditionalOnLoadBalancerNacos
+        enabled: true
+
+    # openfeign配置
+    openfeign:
+      okhttp:
+        # OkHttpFeignConfiguration
+        enabled: true
+      # FeignHttpClientProperties
+      httpclient:
+        # 关闭ssl验证
+        disable-ssl-validation: true
+      # FeignClientProperties
+      client:
+        # FeignClientConfiguration
+        config:
+          # default表示默认，或者具体的服务名表示指定服务
+          default:
+            loggerLevel: NONE
+            connect-timeout: 3000
+            read-timeout: 3000
+            follow-redirects: true
+
+# 日志配置
+logging:
+  level:
+    root: info
+
+# 规约配置
 convention:
   snowflake-id:
     # 雪花id开始时间，固定不可变

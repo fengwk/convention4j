@@ -7,7 +7,7 @@ import fun.fengwk.convention4j.common.cache.key.CacheKeyPrefix;
 import fun.fengwk.convention4j.common.cache.key.KeyUtils;
 import fun.fengwk.convention4j.common.cache.key.VersionKey;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
-import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 
 import java.lang.reflect.Type;
 import java.util.*;
@@ -88,7 +88,7 @@ public class CacheManager<O> {
                 return reloadReadCache(cacheKeyPrefix, readFunc, params, versionZipKeySet);
             } else {
                 // 反序列化对象
-                T obj = GsonUtils.fromJson(serializedObj, typeOfT);
+                T obj = JsonUtils.fromJson(serializedObj, typeOfT);
                 cacheManagerMetrics.read(cacheName, true);
                 return obj;
             }
@@ -170,7 +170,7 @@ public class CacheManager<O> {
         CacheKey cacheKey = buildCacheKey(cacheKeyPrefix, cacheVersionMap.values(), params);
         String cacheZipKey = KeyUtils.toZipKey(cacheKey);
         // GsonUtils会自动处理null对象
-        String serializedObj = GsonUtils.toJson(obj);
+        String serializedObj = JsonUtils.toJson(obj);
         cacheFacade.set(cacheZipKey, serializedObj, cacheExpireSeconds);
         cacheManagerMetrics.read(cacheKeyPrefix.getCacheName(), false);
         return obj;

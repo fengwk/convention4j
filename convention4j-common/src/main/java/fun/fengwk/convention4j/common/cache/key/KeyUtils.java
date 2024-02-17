@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.cache.key;
 
-import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -39,7 +39,7 @@ public class KeyUtils {
         if (zipKey == null) {
             return null;
         }
-        String json = GsonUtils.toJson(zipKey);
+        String json = JsonUtils.toJson(zipKey);
         return DigestUtils.md5DigestAsHex(json.getBytes(StandardCharsets.UTF_8));
     }
 

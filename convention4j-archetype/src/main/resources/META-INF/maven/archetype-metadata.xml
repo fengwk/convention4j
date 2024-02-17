@@ -17,6 +17,7 @@
         <include>lombok.config</include>
         <include>__gitignore__</include>
         <include>README.md</include>
+        <include>scripts/**</include>
       </includes>
     </fileSet>
   </fileSets>
@@ -63,6 +64,12 @@
           <directory>src/test/java</directory>
           <includes>
             <include>**/*.java</include>
+          </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+          <directory>src/test/resources</directory>
+          <includes>
+            <include>**/*.yml</include>
           </includes>
         </fileSet>
       </fileSets>

@@ -12,7 +12,9 @@ import java.util.function.Function;
  * @author fengwk
  */
 public abstract class TypeToken<T> {
-    
+
+    private static final int MAX_CACHE_SIZE = 100000;
+
     private static final ConcurrentMap<Type, Type> TYPE_CACHE = new ConcurrentHashMap<>();
     
     public Type getType() {
@@ -20,9 +22,11 @@ public abstract class TypeToken<T> {
                 .as(TypeToken.class)
                 .asParameterizedType()
                 .getActualTypeArguments()[0];
-        
+
+        if (TYPE_CACHE.size() > MAX_CACHE_SIZE) {
+            TYPE_CACHE.clear();
+        }
         // 使用缓存是为了兼容某些框架，例如FastJson由于使用IdentityMap因此并非使用equals确认Type的唯一性
-        // TODO 可能会在某些动态类型生成的框架中产生内存溢出风险
         return TYPE_CACHE.computeIfAbsent(type, Function.identity());
     }
 

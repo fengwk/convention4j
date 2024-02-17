@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>fun.fengwk.convention4j</groupId>
 		<artifactId>convention4j-parent</artifactId>
-		<version>0.0.18</version>
+		<version>0.0.19</version>
 	</parent>
 
 	<artifactId>convention4j-spring-boot-starter</artifactId>
@@ -29,6 +29,10 @@
 			<artifactId>spring-aspects</artifactId>
 		</dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
         </dependency>
@@ -40,10 +44,15 @@
 			<groupId>ognl</groupId>
 			<artifactId>ognl</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <optional>true</optional>
+        </dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>

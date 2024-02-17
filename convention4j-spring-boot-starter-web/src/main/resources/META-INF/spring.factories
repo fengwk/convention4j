@@ -1,2 +1,2 @@
 org.springframework.context.ApplicationContextInitializer=\
-  fun.fengwk.convention4j.springboot.starter.web.WebEnvironmentInitializer
+  fun.fengwk.convention4j.springboot.starter.web.env.WebEnvironmentInitializer

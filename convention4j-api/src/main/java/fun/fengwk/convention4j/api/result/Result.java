@@ -62,9 +62,31 @@ public interface Result<T> extends Serializable {
      * 将当前结果映射为其它类型。
      *
      * @param mapper 映射函数。
-     * @param <R> 映射到的类型。
+     * @param <R>    映射到的类型。
      * @return 映射后的结果。
      */
     <R> Result<R> map(Function<T, R> mapper);
+
+    /**
+     * 如果成功则获取数据，否则返回默认值。
+     *
+     * @param defaultValue 默认值。
+     * @return 数据值。
+     */
+    default T orElseGet(T defaultValue) {
+        return isSuccess() ? getData() : defaultValue;
+    }
+
+    /**
+     * 如果成功则获取数据，否则将抛出异常。
+     *
+     * @return 数据值。
+     */
+    default T orElseThrow() {
+        if (isSuccess()) {
+            return getData();
+        }
+        throw getErrorCode().asThrowable();
+    }
 
 }

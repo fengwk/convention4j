@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.mybatis;
 
-import fun.fengwk.convention4j.common.gson.GsonUtils;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.reflect.TypeResolver;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
@@ -45,25 +45,25 @@ public class JsonTypeHandler<T> extends BaseTypeHandler<T> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, GsonUtils.toJson(parameter));
+        ps.setString(i, JsonUtils.toJson(parameter));
     }
 
     @Override
     public T getNullableResult(ResultSet rs, String columnName) throws SQLException {
         String columnValue = rs.getString(columnName);
-        return GsonUtils.fromJson(columnValue, type);
+        return JsonUtils.fromJson(columnValue, type);
     }
 
     @Override
     public T getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
         String columnValue = rs.getString(columnIndex);
-        return GsonUtils.fromJson(columnValue, type);
+        return JsonUtils.fromJson(columnValue, type);
     }
 
     @Override
     public T getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
         String columnValue = cs.getString(columnIndex);
-        return GsonUtils.fromJson(columnValue, type);
+        return JsonUtils.fromJson(columnValue, type);
     }
 
 }

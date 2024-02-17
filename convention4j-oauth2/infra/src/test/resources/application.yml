@@ -15,6 +15,9 @@ spring:
     # 指定的默认的用户名SA，防止h2出现认证异常
     # 详见，org.h2.engine.Database.setMasterUser
     username: SA
+    # 指定classpath中的DDL初始化文件
+    schema:
+      - schema.sql
 
 convention:
 
@@ -28,5 +31,4 @@ convention:
       locale: zh_CN
 
   oauth2:
-    # 自动初始化oauth2基础设施
-    auto-init-infra: true
+    enable-mysql-repo: true
