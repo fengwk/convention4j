@@ -90,6 +90,7 @@
         <auto-service.version>1.1.1</auto-service.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <transmittable-thread-local.version>2.14.4</transmittable-thread-local.version>
+        <bcprov-jdk18on.version>1.77</bcprov-jdk18on.version>
     </properties>
 
     <dependencyManagement>
@@ -281,6 +282,11 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>transmittable-thread-local</artifactId>
                 <version>${transmittable-thread-local.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bcprov-jdk18on.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

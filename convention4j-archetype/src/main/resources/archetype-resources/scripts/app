@@ -56,7 +56,7 @@ stop() {
 start() {
   set -e
   trap stop SIGINT SIGQUIT SIGTERM
-  nohup $app_java_cmd -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  nohup $app_java_cmd -Xms128M -Xmx512M -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid
 }
