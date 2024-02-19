@@ -84,6 +84,13 @@ spring:
             read-timeout: 3000
             follow-redirects: true
 
+server:
+  port: 8080
+  # Compression
+  compression:
+    # 启用gzip压缩
+    enabled: true
+
 # 日志配置
 logging:
   level:
