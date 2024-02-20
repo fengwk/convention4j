@@ -26,6 +26,7 @@ public class DefaultObjectMapperConfigurator implements ObjectMapperConfigurator
 
         SimpleModule defaultModule = new SimpleModule();
         defaultModule.addSerializer(Long.class, new LongJsonSerializer());
+        defaultModule.addSerializer(long.class, new LongJsonSerializer());
         defaultModule.addSerializer(Result.class, new ResultJsonSerializer());
         defaultModule.addDeserializer(Result.class, new ResultJsonDeserializer());
         defaultModule.addDeserializer(Page.class, new PageDeserializer());

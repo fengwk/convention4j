@@ -128,11 +128,14 @@ public class JacksonTest {
         System.out.println(s);
         L lObj = JacksonUtils.readValue(s, L.class);
         assertEquals(kvs.get("l"), lObj.getL());
+        System.out.println(JacksonUtils.writeValueAsString(lObj));
     }
 
     @Data
     static class L {
         long l;
     }
+
+
 
 }
