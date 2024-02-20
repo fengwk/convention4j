@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.model.context;
 
+import fun.fengwk.convention4j.common.web.UriUtils;
 import lombok.Data;
 
 /**
@@ -20,5 +21,9 @@ public class DefaultTokenContext<CERTIFICATE> implements AuthenticationCodeToken
     private CERTIFICATE certificate;
     private String ssoId;
     private boolean ssoAuthenticate;
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = UriUtils.decodeUriComponent(redirectUri);
+    }
 
 }
