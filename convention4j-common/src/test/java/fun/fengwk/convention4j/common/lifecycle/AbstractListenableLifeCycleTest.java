@@ -142,9 +142,9 @@ public class AbstractListenableLifeCycleTest {
         assert lifeCycle.getState() == LifeCycleState.STARTED;
         assert !lifeCycle.init();
         assert !lifeCycle.start();
-        assert !lifeCycle.close();
-        assert lifeCycle.stop();
-        assert lifeCycle.getState() == LifeCycleState.STOPPED;
+        assert lifeCycle.close();
+        assert !lifeCycle.stop();
+        assert lifeCycle.getState() == LifeCycleState.CLOSED;
     }
 
     @Test

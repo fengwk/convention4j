@@ -107,6 +107,8 @@ public abstract class AbstractLifeCycle implements LifeCycle {
     @Override
     public boolean close() throws LifeCycleException {
         return executeWithLifeCycleWriteLock(() -> {
+            stop(); // 先停止
+
             LifeCycleState state = getState();
 
             if (!canClose(state)) {
