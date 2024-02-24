@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.spring.cloud.starter.nacos;
 
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
+import com.alibaba.cloud.nacos.registry.NacosAutoServiceRegistration;
 import com.alibaba.cloud.nacos.util.InetIPv6Utils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -25,6 +26,18 @@ public class NacosCustomAutoConfiguration {
         Environment environment) {
         return new NacosRegistrationIpCorrector(nacosDiscoveryProperties,
             inetIPv6Utils, inetUtils, applicationEventPublisher, environment);
+    }
+
+    @Bean
+    public NacosRegistrationOnlineEndpoint nacosRegistrationOnlineEndpoint(
+        NacosAutoServiceRegistration nacosAutoServiceRegistration) {
+        return new NacosRegistrationOnlineEndpoint(nacosAutoServiceRegistration);
+    }
+
+    @Bean
+    public NacosRegistrationOfflineEndpoint nacosRegistrationOfflineEndpoint(
+        NacosAutoServiceRegistration nacosAutoServiceRegistration) {
+        return new NacosRegistrationOfflineEndpoint(nacosAutoServiceRegistration);
     }
 
 }
