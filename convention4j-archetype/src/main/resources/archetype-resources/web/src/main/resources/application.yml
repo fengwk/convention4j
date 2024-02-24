@@ -91,6 +91,13 @@ server:
     # 启用gzip压缩
     enabled: true
 
+# https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus,offline,online"
+
 # 日志配置
 logging:
   level:
