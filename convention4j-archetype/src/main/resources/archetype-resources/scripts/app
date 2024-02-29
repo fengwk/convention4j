@@ -3,22 +3,19 @@
 script_home=$(readlink -f $(dirname $(readlink -f "$0")))
 app_home=$(readlink -f $(dirname $script_home))
 # 查找app java环境所在的目录
-app_java_home="$APP_JAVA_HOME"
-if [ -z "$app_java_home" ]; then
-  app_java_home="$JAVA_HOME"
-fi
-if [ ! -d "$app_java_home" ]; then
-  echo "cannot found app_java_home: $app_java_home"
+java_home="$JAVA_HOME"
+if [ ! -d "$java_home" ]; then
+  echo "cannot found java_home: $java_home"
   exit 1
 fi
 # 查找java命令
-app_java_cmd="$app_java_home/bin/java"
-if [ ! -x "$app_java_cmd" ]; then
-  echo "cannot found app_java_cmd: $app_java_cmd"
+java_cmd="$java_home/bin/java"
+if [ ! -x "$java_cmd" ]; then
+  echo "cannot found executable java_cmd: $java_cmd"
   exit 1
 fi
 # 设置java环境
-export JAVA_HOME=$app_java_home
+export JAVA_HOME=$java_home
 # 获取日志路径
 app_runtime_home=$APP_RUNTIME_HOME
 if [ -z "$app_runtime_home" ]; then
@@ -28,9 +25,9 @@ fi
 env() {
   echo "script_home: $script_home"
   echo "app_home: $app_home"
-  echo "app_java_home: $app_java_home"
-  echo "app_java_cmd: $app_java_cmd"
   echo "app_runtime_home: $app_runtime_home"
+  echo "java_home: $java_home"
+  echo "java_cmd: $java_cmd"
 }
 
 build() {
@@ -60,7 +57,7 @@ start() {
   if [ "$debug" == "true" ]; then
     debug='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000'
   fi
-  nohup $app_java_cmd -Xms64M -Xmx256M $debug -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  nohup $java_cmd -Xms64M -Xmx256M $debug -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid
 }
