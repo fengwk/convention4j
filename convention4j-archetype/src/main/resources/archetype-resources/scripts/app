@@ -53,11 +53,14 @@ stop() {
 start() {
   set -e
   trap stop SIGINT SIGQUIT SIGTERM
+  JAVA_OPTS="-server -Xms64M -Xmx256M $JAVA_OPTS"
+  JAVA_OPTS="-Dsun.net.inetaddr.ttl=10 $JAVA_OPTS"
   debug="$DEBUG"
   if [ "$debug" == "true" ]; then
     debug='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000'
   fi
-  nohup $java_cmd -Xms64M -Xmx256M $debug -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  JAVA_OPTS="$debug $JAVA_OPTS"
+  nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid
 }
