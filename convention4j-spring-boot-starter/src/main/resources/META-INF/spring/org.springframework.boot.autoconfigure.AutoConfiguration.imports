@@ -9,3 +9,4 @@ fun.fengwk.convention4j.springboot.starter.result.ResultAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.cache.CacheSupportAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.cache.mapper.MapperCacheAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.transaction.TransactionExecutorAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.lettuce.KeepAliveLettuceAutoConfiguration
