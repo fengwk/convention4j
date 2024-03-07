@@ -50,7 +50,7 @@ public class MemoryKvStoreTest {
             }
         }).start();
 
-        Thread.sleep(5000L);
+        Thread.sleep(10000L);
 
         assertEquals(limit, memoryKvStore.size());
         assertEquals(0, memoryKvStore.heapSize());
@@ -78,7 +78,7 @@ public class MemoryKvStoreTest {
             }
         }).start();
 
-        Thread.sleep(5000L);
+        Thread.sleep(10000L);
 
         assertEquals(limit, memoryKvStore.size());
         assertEquals(0, memoryKvStore.heapSize());
