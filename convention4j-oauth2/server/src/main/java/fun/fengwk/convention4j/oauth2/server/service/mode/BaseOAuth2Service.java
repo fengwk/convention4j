@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.oauth2.server.service.mode;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2SubjectManager;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;
@@ -49,8 +48,8 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
         // 标准的认证流程
         Result<String> result = oauth2SubjectManager.authenticate(client, certificate);
         if (result.getData() == null) {
-            log.warn("Authenticate failed, message: {}, clientId: {}, certificate: {}",
-                result.getMessage(), client.getClientId(), JsonUtils.toJson(certificate));
+            log.warn("Authenticate failed, result: {}, clientId: {}, certificate: {}",
+                result, client.getClientId(), certificate);
             ErrorCode errorCode;
             if (!result.isSuccess()) {
                 errorCode = result.getErrorCode();

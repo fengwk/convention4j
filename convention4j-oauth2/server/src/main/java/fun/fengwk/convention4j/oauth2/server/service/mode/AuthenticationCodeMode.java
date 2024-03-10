@@ -80,12 +80,17 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
                 AuthenticationCode authenticationCode = checkAndGetAuthenticationCode(context.getCode());
                 if (authenticationCode.isSsoAuthenticate()) {
                     // 单点登陆的情况，直接返回单点登陆对应的令牌
-                    return oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
+                    OAuth2Token oauth2Token = oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
+                    log.debug("Sso authenticate, ssoId: {}, oauth2Token: {}",
+                        authenticationCode.getSsoId(), oauth2Token);
+                    return oauth2Token;
                 } else {
                     // 走正常的登陆流程
                     checkRedirectUri(context.getRedirectUri(), authenticationCode);
-                    return generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
+                    OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
                         client, authenticationCode.getSsoId());
+                    log.debug("Normal authenticate, oauth2Token: {}", oauth2Token);
+                    return oauth2Token;
                 }
             }
         };

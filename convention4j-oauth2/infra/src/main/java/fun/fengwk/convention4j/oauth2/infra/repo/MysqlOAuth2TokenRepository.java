@@ -6,10 +6,12 @@ import fun.fengwk.convention4j.oauth2.infra.model.OAuth2TokenDO;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author fengwk
  */
+@Slf4j
 @AllArgsConstructor
 public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
 
@@ -24,18 +26,24 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
     @Override
     public boolean add(OAuth2Token oauth2Token, int authorizeExpireSeconds) {
         OAuth2TokenDO oauth2TokenDO = convert(oauth2Token);
-        return oauth2TokenMapper.insertSelective(oauth2TokenDO) > 0;
+        boolean result = oauth2TokenMapper.insertSelective(oauth2TokenDO) > 0;
+        log.debug("Add oauth2 token to mysql, oauth2Token: {}, result: {}", oauth2Token, result);
+        return result;
     }
 
     @Override
     public boolean updateById(OAuth2Token oauth2Token, int authorizeExpireSeconds) {
         OAuth2TokenDO oauth2TokenDO = convert(oauth2Token);
-        return oauth2TokenMapper.updateById(oauth2TokenDO) > 0;
+        boolean result = oauth2TokenMapper.updateById(oauth2TokenDO) > 0;
+        log.debug("Update oauth2 token to mysql, oauth2Token: {}, result: {}", oauth2Token, result);
+        return result;
     }
 
     @Override
     public boolean removeByAccessToken(String accessToken) {
-        return oauth2TokenMapper.deleteByAccessToken(accessToken) > 0;
+        boolean result = oauth2TokenMapper.deleteByAccessToken(accessToken) > 0;
+        log.debug("Remove oauth2 token from mysql, accessToken: {}, result: {}", accessToken, result);
+        return result;
     }
 
     @Override

@@ -13,6 +13,7 @@ import fun.fengwk.convention4j.oauth2.share.model.OAuth2TokenDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * @author fengwk
  */
+@Slf4j
 @AllArgsConstructor
 public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
 
@@ -48,8 +50,10 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setSsoId(ssoIdMap.get(clientId));
         try {
             URI uri = oauth2Service.authorize(context);
+            log.debug("Sso authorize success, context: {}, uri: {}", context, uri);
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
+            log.debug("Sso authorize failed, context: {}", context, ex);
             // 如果sso认证失败则返回空结果
             return Results.ok();
         }
@@ -80,9 +84,11 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setSsoId(ssoIdMap.get(clientId));
         try {
             URI uri = oauth2Service.authorize(context);
+            log.debug("Authorize success, context: {}, uri: {}", context, uri);
             SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.ok(uri.toASCIIString());
         } catch (ThrowableErrorCode errorCode) {
+            log.debug("Authorize failed, context: {}", context, errorCode);
             SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.error(errorCode);
         }
@@ -119,9 +125,11 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setSsoId(ssoIdMap.get(clientId));
         try {
             OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(context);
+            log.debug("Token success, context: {}, oauth2TokenDTO: {}", context, oauth2TokenDTO);
             SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.created(oauth2TokenDTO);
         } catch (ThrowableErrorCode errorCode) {
+            log.debug("Token failed, context: {}", context, errorCode);
             SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.error(errorCode);
         }
@@ -139,6 +147,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         String scope) {
         String accessToken = TokenType.BEARER.parseAccessToken(authorization);
         SUBJECT subject = oauth2Service.subject(accessToken, scope);
+        log.debug("Subject success, accessToken: {}, scope: {}, subject: {}", accessToken, scope, subject);
         return Results.ok(subject);
     }
 
@@ -150,6 +159,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
     public Result<Void> revokeToken(String authorization) {
         String accessToken = TokenType.BEARER.parseAccessToken(authorization);
         oauth2Service.revokeToken(accessToken);
+        log.debug("Revoke token success, accessToken: {}", accessToken);
         return Results.ok();
     }
 

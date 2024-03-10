@@ -6,6 +6,7 @@ import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author fengwk
  */
+@Slf4j
 @AllArgsConstructor
 public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
 
@@ -46,6 +48,14 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         redisTemplate.opsForValue().set(rtKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
         redisTemplate.opsForValue().set(siKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
         redisTemplate.opsForValue().set(tokenKey, tokenValue, authorizeExpiresIn, TimeUnit.SECONDS);
+        log.debug("Add oauth2 token, set accessToken->tokenId, atKey: {}, idValue: {} authorizeExpiresIn: {}s",
+            atKey, idValue, authorizeExpireSeconds);
+        log.debug("Add oauth2 token, set refreshToken->tokenId, rtKey: {}, idValue: {} authorizeExpiresIn: {}s",
+            rtKey, idValue, authorizeExpireSeconds);
+        log.debug("Add oauth2 token, set ssoId->tokenId, siKey: {}, idValue: {} authorizeExpiresIn: {}s",
+            siKey, idValue, authorizeExpireSeconds);
+        log.debug("Add oauth2 token, set tokenId->token, tokenKey: {}, tokenValue: {} authorizeExpiresIn: {}s",
+            tokenKey, tokenValue, authorizeExpireSeconds);
         return true;
     }
 
@@ -66,6 +76,9 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         redisTemplate.delete(oldAtKey);
         redisTemplate.delete(oldRtKey);
         redisTemplate.delete(oldSiKey);
+        log.debug("Update oauth2 token, delete accessToken->tokenId, atKey: {}", oldAtKey);
+        log.debug("Update oauth2 token, delete refreshToken->tokenId, rtToken: {}", oldRtKey);
+        log.debug("Update oauth2 token, delete ssoId->tokenId, siKey: {}", oldSiKey);
 
         // 重新添加令牌
         return add(oauth2Token, authorizeExpireSeconds);
@@ -93,6 +106,10 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         redisTemplate.delete(atKey);
         redisTemplate.delete(rtKey);
         redisTemplate.delete(siKey);
+        log.debug("Remove oauth2 token, delete accessToken->tokenId, atKey: {}", atKey);
+        log.debug("Remove oauth2 token, delete refreshToken->tokenId, rtKey: {}", rtKey);
+        log.debug("Remove oauth2 token, delete ssoId->tokenId, siKey: {}", siKey);
+        log.debug("Remove oauth2 token, delete tokenId->token, tokenKey: {}", tokenKey);
         return true;
     }
 

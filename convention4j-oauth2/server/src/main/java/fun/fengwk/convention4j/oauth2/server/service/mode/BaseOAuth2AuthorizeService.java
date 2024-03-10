@@ -71,8 +71,8 @@ public abstract class BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE>
             throw OAuth2ErrorCodes.INVALID_REDIRECT_URI.asThrowable();
         }
         if (!client.supportRedirectUri(redirectUri)) {
-            log.warn("Client unsupported redirectUri, clientId: {}, redirectUri: {}",
-                client.getClientId(), redirectUri);
+            log.warn("Client unsupported redirectUri, clientId: {}, clientRedirectUris: {}, redirectUri: {}, ",
+                client.getClientId(), client.getRedirectUris(), redirectUri);
             throw OAuth2ErrorCodes.UNSUPPORTED_REDIRECT_URI.asThrowable();
         }
         return redirectUriBuilder;
