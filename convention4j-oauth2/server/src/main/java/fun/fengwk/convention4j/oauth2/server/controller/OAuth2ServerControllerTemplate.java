@@ -150,7 +150,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
     public Result<Void> revokeToken(String authorization) {
         String accessToken = TokenType.BEARER.parseAccessToken(authorization);
         oauth2Service.revokeToken(accessToken);
-        return Results.noContent();
+        return Results.ok();
     }
 
 }
