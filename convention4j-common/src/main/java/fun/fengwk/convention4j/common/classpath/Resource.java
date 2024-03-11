@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.classpath;
 
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 
 import java.net.URL;
 

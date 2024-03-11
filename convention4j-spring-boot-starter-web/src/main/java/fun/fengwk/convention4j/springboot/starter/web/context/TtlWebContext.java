@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * @author fengwk
  */
-public class ThreadLocalWebContext implements WebContext {
+public class TtlWebContext implements WebContext {
 
     private final TransmittableThreadLocal<Context> tlCtx = new TransmittableThreadLocal<>();
 

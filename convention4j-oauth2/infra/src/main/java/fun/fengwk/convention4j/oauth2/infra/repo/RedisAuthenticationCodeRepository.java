@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.oauth2.infra.repo;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.model.AuthenticationCode;
 import fun.fengwk.convention4j.oauth2.server.repo.AuthenticationCodeRepository;
 import lombok.AllArgsConstructor;

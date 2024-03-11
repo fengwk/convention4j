@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.tracer.util;
 
-import fun.fengwk.convention4j.tracer.util.SpanPropagation;
 import lombok.Builder;
 import lombok.Data;
 

@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.tracer;
 
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.SpanContext;
 import lombok.EqualsAndHashCode;

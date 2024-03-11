@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.classpath;
 
-import fun.fengwk.convention4j.common.AntPattern;
+import fun.fengwk.convention4j.common.util.AntPattern;
 import org.junit.Test;
 
 import java.io.IOException;

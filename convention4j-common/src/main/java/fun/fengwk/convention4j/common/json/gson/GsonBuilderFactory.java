@@ -1,10 +1,9 @@
 package fun.fengwk.convention4j.common.json.gson;
 
 import com.google.gson.GsonBuilder;
-import fun.fengwk.convention4j.common.ClassUtils;
-import fun.fengwk.convention4j.common.OrderedObject;
+import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * 
@@ -12,37 +11,8 @@ import java.util.*;
  */
 public class GsonBuilderFactory {
 
-    private static final List<GsonBuilderConfigurator> CONFIGURATORS;
-
-    static {
-        List<GsonBuilderConfigurator> configurators = new ArrayList<>();
-        ServiceLoader<GsonBuilderConfigurator> sl = ServiceLoader.load(
-            GsonBuilderConfigurator.class, ClassUtils.getDefaultClassLoader());
-        Iterator<GsonBuilderConfigurator> iterator = sl.iterator();
-        while (iterator.hasNext()) {
-            GsonBuilderConfigurator configurator;
-            try {
-                configurator = iterator.next();
-                configurator.init();
-            } catch (ServiceConfigurationError | NoClassDefFoundError ex) {
-                NoClassDefFoundError ncEx = null;
-                if (ex instanceof NoClassDefFoundError) {
-                    ncEx = (NoClassDefFoundError) ex;
-                }
-                if (ex.getCause() instanceof NoClassDefFoundError) {
-                    ncEx = (NoClassDefFoundError) ex.getCause();
-                }
-                if (ncEx != null
-                    // ignore for JsonPathGsonBuilderConfigurator
-                    && Objects.equals("com/jayway/jsonpath/Configuration$Defaults", ncEx.getMessage())) {
-                    continue;
-                }
-                throw ex;
-            }
-            configurators.add(configurator);
-        }
-        CONFIGURATORS = OrderedObject.sort(configurators);
-    }
+    private static final List<GsonBuilderConfigurator> CONFIGURATORS
+        = LazyServiceLoader.loadServiceIgnoreLoadFailed(GsonBuilderConfigurator.class);
 
     private GsonBuilderFactory() {}
     

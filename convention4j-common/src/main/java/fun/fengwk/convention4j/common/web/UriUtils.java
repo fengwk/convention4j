@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.web;
 
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;

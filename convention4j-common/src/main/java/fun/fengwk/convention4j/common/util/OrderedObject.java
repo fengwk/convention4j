@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.util;
 
 import java.util.Collection;
 import java.util.Comparator;

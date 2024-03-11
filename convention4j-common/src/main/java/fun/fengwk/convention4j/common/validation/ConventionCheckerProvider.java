@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.validation;
 
-import fun.fengwk.convention4j.common.OrderedObject;
+import fun.fengwk.convention4j.common.util.OrderedObject;
 
 /**
  * 检查其提供者。

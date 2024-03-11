@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.common.json.jackson;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.fengwk.convention4j.common.lang.ClassUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,7 +14,7 @@ public abstract class BaseModuleObjectMapperConfigurator implements ObjectMapper
     protected abstract String moduleClassName();
 
     protected Module newModule() throws Exception {
-        Class<?> clazz = Class.forName(moduleClassName());
+        Class<?> clazz = Class.forName(moduleClassName(), false, ClassUtils.getDefaultClassLoader());
         return (Module) clazz.getConstructor().newInstance();
     }
 

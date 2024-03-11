@@ -1,11 +1,11 @@
 package fun.fengwk.convention4j.common.sql.dynamic;
 
-import fun.fengwk.convention4j.common.NullSafe;
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.sql.dynamic.node.DynamicSqlNode;
 import fun.fengwk.convention4j.common.sql.dynamic.node.InterpretContext;
 import fun.fengwk.convention4j.common.sql.dynamic.node.InterpretException;
 import fun.fengwk.convention4j.common.sql.dynamic.parser.DynamicSqlParser;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import org.xml.sax.SAXException;
 
 import java.util.HashMap;

@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.tracer;
 
-import fun.fengwk.convention4j.common.NullSafe;
-import fun.fengwk.convention4j.common.StringUtils;
 import fun.fengwk.convention4j.common.clock.Clock;
+import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.propagation.TracerTransformer;
 import fun.fengwk.convention4j.tracer.tag.NumberTag;
@@ -176,13 +176,14 @@ public class TracerImpl implements Tracer {
             }
 
             SpanImpl span = new SpanImpl(clock, spanContext, spanFinisher, operationName, startTimestamp, references);
-            // 设置默认tags
-            TracerUtils.setDefaultTags(span);
-            // 如果是首个span则设置根span的tags和baggage
+
+            // 根span初始化
             if (parentContext == null || StringUtils.isBlank(parentContext.toSpanId())) {
-                TracerUtils.setRootSpanTags(span);
-                TracerUtils.setRootSpanBaggage(span);
+                TracerUtils.initializeRootSpan(span);
             }
+
+            // 默认的span初始化
+            TracerUtils.initializeSpan(span);
 
             // 处理tagValues
             if (tagValues != null) {

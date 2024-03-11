@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.oauth2.infra.repo;
 
-import fun.fengwk.convention4j.common.StringUtils;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;

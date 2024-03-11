@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.example.gson;
 
 import com.google.gson.Gson;
-import fun.fengwk.convention4j.common.MapUtils;
 import fun.fengwk.convention4j.common.json.gson.GsonHolder;
+import fun.fengwk.convention4j.common.util.MapUtils;
 
 /**
  * @author fengwk

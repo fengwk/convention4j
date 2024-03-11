@@ -6,7 +6,7 @@ import com.google.gson.internal.bind.DateTypeAdapter;
 import fun.fengwk.convention4j.api.page.CursorPage;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.result.Result;
-import fun.fengwk.convention4j.common.OrderedObject;
+import fun.fengwk.convention4j.common.util.OrderedObject;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.util;
 
 import java.util.ArrayList;
 import java.util.HashSet;

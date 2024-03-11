@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.tracer.propagation.extract;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.common.NullSafe;
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.propagation.Formats;
 import fun.fengwk.convention4j.tracer.propagation.PropagationConstants;
 import fun.fengwk.convention4j.tracer.propagation.SpanContextBean;

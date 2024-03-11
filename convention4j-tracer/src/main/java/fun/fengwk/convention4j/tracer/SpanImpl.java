@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.tracer;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.clock.Clock;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.tag.NumberTag;
 import io.opentracing.Span;

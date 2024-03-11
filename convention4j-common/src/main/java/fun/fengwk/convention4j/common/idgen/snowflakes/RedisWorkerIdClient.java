@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.idgen.snowflakes;
 
-import fun.fengwk.convention4j.common.ClassUtils;
+import fun.fengwk.convention4j.common.lang.ClassUtils;
 import fun.fengwk.convention4j.common.lifecycle.AbstractLifeCycle;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleState;

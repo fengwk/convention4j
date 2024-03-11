@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.tracer.propagation;
 
-import fun.fengwk.convention4j.common.StringUtils;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.tracer.SpanContextImpl;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.SpanContext;

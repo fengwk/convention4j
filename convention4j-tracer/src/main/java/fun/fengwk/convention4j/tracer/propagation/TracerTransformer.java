@@ -1,16 +1,15 @@
 package fun.fengwk.convention4j.tracer.propagation;
 
+import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 import fun.fengwk.convention4j.tracer.propagation.extract.Extract;
 import fun.fengwk.convention4j.tracer.propagation.inject.Inject;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * @author fengwk
@@ -18,14 +17,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TracerTransformer {
 
-    private final Map<Format<?>, Inject<?>> injectRegistry;
-    private final Map<Format<?>, Extract<?>> extractRegistry;
+    private final Map<Format<?>, Inject> injectRegistry;
+    private final Map<Format<?>, Extract> extractRegistry;
 
     public TracerTransformer() {
-        this.injectRegistry = loadAll(Inject.class).stream()
-            .collect(Collectors.toMap(Inject::format, Function.identity()));
-        this.extractRegistry = loadAll(Extract.class).stream()
-            .collect(Collectors.toMap(Extract::format, Function.identity()));
+        this.injectRegistry = loadRegistry(Inject.class);
+        this.extractRegistry = loadRegistry(Extract.class);
     }
 
     /**
@@ -52,9 +49,13 @@ public class TracerTransformer {
         return extract.extract(carrier);
     }
 
-    private <T> List<T> loadAll(Class<T> clazz) {
-        return ServiceLoader.load(clazz).stream()
-            .map(ServiceLoader.Provider::get).collect(Collectors.toList());
+    private <T extends TransformerSupport<?>> Map<Format<?>, T> loadRegistry(Class<T> clazz) {
+        List<T> services = LazyServiceLoader.loadServiceIgnoreLoadFailed(clazz);
+        Map<Format<?>, T> registry = new HashMap<>();
+        for (T service : services) {
+            registry.put(service.format(), service);
+        }
+        return registry;
     }
 
 }

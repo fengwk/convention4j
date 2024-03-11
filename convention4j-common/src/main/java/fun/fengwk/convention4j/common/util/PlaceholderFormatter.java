@@ -1,5 +1,7 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.util;
 
+
+import fun.fengwk.convention4j.common.lang.StringUtils;
 
 /**
  * {@link PlaceholderFormatter}提供了占位符字符串的格式化功能，

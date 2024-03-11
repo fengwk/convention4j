@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.cache.registry;
 
-import fun.fengwk.convention4j.common.Pair;
 import fun.fengwk.convention4j.common.cache.Cacheable;
 import fun.fengwk.convention4j.common.cache.exception.CacheExecuteException;
+import fun.fengwk.convention4j.common.util.Pair;
 import fun.fengwk.convention4j.springboot.starter.cache.annotation.meta.ListenKeyMeta;
 import lombok.extern.slf4j.Slf4j;
 

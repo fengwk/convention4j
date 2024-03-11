@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.common.cache;
 
-import fun.fengwk.convention4j.common.NullSafe;
-import fun.fengwk.convention4j.common.Ref;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.cache.metrics.LogCacheManagerMetrics;
+import fun.fengwk.convention4j.common.util.NullSafe;
+import fun.fengwk.convention4j.common.util.Ref;
 import org.junit.Before;
 import org.junit.Test;
 

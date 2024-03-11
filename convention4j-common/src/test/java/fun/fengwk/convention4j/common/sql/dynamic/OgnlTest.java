@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.sql.dynamic;
 
-import fun.fengwk.convention4j.common.MapUtils;
+import fun.fengwk.convention4j.common.util.MapUtils;
 import ognl.Ognl;
 import ognl.OgnlException;
 import org.junit.Test;

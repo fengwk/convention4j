@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.repo;
 
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.model.Client;
 import fun.fengwk.convention4j.springboot.test.starter.repo.AbstractTestRepository;
 import org.springframework.stereotype.Repository;

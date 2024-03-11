@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.example.i18n;
 
-import fun.fengwk.convention4j.common.MapUtils;
 import fun.fengwk.convention4j.common.i18n.AggregateResourceBundle;
 import fun.fengwk.convention4j.common.i18n.StringManager;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;
+import fun.fengwk.convention4j.common.util.MapUtils;
 
 import java.util.Locale;
 import java.util.ResourceBundle;

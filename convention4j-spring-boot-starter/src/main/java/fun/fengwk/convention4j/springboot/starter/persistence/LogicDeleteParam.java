@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.persistence;
 
 import fun.fengwk.automapper.annotation.UpdateIncrement;
-import fun.fengwk.convention4j.common.IntBool;
+import fun.fengwk.convention4j.common.util.IntBool;
 import lombok.Data;
 
 /**

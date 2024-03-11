@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.common.sql.dynamic.node;
 
-import fun.fengwk.convention4j.common.StringUtils;
 import fun.fengwk.convention4j.common.expression.AbstractExpressionParser;
 import fun.fengwk.convention4j.common.expression.ExpressionException;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import ognl.Ognl;
 import ognl.OgnlException;
 

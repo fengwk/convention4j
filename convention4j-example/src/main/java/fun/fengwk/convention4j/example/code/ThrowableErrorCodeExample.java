@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.example.code;
 
 import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.common.MapUtils;
+import fun.fengwk.convention4j.common.util.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

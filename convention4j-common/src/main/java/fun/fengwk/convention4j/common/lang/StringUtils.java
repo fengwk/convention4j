@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.lang;
 
 /**
  * 字符串工具类。

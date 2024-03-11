@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.json.gson;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.*;
 import com.google.gson.GsonBuilder;
-import fun.fengwk.convention4j.common.OrderedObject;
+import fun.fengwk.convention4j.common.util.OrderedObject;
 
 /**
  * @author fengwk

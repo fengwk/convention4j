@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.eventbus;
 
 import com.google.common.eventbus.EventBus;
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;

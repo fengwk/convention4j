@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.tracer.finisher;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.SpanImpl;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;

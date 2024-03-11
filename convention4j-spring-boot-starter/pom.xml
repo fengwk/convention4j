@@ -16,6 +16,14 @@
 			<groupId>fun.fengwk.convention4j</groupId>
 			<artifactId>convention4j-common</artifactId>
 		</dependency>
+        <dependency>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-tracer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.ofpay</groupId>
+            <artifactId>logback-mdc-ttl</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>

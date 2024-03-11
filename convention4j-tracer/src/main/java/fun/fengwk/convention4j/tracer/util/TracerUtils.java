@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.tracer.util;
 
 import fun.fengwk.convention4j.common.clock.SystemClock;
+import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.TracerImpl;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
@@ -19,6 +20,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TracerUtils {
 
+    private static final List<SpanInitializer> SPAN_INITIALIZERS
+        = LazyServiceLoader.loadServiceIgnoreLoadFailed(SpanInitializer.class);
+
+
+    public static final String TRACE_ID = "traceId";
+    public static final String SPAN_ID = "spanId";
     public static final String TAG_SPAN_ALIAS = "span.alias";
 
     private TracerUtils() {}
@@ -29,16 +36,16 @@ public class TracerUtils {
         GlobalTracer.registerIfAbsent(tracer);
     }
 
-    public static void setRootSpanBaggage(Span span) {
-        // TODO SPI
+    public static void initializeRootSpan(Span span) {
+        for (SpanInitializer initializer : SPAN_INITIALIZERS) {
+            initializer.initializeRootSpan(span);
+        }
     }
 
-    public static void setRootSpanTags(Span span) {
-        // TODO SPI
-    }
-
-    public static void setDefaultTags(Span span) {
-        // TODO SPI
+    public static void initializeSpan(Span span) {
+        for (SpanInitializer initializer : SPAN_INITIALIZERS) {
+            initializer.initializeSpan(span);
+        }
     }
 
     public static Map<String, String> buildBaggage(Iterable<Map.Entry<String, String>> baggageIt) {

@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.oauth2.server.model;
 
-import fun.fengwk.convention4j.common.AntPattern;
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.AntPattern;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ScopeUtils;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;

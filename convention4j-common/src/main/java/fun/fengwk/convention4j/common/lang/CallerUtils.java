@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.lang;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

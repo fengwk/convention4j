@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.tracer.util;
 
-import fun.fengwk.convention4j.common.NullSafe;
-import fun.fengwk.convention4j.common.StringUtils;
 import fun.fengwk.convention4j.common.function.Func0T1;
+import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;

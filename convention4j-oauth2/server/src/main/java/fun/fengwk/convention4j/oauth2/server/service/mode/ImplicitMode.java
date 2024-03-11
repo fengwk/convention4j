@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.service.mode;
 
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2SubjectManager;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;

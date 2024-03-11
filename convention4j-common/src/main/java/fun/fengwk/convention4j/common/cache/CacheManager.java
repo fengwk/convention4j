@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common.cache;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.cache.facade.CacheFacade;
 import fun.fengwk.convention4j.common.cache.key.CacheKey;
 import fun.fengwk.convention4j.common.cache.key.CacheKeyPrefix;
@@ -8,6 +7,7 @@ import fun.fengwk.convention4j.common.cache.key.KeyUtils;
 import fun.fengwk.convention4j.common.cache.key.VersionKey;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 
 import java.lang.reflect.Type;
 import java.util.*;

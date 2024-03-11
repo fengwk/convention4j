@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common;
 
+import fun.fengwk.convention4j.common.lang.CharSequenceView;
 import org.junit.Test;
 
 /**

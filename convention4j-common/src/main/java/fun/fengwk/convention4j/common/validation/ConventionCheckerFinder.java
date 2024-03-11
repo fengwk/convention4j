@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.validation;
 
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.reflect.TypeResolver;
+import fun.fengwk.convention4j.common.util.NullSafe;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

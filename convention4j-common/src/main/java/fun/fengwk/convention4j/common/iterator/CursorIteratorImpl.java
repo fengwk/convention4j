@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import fun.fengwk.convention4j.common.Order;
 import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
+import fun.fengwk.convention4j.common.util.Order;
 
 import java.util.LinkedList;
 import java.util.List;

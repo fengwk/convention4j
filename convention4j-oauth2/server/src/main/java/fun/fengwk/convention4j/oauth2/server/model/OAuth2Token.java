@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.model;
 
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
 import fun.fengwk.convention4j.oauth2.share.model.OAuth2TokenDTO;
 import lombok.Data;

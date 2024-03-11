@@ -1,8 +1,6 @@
 package fun.fengwk.convention4j.common.cache;
 
 import com.google.gson.internal.$Gson$Types;
-import fun.fengwk.convention4j.common.ListUtils;
-import fun.fengwk.convention4j.common.NullSafe;
 import fun.fengwk.convention4j.common.cache.facade.CacheFacade;
 import fun.fengwk.convention4j.common.cache.key.IndexCacheKey;
 import fun.fengwk.convention4j.common.cache.key.IndexCacheKeyPrefix;
@@ -10,6 +8,8 @@ import fun.fengwk.convention4j.common.cache.key.IndexVersionKey;
 import fun.fengwk.convention4j.common.cache.key.KeyUtils;
 import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.json.JsonUtils;
+import fun.fengwk.convention4j.common.util.ListUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;

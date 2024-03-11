@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import fun.fengwk.convention4j.common.Order;
+import fun.fengwk.convention4j.common.util.Order;
 
 /**
  * 有序的迭代器。

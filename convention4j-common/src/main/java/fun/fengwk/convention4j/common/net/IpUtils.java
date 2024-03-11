@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common;
+package fun.fengwk.convention4j.common.net;
 
 import java.net.*;
 import java.util.Enumeration;

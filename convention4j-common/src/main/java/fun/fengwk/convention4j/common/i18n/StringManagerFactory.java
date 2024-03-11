@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.i18n;
 
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 
 import java.lang.reflect.Proxy;
 import java.util.ResourceBundle;

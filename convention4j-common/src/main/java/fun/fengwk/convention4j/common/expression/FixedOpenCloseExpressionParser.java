@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.expression;
 
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 
 /**
  * @author fengwk

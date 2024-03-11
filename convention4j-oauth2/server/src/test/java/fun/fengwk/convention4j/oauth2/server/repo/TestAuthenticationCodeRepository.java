@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.repo;
 
-import fun.fengwk.convention4j.common.Pair;
+import fun.fengwk.convention4j.common.util.Pair;
 import fun.fengwk.convention4j.oauth2.server.model.AuthenticationCode;
 import org.springframework.stereotype.Repository;
 

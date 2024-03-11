@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.manager;
 
-import fun.fengwk.convention4j.common.StringUtils;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;
 import fun.fengwk.convention4j.oauth2.server.repo.TestClientRepository;
 import lombok.AllArgsConstructor;

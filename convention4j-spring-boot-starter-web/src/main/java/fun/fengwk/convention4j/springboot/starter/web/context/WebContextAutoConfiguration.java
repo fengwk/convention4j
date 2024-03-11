@@ -15,7 +15,7 @@ public class WebContextAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public WebContext webContext() {
-        return new ThreadLocalWebContext();
+        return new TtlWebContext();
     }
 
 }

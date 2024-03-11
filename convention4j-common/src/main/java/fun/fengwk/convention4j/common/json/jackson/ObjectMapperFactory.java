@@ -1,29 +1,17 @@
 package fun.fengwk.convention4j.common.json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
  * @author fengwk
  */
 public class ObjectMapperFactory {
 
-    private static final List<ObjectMapperConfigurator> CONFIGURATORS;
-
-    static {
-        List<ObjectMapperConfigurator> configurators = new ArrayList<>();
-        ServiceLoader<ObjectMapperConfigurator> sl = ServiceLoader.load(ObjectMapperConfigurator.class);
-        Iterator<ObjectMapperConfigurator> it = sl.iterator();
-        while (it.hasNext()) {
-            ObjectMapperConfigurator configurator = it.next();
-            configurators.add(configurator);
-        }
-        CONFIGURATORS = configurators;
-    }
+    private static final List<ObjectMapperConfigurator> CONFIGURATORS
+        = LazyServiceLoader.loadServiceIgnoreLoadFailed(ObjectMapperConfigurator.class);
 
     public static ObjectMapper create() {
         ObjectMapper objectMapper = new ObjectMapper();
