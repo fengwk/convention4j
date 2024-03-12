@@ -98,3 +98,6 @@ buildNumber.properties
 *.gz
 
 .factorypath
+
+# 引入脚本中的agent包
+!convention4j-archetype/**/scripts/*.jar

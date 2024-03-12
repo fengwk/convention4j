@@ -8,7 +8,8 @@ import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.SpanContext;
 import io.opentracing.tag.Tags;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,8 +19,9 @@ import java.util.TreeMap;
 /**
  * @author fengwk
  */
-@Slf4j
 public class Slf4jSpanFinisher implements SpanFinisher {
+
+    private final static Logger log = LoggerFactory.getLogger("TRACE");
 
     @Override
     public void finish(SpanImpl span, long finishMicros) {
@@ -48,11 +50,10 @@ public class Slf4jSpanFinisher implements SpanFinisher {
             // 日志
             boolean error = (Boolean) NullSafe.of(span.getTags()).getOrDefault(Tags.ERROR.getKey(), false);
             if (error) {
-                log.error("[Tracer] {}", JsonUtils.toJson(logBean));
+                log.error(JsonUtils.toJson(logBean));
             } else {
-                log.info("[Tracer] {}", JsonUtils.toJson(logBean));
+                log.info(JsonUtils.toJson(logBean));
             }
-
         } catch (Throwable ex) {
             log.error("Finish span error", ex);
         }

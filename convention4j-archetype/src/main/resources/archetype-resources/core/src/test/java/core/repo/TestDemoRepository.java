@@ -5,7 +5,7 @@ package ${package}.core.repo;
 
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.page.PageQuery;
-import fun.fengwk.convention4j.common.NullSafe;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.springboot.test.starter.repo.AbstractTestRepository;
 import ${package}.core.model.Demo;
 import org.springframework.stereotype.Repository;

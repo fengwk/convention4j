@@ -8,8 +8,10 @@ import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.propagation.TracerTransformer;
 import io.opentracing.References;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,7 +24,6 @@ public class TracerUtils {
 
     private static final List<SpanInitializer> SPAN_INITIALIZERS
         = LazyServiceLoader.loadServiceIgnoreLoadFailed(SpanInitializer.class);
-
 
     public static final String TRACE_ID = "traceId";
     public static final String SPAN_ID = "spanId";
@@ -87,6 +88,26 @@ public class TracerUtils {
 
     private static String generateUuid() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    public static void setMDC(SpanContext spanContext) {
+        if (spanContext != null) {
+            MDC.put(TRACE_ID, spanContext.toTraceId());
+            MDC.put(SPAN_ID, spanContext.toSpanId());
+        }
+    }
+
+    public static void clearMDC(SpanContext spanContext) {
+        if (spanContext != null) {
+            String traceId = MDC.get(TRACE_ID);
+            String spanId = MDC.get(SPAN_ID);
+            if (Objects.equals(traceId, spanContext.toTraceId())) {
+                MDC.remove(TRACE_ID);
+            }
+            if (Objects.equals(spanId, spanContext.toSpanId())) {
+                MDC.remove(SPAN_ID);
+            }
+        }
     }
 
 }

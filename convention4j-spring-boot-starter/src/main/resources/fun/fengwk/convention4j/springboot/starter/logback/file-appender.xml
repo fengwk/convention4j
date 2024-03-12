@@ -35,7 +35,7 @@ initialization performed by Boot
 		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
 			<!-- 日志文件输出格式，见defaults.xml -->
 			<pattern>${FILE_LOG_PATTERN}</pattern>
-			<charset>UTF-8</charset>
+			<charset>${CONSOLE_LOG_CHARSET}</charset>
 		</encoder>
 	</appender>
 
@@ -64,9 +64,42 @@ initialization performed by Boot
 		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
 			<!-- 日志文件输出格式，见defaults.xml -->
 			<pattern>${FILE_LOG_PATTERN}</pattern>
-			<charset>UTF-8</charset>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
 		</encoder>
 	</appender>
+
+    <!-- 追踪控制台日志 -->
+    <appender name="TRACE_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${TRACE_CONSOLE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <!-- 追踪文件日志 -->
+    <appender name="TRACE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 日志文件保存路径 -->
+        <file>${LOG_PATH}/${APP_NAME}-trace.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 日志文件压缩后的名称 -->
+            <FileNamePattern>${LOG_PATH}/${APP_NAME}-trace-%d{yyyy-MM-dd}.%i.gz</FileNamePattern>
+            <!-- 当文件大小达到maxFileSize，默认128MB时，将发生滚动 -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${MAX_SIZE}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!-- 日志最多保留时间，默认2周 -->
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <!-- 启动时尝试清理超过maxHistory的日志 -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            <!-- 日志最大保存大小，默认8G -->
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- 日志文件输出格式，见defaults.xml -->
+            <pattern>${TRACE_FILE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
 
 	<!--异步输出所有内容-->
 	<appender name="ASYNC_ALL" class="ch.qos.logback.classic.AsyncAppender">
@@ -91,4 +124,16 @@ initialization performed by Boot
 		<queueSize>${QUEUE_SIZE}</queueSize>
 		<appender-ref ref="ERROR"/>
 	</appender>
+
+    <!--异步输出追踪内容-->
+    <appender name="ASYNC_TRACE_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <!--
+            discardingThreshold是一个数量，默认是queueSize的1/5，当队列中可用的元素（queueSize - 使用的元素数量）少于这个数量时，
+            将丢弃INFO及以下级别的日志，建议设置为0，等到队列耗尽时再进行丢弃。
+        -->
+        <discardingThreshold>${DISCARDING_THRESHOLD}</discardingThreshold>
+        <!-- 异步队列最大容量 -->
+        <queueSize>${QUEUE_SIZE}</queueSize>
+        <appender-ref ref ="TRACE_FILE"/>
+    </appender>
 </included>

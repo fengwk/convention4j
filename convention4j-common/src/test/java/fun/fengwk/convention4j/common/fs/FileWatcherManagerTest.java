@@ -66,7 +66,7 @@ public class FileWatcherManagerTest {
                 fileWatcherManager.watch(tmpFile2.toPath(), listener);
                 assertTrue(tmpFile2.createNewFile());
                 appendText(tmpFile2);
-                sleep(1000L); // 防止连续两次写入被合并为一次
+                sleep(1500L); // 防止连续两次写入被合并为一次
                 appendText(tmpFile2);
                 assertTrue(tmpFile2.delete());
             } catch (IOException e) {
@@ -86,7 +86,7 @@ public class FileWatcherManagerTest {
             }
         }).start();
 
-        sleep(1000L); // 等待注册启动
+        sleep(1500L); // 等待注册启动
         fileWatcherManager.awaitClosed();
 
         assertEquals(2, createCounter.get());
@@ -129,7 +129,7 @@ public class FileWatcherManagerTest {
                 assertTrue(tmpFile1.createNewFile());
                 tmpFile1.deleteOnExit();
                 appendText(tmpFile1);
-                sleep(1000L);
+                sleep(1500L);
                 fileWatcherManager.unwatch(tmpFile1.toPath());
             } catch (IOException e) {
                 log.error("Watch temp file1 failed", e);
@@ -142,10 +142,10 @@ public class FileWatcherManagerTest {
                 fileWatcherManager.watch(tmpFile2.toPath(), listener);
                 assertTrue(tmpFile2.createNewFile());
                 appendText(tmpFile2);
-                sleep(1000L); // 防止连续写入合并为一次
+                sleep(1500L); // 防止连续写入合并为一次
                 appendText(tmpFile2);
                 assertTrue(tmpFile2.delete());
-                sleep(1000L); // 防止删除无法被感知
+                sleep(1500L); // 防止删除无法被感知
                 fileWatcherManager.unwatch(tmpFile2.toPath());
             } catch (IOException e) {
                 log.error("Watch temp file1 failed", e);
@@ -153,7 +153,7 @@ public class FileWatcherManagerTest {
             cdl.countDown();
         }).start();
 
-        sleep(1000L); // 等待注册启动
+        sleep(1500L); // 等待注册启动
         fileWatcherManager.awaitClosed();
 
         assertEquals(2, createCounter.get());

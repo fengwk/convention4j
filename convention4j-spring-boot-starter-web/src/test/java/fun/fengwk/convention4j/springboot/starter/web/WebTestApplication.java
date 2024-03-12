@@ -5,6 +5,7 @@ import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 //@Import({org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration.class,
 //org.springdoc.webmvc.core.configuration.MultipleOpenApiSupportConfiguration.class
 //})
+@Slf4j
 @EnableTestRedisServer
 @Validated
 @RestController
@@ -33,6 +35,24 @@ public class WebTestApplication {
     
     @GetMapping("/hello")
     public Result<String> hello(@RequestParam("id") @Max(15) long id) {
+        log.info("hello");
+        new Thread(() -> {
+            try {
+                log.info("sub hello");
+                throw new IllegalStateException("123");
+            } catch (Exception ex) {
+                log.error("err", ex);
+            }
+        }).start();
+//        ExecutorService executorService = Executors.newFixedThreadPool(1);
+//        executorService.submit(() -> {
+//            try {
+//                log.info("sub hello");
+//                throw new IllegalStateException("123");
+//            } catch (Exception ex) {
+//                log.error("err", ex);
+//            }
+//        });
         return Results.ok("hello");
     }
 

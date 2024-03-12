@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>fun.fengwk.convention4j</groupId>
 		<artifactId>convention4j-parent</artifactId>
-		<version>0.0.30</version>
+		<version>0.0.31</version>
 	</parent>
 
 	<artifactId>convention4j-spring-boot-starter</artifactId>
@@ -20,10 +20,10 @@
             <groupId>fun.fengwk.convention4j</groupId>
             <artifactId>convention4j-tracer</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.ofpay</groupId>
-            <artifactId>logback-mdc-ttl</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>fun.fengwk.convention4j</groupId>-->
+<!--            <artifactId>convention4j-agent</artifactId>-->
+<!--        </dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>

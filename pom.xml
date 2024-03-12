@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>0.0.30</version>
+    <version>0.0.31</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -50,6 +50,7 @@
     <modules>
         <module>convention4j-api</module>
         <module>convention4j-common</module>
+        <module>convention4j-agent</module>
         <module>convention4j-tracer</module>
         <module>convention4j-spring-boot-starter-test</module>
         <module>convention4j-spring-boot-starter</module>
@@ -66,7 +67,7 @@
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>0.0.30</convention4j.version>
+        <convention4j.version>0.0.31</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.44</auto-mapper.version>
         <spring-boot-dependencies.version>3.0.13</spring-boot-dependencies.version>
@@ -90,10 +91,9 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <auto-service.version>1.1.1</auto-service.version>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <transmittable-thread-local.version>2.14.4</transmittable-thread-local.version>
+        <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
         <bcprov-jdk18on.version>1.77</bcprov-jdk18on.version>
         <opentracing.version>0.33.0</opentracing.version>
-        <logback-mdc-ttl.version>1.0.2</logback-mdc-ttl.version>
     </properties>
 
     <dependencyManagement>
@@ -106,6 +106,11 @@
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-common</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-agent</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>
@@ -310,11 +315,6 @@
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-util</artifactId>
                 <version>${opentracing.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ofpay</groupId>
-                <artifactId>logback-mdc-ttl</artifactId>
-                <version>${logback-mdc-ttl.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

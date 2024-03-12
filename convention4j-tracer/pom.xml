@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>0.0.30</version>
+        <version>0.0.31</version>
     </parent>
 
     <artifactId>convention4j-tracer</artifactId>
@@ -18,12 +18,12 @@
             <artifactId>convention4j-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-util</artifactId>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-agent</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>transmittable-thread-local</artifactId>
+            <groupId>io.opentracing</groupId>
+            <artifactId>opentracing-util</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
