@@ -13,7 +13,7 @@ public class SpanAspectInfo {
     /**
      * span操作名
      */
-    private final String value;
+    private final String operationName;
 
     /**
      * span别名

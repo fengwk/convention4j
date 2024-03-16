@@ -1,7 +1,9 @@
 package fun.fengwk.convention4j.tracer.propagation.extract;
 
 import com.google.auto.service.AutoService;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.reflect.TypeToken;
 import fun.fengwk.convention4j.tracer.SpanContextImpl;
 import fun.fengwk.convention4j.tracer.propagation.Formats;
 import fun.fengwk.convention4j.tracer.propagation.PropagationConstants;
@@ -27,8 +29,9 @@ public class HttpServletRequestExtract implements Extract<HttpServletRequest> {
         }
         String traceId = request.getHeader(PropagationConstants.TRACE_ID_HTTP_HEADER_NAME);
         String spanId = request.getHeader(PropagationConstants.SPAN_ID_HTTP_HEADER_NAME);
+        String baggage = request.getHeader(PropagationConstants.BAGGAGE_HEADER_NAME);
         if (StringUtils.isNotBlank(traceId)) {
-            return new SpanContextImpl(traceId, spanId, null);
+            return new SpanContextImpl(traceId, spanId, JsonUtils.fromJson(baggage, new TypeToken<>() {}));
         }
         return null;
     }

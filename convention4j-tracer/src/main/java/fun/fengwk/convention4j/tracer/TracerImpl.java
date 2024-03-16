@@ -12,7 +12,9 @@ import io.opentracing.propagation.Format;
 import io.opentracing.tag.BooleanTag;
 import io.opentracing.tag.StringTag;
 import io.opentracing.tag.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,15 +22,17 @@ import java.util.Objects;
 /**
  * @author fengwk
  */
+@Slf4j
 public class TracerImpl implements Tracer {
 
     private final Clock clock;
-    private final ScopeManagerImpl scopeManager = new ScopeManagerImpl();
+    private final ScopeManager scopeManager;
     private final TracerTransformer tracerTransformer;
     private final SpanFinisher spanFinisher;
 
-    public TracerImpl(Clock clock, TracerTransformer tracerTransformer, SpanFinisher spanFinisher) {
+    public TracerImpl(Clock clock, ScopeManager scopeManager, TracerTransformer tracerTransformer, SpanFinisher spanFinisher) {
         this.clock = Objects.requireNonNull(clock, "Clock must not be null");
+        this.scopeManager = Objects.requireNonNull(scopeManager, "Scope manager must not be null");
         this.tracerTransformer = Objects.requireNonNull(tracerTransformer, "Tracer transformer must not be null");
         this.spanFinisher = Objects.requireNonNull(spanFinisher, "Span finisher must not be null");
     }
@@ -65,7 +69,13 @@ public class TracerImpl implements Tracer {
 
     @Override
     public void close() {
-        scopeManager.close();
+        if (scopeManager instanceof Closeable) {
+            try {
+                ((Closeable) scopeManager).close();
+            } catch (Exception ex) {
+                log.error("Close {} error", getClass().getSimpleName(), ex);
+            }
+        }
     }
 
     class SpanBuilderImpl implements SpanBuilder {

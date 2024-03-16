@@ -9,24 +9,24 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
-
-import java.lang.reflect.Method;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author fengwk
  */
+@Slf4j
 public class SpanAspectUtils {
 
     private SpanAspectUtils() {}
 
     public static <R, T extends Throwable> R execute(
-        Func0T1<R, T> executor, Method method, SpanAspectInfo spanAspectInfo) throws T {
+        Func0T1<R, T> executor, SpanAspectInfo spanAspectInfo) throws T {
         Tracer tracer = GlobalTracer.get();
         Span activeSpan = tracer.activeSpan();
         SpanContext parentSpanContext = NullSafe.map(activeSpan, Span::context);
 
-        String operationName = buildOperationName(method, spanAspectInfo);
-        if (StringUtils.isBlank(operationName)) {
+        if (StringUtils.isBlank(spanAspectInfo.getOperationName())) {
+            log.warn("Span aspect info operation name is blank, skip span aspect, spanAspectInfo: {}", spanAspectInfo);
             return executor.apply();
         }
 
@@ -41,7 +41,7 @@ public class SpanAspectUtils {
             }
         }
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName);
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanAspectInfo.getOperationName());
         if (StringUtils.isNotBlank(spanAspectInfo.getKind())) {
             spanBuilder.withTag(Tags.SPAN_KIND, spanAspectInfo.getKind());
         }
@@ -63,30 +63,6 @@ public class SpanAspectUtils {
         } finally {
             span.finish();
         }
-    }
-
-    private static String buildOperationName(Method method, SpanAspectInfo spanAspectInfo) {
-        if (StringUtils.isNotBlank(spanAspectInfo.getValue())) {
-            return spanAspectInfo.getValue();
-        }
-
-        if (method != null) {
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            StringBuilder sb = new StringBuilder(
-                method.getDeclaringClass().getSimpleName());
-            sb.append('#').append(method.getName()).append('(');
-            for (int i = 0; i < parameterTypes.length; i++) {
-                if (i > 0) {
-                    sb.append(',');
-                }
-                sb.append(parameterTypes[i].getSimpleName());
-            }
-            sb.append(')');
-            return sb.toString();
-
-        }
-
-        return "";
     }
 
 }

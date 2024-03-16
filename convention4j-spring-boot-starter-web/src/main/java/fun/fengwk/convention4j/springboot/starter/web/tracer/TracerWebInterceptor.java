@@ -62,13 +62,16 @@ public class TracerWebInterceptor implements AsyncHandlerInterceptor {
         }
         Span span = context.getSpan();
         try (Scope ignored = context.getScope()) {
-            if (ex != null) {
+            int status = response.getStatus();
+            if (ex != null || status < 200 || status >= 300) {
                 span.setTag(Tags.ERROR, true);
-                span.log(ex.getMessage());
+                if (ex != null) {
+                    span.log(ex.getMessage());
+                }
             } else {
                 span.setTag(Tags.ERROR, false);
             }
-            span.setTag(Tags.HTTP_STATUS, response.getStatus());
+            span.setTag(Tags.HTTP_STATUS, status);
         } finally {
             span.finish();
         }

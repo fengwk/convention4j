@@ -38,6 +38,7 @@ public class WebTestApplication {
         log.info("hello");
         new Thread(() -> {
             try {
+                service.hello();
                 log.info("sub hello");
                 throw new IllegalStateException("123");
             } catch (Exception ex) {

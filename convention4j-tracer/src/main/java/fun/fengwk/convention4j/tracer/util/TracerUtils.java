@@ -1,11 +1,15 @@
 package fun.fengwk.convention4j.tracer.util;
 
 import fun.fengwk.convention4j.common.clock.SystemClock;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.util.LazyServiceLoader;
+import fun.fengwk.convention4j.common.util.ListUtils;
+import fun.fengwk.convention4j.common.util.OrderedObject;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.TracerImpl;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.propagation.TracerTransformer;
+import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
 import io.opentracing.References;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -33,7 +37,11 @@ public class TracerUtils {
 
     public static void initializeGlobalTracer(SpanFinisher finisher) {
         TracerTransformer tracerTransformer = new TracerTransformer();
-        TracerImpl tracer = new TracerImpl(new SystemClock(), tracerTransformer, finisher);
+        List<ConventionScopeManager> scopeManagers = LazyServiceLoader
+            .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
+        OrderedObject.sort(scopeManagers);
+        ConventionScopeManager priorityScopeManager = ListUtils.getFirst(scopeManagers);
+        TracerImpl tracer = new TracerImpl(new SystemClock(), priorityScopeManager, tracerTransformer, finisher);
         GlobalTracer.registerIfAbsent(tracer);
     }
 
@@ -90,23 +98,29 @@ public class TracerUtils {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    public static void setMDC(SpanContext spanContext) {
+    public static Map<String, String> setMDC(SpanContext spanContext) {
+        Map<String, String> storeMdc = new HashMap<>();
+        storeMdc.put(TRACE_ID, MDC.get(TRACE_ID));
+        storeMdc.put(SPAN_ID, MDC.get(SPAN_ID));
         if (spanContext != null) {
             MDC.put(TRACE_ID, spanContext.toTraceId());
             MDC.put(SPAN_ID, spanContext.toSpanId());
         }
+        return storeMdc;
     }
 
-    public static void clearMDC(SpanContext spanContext) {
-        if (spanContext != null) {
-            String traceId = MDC.get(TRACE_ID);
-            String spanId = MDC.get(SPAN_ID);
-            if (Objects.equals(traceId, spanContext.toTraceId())) {
-                MDC.remove(TRACE_ID);
-            }
-            if (Objects.equals(spanId, spanContext.toSpanId())) {
-                MDC.remove(SPAN_ID);
-            }
+    public static void clearMDC(Map<String, String> storeMdc) {
+        String storeTraceId = storeMdc.get(TRACE_ID);
+        String storeSpanId = storeMdc.get(SPAN_ID);
+        if (StringUtils.isBlank(storeTraceId)) {
+            MDC.remove(TRACE_ID);
+        } else {
+            MDC.put(TRACE_ID, storeTraceId);
+        }
+        if (StringUtils.isBlank(storeSpanId)) {
+            MDC.remove(SPAN_ID);
+        } else {
+            MDC.put(SPAN_ID, storeSpanId);
         }
     }
 

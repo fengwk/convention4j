@@ -1,10 +1,9 @@
-package fun.fengwk.convention4j.tracer;
+package fun.fengwk.convention4j.tracer.scope;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import fun.fengwk.convention4j.common.json.JsonUtils;
+import com.google.auto.service.AutoService;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.Scope;
-import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,13 +12,14 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author fengwk
  */
+@AutoService(ConventionScopeManager.class)
 @Slf4j
-public class ScopeManagerImpl implements ScopeManager, AutoCloseable {
+public class TtlScopeManager implements ConventionScopeManager {
 
     private static final int MAX_STACK_SIZE = 1000;
     private static final TransmittableThreadLocal<LinkedList<ScopeImpl>> TTL_SCOPE_STACK = new TransmittableThreadLocal<>() {
@@ -55,10 +55,10 @@ public class ScopeManagerImpl implements ScopeManager, AutoCloseable {
         }
     };
 
-    @Override
-    public Scope activate(Span span) {
+    private static Scope doActive(Span span) {
         LinkedList<ScopeImpl> scopeStack = TTL_SCOPE_STACK.get();
-        ScopeImpl scope = new ScopeImpl(scopeStack, span);
+        Map<String, String> storeMdc = TracerUtils.setMDC(span.context());
+        ScopeImpl scope = new ScopeImpl(scopeStack, span, storeMdc);
         synchronized (scopeStack) {
             // addFirst可以使最近添加的节点以最少的遍历数被移出LinkedList
             scopeStack.addFirst(scope);
@@ -69,9 +69,12 @@ public class ScopeManagerImpl implements ScopeManager, AutoCloseable {
                 removedScope.close();
             }
         }
-        // MDC支持
-        TracerUtils.setMDC(span.context());
         return scope;
+    }
+
+    @Override
+    public Scope activate(Span span) {
+        return doActive(span);
     }
 
     @Override
@@ -89,31 +92,26 @@ public class ScopeManagerImpl implements ScopeManager, AutoCloseable {
 
     @EqualsAndHashCode
     @ToString
-    public class ScopeImpl implements Scope {
+    public static class ScopeImpl implements Scope {
 
-        private final List<ScopeImpl> scopeStack;
+        private final LinkedList<ScopeImpl> scopeStack;
         @Getter
         private final Span span;
-        private final String trace;
+        private final Map<String, String> storeMdc;
 
-        public ScopeImpl(List<ScopeImpl> scopeStack, Span span) {
+        public ScopeImpl(LinkedList<ScopeImpl> scopeStack, Span span, Map<String, String> storeMdc) {
             this.scopeStack = scopeStack;
             this.span = span;
-            this.trace = buildTrace(span);
+            this.storeMdc = storeMdc;
         }
 
         @Override
         public void close() {
             synchronized (scopeStack) {
                 if (scopeStack.remove(this)) {
-                    TracerUtils.clearMDC(span.context());
+                    TracerUtils.clearMDC(storeMdc);
                 }
             }
-        }
-
-        private String buildTrace(Span span) {
-            TraceInfo traceInfo = new TraceInfo(span.context().toTraceId(), span.context().toSpanId());
-            return JsonUtils.toJson(traceInfo);
         }
 
     }
