@@ -39,7 +39,7 @@ public class TracerUtils {
         TracerTransformer tracerTransformer = new TracerTransformer();
         List<ConventionScopeManager> scopeManagers = LazyServiceLoader
             .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
-        OrderedObject.sort(scopeManagers);
+        scopeManagers = OrderedObject.sort(scopeManagers);
         ConventionScopeManager priorityScopeManager = ListUtils.getFirst(scopeManagers);
         TracerImpl tracer = new TracerImpl(new SystemClock(), priorityScopeManager, tracerTransformer, finisher);
         GlobalTracer.registerIfAbsent(tracer);
