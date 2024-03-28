@@ -83,6 +83,17 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
                     OAuth2Token oauth2Token = oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
                     log.debug("Sso authenticate, ssoId: {}, oauth2Token: {}",
                         authenticationCode.getSsoId(), oauth2Token);
+
+                    // 如果访问令牌已过期则刷新，确保返回的令牌是可用的
+                    if (oauth2Token.accessTokenExpired(client.getAccessTokenExpireSeconds())) {
+                        oauth2Token.refresh();
+                        if (!oauth2TokenRepository.updateById(oauth2Token, client.getAuthorizeExpireSeconds())) {
+                            log.warn("Refresh token failed, clientId: {}, refreshToken: {}",
+                                    client.getClientId(), oauth2Token.getRefreshToken());
+                            throw OAuth2ErrorCodes.REFRESH_TOKEN_FAILED.asThrowable();
+                        }
+                    }
+
                     return oauth2Token;
                 } else {
                     // 走正常的登陆流程
