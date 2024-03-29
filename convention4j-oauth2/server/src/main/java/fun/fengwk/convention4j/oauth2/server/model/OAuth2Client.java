@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.oauth2.server.model;
 
 import fun.fengwk.convention4j.common.util.AntPattern;
 import fun.fengwk.convention4j.common.util.NullSafe;
+import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ScopeUtils;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
@@ -117,7 +118,8 @@ public interface OAuth2Client {
         if (StringUtils.isBlank(redirectUri)) {
             return true;
         }
-        UriComponents uri = UriComponentsBuilder.fromUriString(redirectUri).build();
+        UriComponents uri = UriComponentsBuilder.fromUriString(
+            UriUtils.decodeUriComponent(redirectUri)).build();
         String scheme = uri.getScheme();
         String userInfo = uri.getUserInfo();
         String host = uri.getHost();
@@ -126,7 +128,8 @@ public interface OAuth2Client {
         String fragment = uri.getFragment();
         for (String supportRedirectUri : getRedirectUris()) {
             try {
-                UriComponents supportUri = UriComponentsBuilder.fromUriString(supportRedirectUri).build();
+                UriComponents supportUri = UriComponentsBuilder.fromUriString(
+                    UriUtils.decodeUriComponent(supportRedirectUri)).build();
                 String supportScheme = supportUri.getScheme();
                 String supportUserInfo = supportUri.getUserInfo();
                 String supportHost = supportUri.getHost();
@@ -135,7 +138,9 @@ public interface OAuth2Client {
                 String supportFragment = supportUri.getFragment();
                 if (Objects.equals(scheme, supportScheme) && Objects.equals(userInfo, supportUserInfo)
                     && new AntPattern(supportHost).match(host)
-                    && Objects.equals(port, supportPort)
+                    && (Objects.equals(port, supportPort)
+                            || (port == 443 && Objects.equals(scheme, "https"))
+                            || (port == 80 && Objects.equals(scheme, "http")))
                     && new AntPattern(supportPath).match(path)
                     && (supportFragment == null || new AntPattern(supportFragment).match(fragment))) {
                     return true;

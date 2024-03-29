@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.service.mode;
 
+import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2SubjectManager;
 import fun.fengwk.convention4j.oauth2.server.model.AuthenticationCode;
@@ -164,8 +165,10 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
     }
 
     private void checkRedirectUri(String redirectUri, AuthenticationCode authenticationCode) {
-        UriComponents curUri = UriComponentsBuilder.fromUriString(redirectUri).build();
-        UriComponents storeUri = UriComponentsBuilder.fromUriString(authenticationCode.getRedirectUri()).build();
+        UriComponents curUri = UriComponentsBuilder.fromUriString(
+            UriUtils.decodeUriComponent(redirectUri)).build();
+        UriComponents storeUri = UriComponentsBuilder.fromUriString(
+            UriUtils.decodeUriComponent(authenticationCode.getRedirectUri())).build();
         if (!Objects.equals(curUri.getScheme(), storeUri.getScheme())
             || !Objects.equals(curUri.getUserInfo(), storeUri.getUserInfo())
             || !Objects.equals(curUri.getHost(), storeUri.getHost())

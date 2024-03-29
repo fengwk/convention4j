@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.service.mode;
 
+import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2SubjectManager;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;
@@ -65,7 +66,7 @@ public abstract class BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE>
     private UriComponentsBuilder checkAndGetRedirectUriBuilder(OAuth2Client client, String redirectUri) {
         UriComponentsBuilder redirectUriBuilder;
         try {
-            redirectUriBuilder = UriComponentsBuilder.fromUriString(redirectUri);
+            redirectUriBuilder = UriComponentsBuilder.fromUriString(UriUtils.decodeUriComponent(redirectUri));
         } catch (IllegalArgumentException ex) {
             log.warn("Invalid redirectUri, redirectUri: {}", redirectUri);
             throw OAuth2ErrorCodes.INVALID_REDIRECT_URI.asThrowable();
