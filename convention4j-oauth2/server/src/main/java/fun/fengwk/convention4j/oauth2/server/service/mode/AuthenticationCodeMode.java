@@ -166,9 +166,9 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
 
     private void checkRedirectUri(String redirectUri, AuthenticationCode authenticationCode) {
         UriComponents curUri = UriComponentsBuilder.fromUriString(
-            UriUtils.decodeUriComponent(redirectUri)).build();
+            UriUtils.fullDecodeUriComponent(redirectUri)).build();
         UriComponents storeUri = UriComponentsBuilder.fromUriString(
-            UriUtils.decodeUriComponent(authenticationCode.getRedirectUri())).build();
+            UriUtils.fullDecodeUriComponent(authenticationCode.getRedirectUri())).build();
         if (!Objects.equals(curUri.getScheme(), storeUri.getScheme())
             || !Objects.equals(curUri.getUserInfo(), storeUri.getUserInfo())
             || !Objects.equals(curUri.getHost(), storeUri.getHost())
