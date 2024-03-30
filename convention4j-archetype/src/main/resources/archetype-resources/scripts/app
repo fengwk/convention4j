@@ -53,17 +53,19 @@ stop() {
 start() {
   set -e
   trap stop SIGINT SIGQUIT SIGTERM
-  agent_jar="$(ls $script_home/convention4j-agent-*.jar)"
-  JAVA_OPTS="-javaagent:$agent_jar $JAVA_OPTS"
   JAVA_OPTS="-server -Xms64M -Xmx256M $JAVA_OPTS"
   JAVA_OPTS="-Dsun.net.inetaddr.ttl=10 $JAVA_OPTS"
+  #JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000 $JAVA_OPTS"
   debug="$DEBUG"
   if [ "$debug" == "true" ]; then
     debug='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000'
   fi
   JAVA_OPTS="$debug $JAVA_OPTS"
-  mkdir -p $app_runtime_home/logs
-  nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=prod --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  spring_profiles_active='prod'
+  if [ -n "$SPRING_PROFILES_ACTIVE" ]; then
+    spring_profiles_active="$SPRING_PROFILES_ACTIVE"
+  fi
+  nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid
 }
