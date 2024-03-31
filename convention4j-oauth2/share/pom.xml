@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-oauth2</artifactId>
-        <version>0.0.39</version>
+        <version>0.0.40</version>
     </parent>
 
     <artifactId>convention4j-oauth2-share</artifactId>

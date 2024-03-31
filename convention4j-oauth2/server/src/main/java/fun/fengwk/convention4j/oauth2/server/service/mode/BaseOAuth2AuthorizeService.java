@@ -53,7 +53,7 @@ public abstract class BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE>
         checkResponseType(client);
         checkScope(client, context.getScope());
         UriComponentsBuilder redirectUriBuilder = checkAndGetRedirectUriBuilder(client, context.getRedirectUri());
-        String subjectId = authenticate(client, context.getCertificate(), context);
+        String subjectId = authenticate(client, context.getCertificate(), context.getScope(), context);
         return generateAuthorizeUri(context, client, redirectUriBuilder, subjectId);
     }
 

@@ -29,7 +29,7 @@ public class PasswordMode<SUBJECT, CERTIFICATE>
     @Override
     protected OAuth2Token generateOAuth2Token(PasswordTokenContext<CERTIFICATE> context, OAuth2Client client) {
         checkScope(client, context.getScope());
-        String subjectId = authenticate(client, context.getCertificate(), context);
+        String subjectId = authenticate(client, context.getCertificate(), context.getScope(), context);
         String ssoId = getSsoId(context);
         return generateToken(subjectId, context.getScope(), client, ssoId);
     }
