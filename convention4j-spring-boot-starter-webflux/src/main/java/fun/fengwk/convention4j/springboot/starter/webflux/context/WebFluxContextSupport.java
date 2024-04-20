@@ -56,7 +56,8 @@ public abstract class WebFluxContextSupport {
         ServerHttpRequest request = exchange.getRequest();
         String relativePath = RequestPathUtils.extractPath(
             request.getPath().pathWithinApplication(), "/**");
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(relativePath)
+        String operationName = relativePath.startsWith("/") ? relativePath : "/" + relativePath;
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(operationName)
             .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER)
             .withTag(Tags.HTTP_METHOD, request.getMethod().name())
             .withTag(Tags.HTTP_URL, request.getURI().toString());
@@ -72,7 +73,7 @@ public abstract class WebFluxContextSupport {
             return;
         }
 
-        WebFluxSpan fluxSpan = traceContext.getWebFluxSpan();
+        WebFluxSpan webFluxSpan = traceContext.getWebFluxSpan();
         Scope scope = traceContext.getScope();
 
         ServerHttpResponse response = exchange.getResponse();
@@ -81,17 +82,17 @@ public abstract class WebFluxContextSupport {
             status = response.getStatusCode().value();
         }
         if (status < 200 || status >= 300) {
-            fluxSpan.setTag(Tags.ERROR, true);
+            webFluxSpan.setTag(Tags.ERROR, true);
         } else {
-            fluxSpan.setTag(Tags.ERROR, false);
+            webFluxSpan.setTag(Tags.ERROR, false);
         }
-        fluxSpan.setTag(Tags.HTTP_STATUS, status);
+        webFluxSpan.setTag(Tags.HTTP_STATUS, status);
         try {
             scope.close();
         } catch (Exception ex) {
             log.error("Close scope error", ex);
         }
-        fluxSpan.finish();
+        webFluxSpan.finish();
     }
 
 }

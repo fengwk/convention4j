@@ -16,7 +16,8 @@ public class HandlerRouterConfiguration {
 
     @Bean
     public RouterFunction<ServerResponse> handlerRouter(TestHandler testHandler) {
-        return RouterFunctions.route(GET("/api/hello1"), testHandler::hello1);
+        return RouterFunctions.route(GET("/api/hello1"), testHandler::hello1)
+            .andRoute(GET("/api/hello2"), testHandler::hello2);
     }
 
 }
