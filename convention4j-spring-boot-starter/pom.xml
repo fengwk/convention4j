@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>fun.fengwk.convention4j</groupId>
 		<artifactId>convention4j-parent</artifactId>
-		<version>0.0.40</version>
+		<version>0.0.41</version>
 	</parent>
 
 	<artifactId>convention4j-spring-boot-starter</artifactId>
@@ -28,10 +28,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-aspects</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>

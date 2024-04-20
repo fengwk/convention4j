@@ -4,6 +4,7 @@ import fun.fengwk.convention4j.common.clock.SystemClock;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 import fun.fengwk.convention4j.common.util.ListUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.util.OrderedObject;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.TracerImpl;
@@ -13,6 +14,8 @@ import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
 import io.opentracing.References;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
+import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -87,14 +90,14 @@ public class TracerUtils {
     }
 
     public static String generateTraceId() {
-        return generateUuid();
+        return generateUUID();
     }
 
     public static String generateSpanId() {
-        return generateUuid();
+        return generateUUID();
     }
 
-    private static String generateUuid() {
+    private static String generateUUID() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
@@ -122,6 +125,42 @@ public class TracerUtils {
         } else {
             MDC.put(SPAN_ID, storeSpanId);
         }
+    }
+
+    public static Span startSpan(SpanInfo spanInfo) {
+        Tracer tracer = GlobalTracer.get();
+        Span activeSpan = tracer.activeSpan();
+        SpanContext parentSpanContext = NullSafe.map(activeSpan, Span::context);
+        if (StringUtils.isBlank(spanInfo.getOperationName())) {
+            log.warn("Start span failed, operation name is blank, spanInfo: {}", spanInfo);
+            return null;
+        }
+
+        String alias = spanInfo.getOperationName();
+        if (StringUtils.isNotBlank(spanInfo.getAlias())) {
+            alias = spanInfo.getAlias();
+        }
+
+        if (parentSpanContext == null) {
+            switch (spanInfo.getPropagation()) {
+                case REQUIRED:
+                    break;
+                case SUPPORTS:
+                    return null;
+                default:
+                    throw new IllegalStateException("Unsupported span propagation: " + spanInfo.getPropagation());
+            }
+        }
+
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanInfo.getOperationName())
+            .withTag(TracerUtils.TAG_SPAN_ALIAS, alias);
+        if (StringUtils.isNotBlank(spanInfo.getKind())) {
+            spanBuilder.withTag(Tags.SPAN_KIND, spanInfo.getKind());
+        }
+        if (parentSpanContext != null) {
+            spanBuilder.asChildOf(parentSpanContext);
+        }
+        return spanBuilder.start();
     }
 
 }

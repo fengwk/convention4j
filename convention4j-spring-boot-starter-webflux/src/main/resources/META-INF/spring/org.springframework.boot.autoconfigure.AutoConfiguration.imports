@@ -1,0 +1,2 @@
+fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContextAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.webflux.webclient.WebClientAutoConfiguration

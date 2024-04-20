@@ -21,7 +21,7 @@ public @interface ConventionSpan {
     String value() default "";
 
     /**
-     * span别名，通常是更易于理解的观察的名称
+     * span别名，通常是更易于理解的观察的名称，如果没有设置默认为value值
      */
     String alias() default "";
 
