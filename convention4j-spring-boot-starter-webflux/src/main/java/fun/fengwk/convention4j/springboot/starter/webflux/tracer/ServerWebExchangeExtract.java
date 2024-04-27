@@ -1,12 +1,11 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.tracer;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
-import fun.fengwk.convention4j.common.reflect.TypeToken;
 import fun.fengwk.convention4j.tracer.SpanContextImpl;
 import fun.fengwk.convention4j.tracer.propagation.PropagationConstants;
 import fun.fengwk.convention4j.tracer.propagation.extract.Extract;
+import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
 import org.springframework.http.HttpHeaders;
@@ -35,7 +34,7 @@ public class ServerWebExchangeExtract implements Extract<ServerWebExchange> {
         String spanId = headers.getFirst(PropagationConstants.SPAN_ID_HTTP_HEADER_NAME);
         String baggage = headers.getFirst(PropagationConstants.BAGGAGE_HEADER_NAME);
         if (StringUtils.isNotBlank(traceId)) {
-            return new SpanContextImpl(traceId, spanId, JsonUtils.fromJson(baggage, new TypeToken<>() {}));
+            return new SpanContextImpl(traceId, spanId, TracerUtils.deserializeHttpPropagationBaggage(baggage));
         }
         return null;
     }

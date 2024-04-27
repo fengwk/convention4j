@@ -26,6 +26,11 @@ public class WebFluxTracerContext {
         this.webFluxContext = webFluxContext;
     }
 
+    /**
+     * 获取当前上下文
+     *
+     * @return 返回WebFluxTracerContext Mono
+     */
     public static Mono<WebFluxTracerContext> get() {
         return WebFluxContext.get().map(opt -> {
             WebFluxContext webFluxContext = opt.orElse(null);
@@ -33,6 +38,11 @@ public class WebFluxTracerContext {
         });
     }
 
+    /**
+     * 在tracer上下文中执行
+     *
+     * @return 返回WebFluxContext
+     */
     public <T> T execute(Supplier<T> executor) {
         WebFluxContext old = null;
         if (webFluxContext != null) {

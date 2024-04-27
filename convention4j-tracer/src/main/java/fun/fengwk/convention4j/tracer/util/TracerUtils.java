@@ -1,11 +1,14 @@
 package fun.fengwk.convention4j.tracer.util;
 
 import fun.fengwk.convention4j.common.clock.SystemClock;
+import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.reflect.TypeToken;
 import fun.fengwk.convention4j.common.util.LazyServiceLoader;
 import fun.fengwk.convention4j.common.util.ListUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.util.OrderedObject;
+import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.TracerImpl;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
@@ -68,6 +71,17 @@ public class TracerUtils {
             }
         }
         return baggage;
+    }
+
+    public static String serializeHttpPropagationBaggage(Iterable<Map.Entry<String, String>> baggageIt) {
+        Map<String, String> baggage = buildBaggage(baggageIt);
+        String baggageJson = JsonUtils.toJson(baggage);
+        return UriUtils.encodeUriComponent(baggageJson);
+    }
+
+    public static Map<String, String> deserializeHttpPropagationBaggage(String serializedBaggage) {
+        String baggageJson = UriUtils.decodeUriComponent(serializedBaggage);
+        return JsonUtils.fromJson(baggageJson, new TypeToken<>() {});
     }
 
     public static Reference getChildOfReference(List<Reference> references) {

@@ -1,0 +1,77 @@
+spring:
+
+  application:
+    # 应用名称
+    name: test
+
+  profiles:
+    active: dev
+
+  config:
+    # NacosConfigDataMissingEnvironmentPostProcessor
+    # 指定nacos使用配置文件的dataId
+    import: 'nacos:${spring.application.name}.yml'
+
+  cloud:
+    discovery:
+      # 当这个选项被启用后nacos的loadbalancer将会被激活
+      # @ConditionalOnDiscoveryEnabled
+      enabled: true
+      # 指定tailscale网卡进行注册，这可以避免在网络异常的情况下注册容器网卡，再次异常后下线容器网卡失败
+      network-interface: tailscale0
+    # nacos配置，注意另外需配置spring.cloud.config.import
+    nacos:
+      # NacosConfigProperties
+      config:
+#        server-addr: vps-nacos1:8848,vps-nacos2:8848,vps-nacos3:8848
+        server-addr: vps-nacos:8848
+        namespace: ${spring.profiles.active}
+      # NacosDiscoveryProperties
+      discovery:
+        server-addr: ${spring.cloud.nacos.config.server-addr}
+        namespace: ${spring.cloud.nacos.config.namespace}
+
+    loadbalancer:
+      nacos:
+        # 启用nacos的loadbalancer
+        # @ConditionalOnLoadBalancerNacos
+        enabled: true
+
+    # openfeign配置
+    openfeign:
+      okhttp:
+        # OkHttpFeignConfiguration
+        enabled: true
+      # FeignHttpClientProperties
+      httpclient:
+        # 关闭ssl验证
+        disable-ssl-validation: true
+      # FeignClientProperties
+      client:
+        # FeignClientConfiguration
+        config:
+          # default表示默认，或者具体的服务名表示指定服务
+          default:
+            loggerLevel: NONE
+            connect-timeout: 3000
+            read-timeout: 3000
+            follow-redirects: true
+
+server:
+  port: 8080
+  # Compression
+  compression:
+    # 启用gzip压缩
+    enabled: true
+
+# https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus,offline,online"
+
+# 日志配置
+logging:
+  level:
+    root: info

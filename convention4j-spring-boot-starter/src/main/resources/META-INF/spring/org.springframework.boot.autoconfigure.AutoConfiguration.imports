@@ -11,3 +11,4 @@ fun.fengwk.convention4j.springboot.starter.cache.mapper.MapperCacheAutoConfigura
 fun.fengwk.convention4j.springboot.starter.transaction.TransactionExecutorAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.lettuce.KeepAliveLettuceAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.tracer.ConventionSpanAspectAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.xheader.XHeaderAutoConfiguration

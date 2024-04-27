@@ -1,15 +1,12 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.tracer;
 
 import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.tracer.propagation.PropagationConstants;
 import fun.fengwk.convention4j.tracer.propagation.inject.Inject;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.SpanContext;
 import io.opentracing.propagation.Format;
 import org.springframework.web.reactive.function.client.ClientRequest;
-
-import java.util.Map;
 
 /**
  * @author fengwk
@@ -31,8 +28,8 @@ public class ClientRequestBuilderInject implements Inject<ClientRequest.Builder>
         }
         builder.header(PropagationConstants.TRACE_ID_HTTP_HEADER_NAME, spanContext.toTraceId());
         builder.header(PropagationConstants.SPAN_ID_HTTP_HEADER_NAME, spanContext.toSpanId());
-        Map<String, String> baggage = TracerUtils.buildBaggage(spanContext.baggageItems());
-        builder.header(PropagationConstants.BAGGAGE_HEADER_NAME, JsonUtils.toJson(baggage));
+        builder.header(PropagationConstants.BAGGAGE_HEADER_NAME,
+            TracerUtils.serializeHttpPropagationBaggage(spanContext.baggageItems()));
     }
 
 }

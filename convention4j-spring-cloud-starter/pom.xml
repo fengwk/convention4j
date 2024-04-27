@@ -46,5 +46,20 @@
             <artifactId>spring-boot-actuator</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
