@@ -42,7 +42,7 @@ public class CacheSupportAutoConfiguration {
 
     @ConditionalOnBean(CacheFacade.class)
     @Bean
-    public CacheFacadeMetrics cacheFacadeMetrics(CacheFacade cacheFacade) {
+    public CacheFacadeMetrics cacheFacadeMetrics(@Qualifier("cacheFacade") CacheFacade cacheFacade) {
         return new CacheFacadeMetrics(cacheFacade);
     }
 

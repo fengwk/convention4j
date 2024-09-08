@@ -150,6 +150,11 @@ public class EncodeUriBuilder implements UriBuilder {
         return delegate.build(uriVariables);
     }
 
+    @Override
+    public String toUriString() {
+        return delegate.toUriString();
+    }
+
     public EncodeUriBuilder queryParamWithEncode(String name, Object... values) {
         delegate.queryParam(name, encodeValues(values));
         return this;
