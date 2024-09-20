@@ -2,9 +2,7 @@
 //
 //import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 //import org.junit.Test;
-//import redis.clients.jedis.Jedis;
-//import redis.clients.jedis.JedisPoolConfig;
-//import redis.clients.jedis.JedisSentinelPool;
+//import redis.clients.jedis.*;
 //import redis.clients.jedis.util.Pool;
 //
 //import java.util.Collections;
@@ -32,7 +30,7 @@
 //
 //        List<RedisWorkerIdClient> clients = new CopyOnWriteArrayList<>();
 //        for (int i = 0; i < count; i++) {
-//            RedisWorkerIdClient client = new RedisWorkerIdClient(new JedisPoolScriptExecutor(pool)) {
+//            RedisWorkerIdClient client = new RedisWorkerIdClient("default", new JedisPoolScriptExecutor(pool)) {
 //                @Override
 //                protected void onStopped() {
 //                    super.onStopped();
@@ -72,20 +70,26 @@
 //    }
 //
 //    private static Pool<Jedis> getPool() {
-//        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-//        jedisPoolConfig.setMaxTotal(100);
-//        jedisPoolConfig.setMaxIdle(50);
-//        jedisPoolConfig.setMinIdle(50);
-//        jedisPoolConfig.setMaxWaitMillis(-1);
+//        String host = System.getenv("VPS_REDIS_HOST");
+//        String port = System.getenv("VPS_REDIS_PORT");
+//        String password = System.getenv("VPS_REDIS_PASSWORD");
+//        HostAndPort hostAndPort = new HostAndPort(host, Integer.parseInt(port));
+//        return new JedisPool(hostAndPort, DefaultJedisClientConfig.builder().password(password).build());
 //
-//        Set<String> sentinels = new HashSet<String>();
-//        sentinels.add("redis.fengwk.fun:26379");
-//        sentinels.add("redis.fengwk.fun:26380");
-//        sentinels.add("redis.fengwk.fun:26381");
-//        JedisSentinelPool jedisSentinelPool = new JedisSentinelPool("mymaster", sentinels,
-//                jedisPoolConfig, 1000 * 3, "a123");
-//
-//        return jedisSentinelPool;
+////        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+////        jedisPoolConfig.setMaxTotal(100);
+////        jedisPoolConfig.setMaxIdle(50);
+////        jedisPoolConfig.setMinIdle(50);
+////        jedisPoolConfig.setMaxWaitMillis(-1);
+////
+////        Set<String> sentinels = new HashSet<String>();
+////        sentinels.add("redis.fengwk.fun:26379");
+////        sentinels.add("redis.fengwk.fun:26380");
+////        sentinels.add("redis.fengwk.fun:26381");
+////        JedisSentinelPool jedisSentinelPool = new JedisSentinelPool("mymaster", sentinels,
+////                jedisPoolConfig, 1000 * 3, "a123");
+////
+////        return jedisSentinelPool;
 //    }
 //
 //}
