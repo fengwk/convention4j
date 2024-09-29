@@ -33,7 +33,7 @@ public class WebErrorController implements ErrorController {
     public ResponseEntity<Result<Void>> error(HttpServletRequest request) {
         HttpStatus status = getStatus(request);
         fun.fengwk.convention4j.api.code.HttpStatus httpStatus = fun.fengwk.convention4j.api.code.HttpStatus.of(status.value());
-        CommonErrorCodes errorCode = CommonErrorCodes.of(httpStatus);
+        CommonErrorCodes errorCode = of(httpStatus);
         if (errorCode == null) {
             errorCode = CommonErrorCodes.INTERNAL_SERVER_ERROR;
         }
@@ -52,6 +52,15 @@ public class WebErrorController implements ErrorController {
         catch (Exception ex) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
+    }
+
+    private CommonErrorCodes of(fun.fengwk.convention4j.api.code.HttpStatus httpStatus) {
+        for (CommonErrorCodes errorCode : CommonErrorCodes.values()) {
+            if (errorCode.getStatus() == httpStatus.getStatus()) {
+                return errorCode;
+            }
+        }
+        return null;
     }
 
 }

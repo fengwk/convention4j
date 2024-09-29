@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.code;
 
-import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.DomainConventionErrorCodeEnumAdapter;
 import fun.fengwk.convention4j.api.code.HttpStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,11 +10,10 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum TestErrorCodes implements ConventionErrorCode {
+public enum TestErrorCodes implements DomainConventionErrorCodeEnumAdapter {
 
-    TEST(1, HttpStatus.INTERNAL_SERVER_ERROR);
+    TEST(HttpStatus.INTERNAL_SERVER_ERROR);
 
-    private final int domainCode;
     private final HttpStatus httpStatus;
 
     @Override

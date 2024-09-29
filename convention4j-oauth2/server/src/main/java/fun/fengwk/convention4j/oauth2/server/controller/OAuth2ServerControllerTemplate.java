@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.oauth2.server.controller;
 
-import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultAuthorizeContext;
@@ -50,10 +49,10 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setSsoId(ssoIdMap.get(clientId));
         try {
             URI uri = oauth2Service.authorize(context);
-            log.debug("Sso authorize success, context: {}, uri: {}", context, uri);
+            log.debug("SSO authorize success, context: {}, uri: {}", context, uri);
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
-            log.debug("Sso authorize failed, context: {}", context, ex);
+            log.debug("SSO authorize failed, context: {}", context, ex);
             // 如果sso认证失败则返回空结果
             return Results.ok();
         }
@@ -87,10 +86,10 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
             log.debug("Authorize success, context: {}, uri: {}", context, uri);
             SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.ok(uri.toASCIIString());
-        } catch (ThrowableErrorCode errorCode) {
-            log.debug("Authorize failed, context: {}", context, errorCode);
+        } catch (Exception ex) {
+            log.debug("Authorize failed, context: {}", context);
             SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
-            return Results.error(errorCode);
+            throw ex;
         }
     }
 
@@ -128,10 +127,10 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
             log.debug("Token success, context: {}, oauth2TokenDTO: {}", context, oauth2TokenDTO);
             SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
             return Results.created(oauth2TokenDTO);
-        } catch (ThrowableErrorCode errorCode) {
-            log.debug("Token failed, context: {}", context, errorCode);
+        } catch (Exception ex) {
+            log.debug("Token failed, context: {}", context);
             SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
-            return Results.error(errorCode);
+            throw ex;
         }
     }
 

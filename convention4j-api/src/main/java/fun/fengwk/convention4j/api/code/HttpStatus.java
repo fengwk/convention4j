@@ -7,7 +7,7 @@ import java.util.Objects;
  *
  * @author fengwk
  */
-public enum HttpStatus implements Status {
+public enum HttpStatus {
 
     // 1xx Informational
 
@@ -428,23 +428,23 @@ public enum HttpStatus implements Status {
         return status >= 500 && status < 600;
     }
 
-    public static boolean is1xx(Status status) {
+    public static boolean is1xx(HttpStatus status) {
         return is1xx(status.getStatus());
     }
 
-    public static boolean is2xx(Status status) {
+    public static boolean is2xx(HttpStatus status) {
         return is2xx(status.getStatus());
     }
 
-    public static boolean is3xx(Status status) {
+    public static boolean is3xx(HttpStatus status) {
         return is3xx(status.getStatus());
     }
 
-    public static boolean is4xx(Status status) {
+    public static boolean is4xx(HttpStatus status) {
         return is4xx(status.getStatus());
     }
 
-    public static boolean is5xx(Status status) {
+    public static boolean is5xx(HttpStatus status) {
         return is5xx(status.getStatus());
     }
 
@@ -468,12 +468,10 @@ public enum HttpStatus implements Status {
         return is5xx(this);
     }
 
-    @Override
     public int getStatus() {
         return status;
     }
 
-    @Override
     public String getMessage() {
         return message;
     }

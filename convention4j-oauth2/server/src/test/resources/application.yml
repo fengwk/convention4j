@@ -9,7 +9,7 @@ spring:
 
 convention:
 
-  error-code:
+  code:
     i18n:
       locale: zh_CN
 

@@ -25,7 +25,7 @@ convention:
     initial-timestamp: 1649308857236
     worker-id: 0
 
-  error-code:
+  code:
     i18n:
       # 错误码本地化
       locale: zh_CN

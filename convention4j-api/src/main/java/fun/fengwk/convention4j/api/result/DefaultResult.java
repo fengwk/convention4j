@@ -1,42 +1,47 @@
 package fun.fengwk.convention4j.api.result;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
-import fun.fengwk.convention4j.api.code.HttpStatus;
-import fun.fengwk.convention4j.api.code.ImmutableResolvedErrorCode;
+import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.ImmutableResolvedConventionErrorCode;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.io.Serial;
-import java.util.Objects;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
  * 
  * @author fengwk
  */
+@EqualsAndHashCode
+@ToString
 public class DefaultResult<T> implements Result<T> {
     
     @Serial
     private static final long serialVersionUID = 1L;
 
     private final int status;
+    private final String code;
     private final String message;
     private final T data;
-    private final Errors errors;
+    private final Map<String, Object> errors;
 
-    public DefaultResult(int status, String message, T data, Errors errors) {
+    public DefaultResult(int status, String code, String message, T data, Map<String, Object> errors) {
         this.status = status;
+        this.code = code;
         this.message = message;
         this.data = data;
         this.errors = errors;
     }
 
     @Override
-    public boolean isSuccess() {
-        return HttpStatus.is2xx(status);
+    public int getStatus() {
+        return status;
     }
 
     @Override
-    public int getStatus() {
-        return status;
+    public String getCode() {
+        return code;
     }
 
     @Override
@@ -50,48 +55,23 @@ public class DefaultResult<T> implements Result<T> {
     }
 
     @Override
-    public Errors getErrors() {
+    public Map<String, Object> getErrors() {
         return errors;
     }
 
     @Override
-    public ErrorCode getErrorCode() {
-        Errors errors = getErrors();
-        if (errors == null) {
+    public ConventionErrorCode getErrorCode() {
+        if (isSuccess()) {
             return null;
         }
         // 返回一个ResolvedErrorCode，尊重错误码的解析避免被重复解析
-        return new ImmutableResolvedErrorCode(
-            getStatus(), errors.getCode(), getMessage(), errors.withoutCode());
+        return new ImmutableResolvedConventionErrorCode(getStatus(), getCode(), getMessage(), errors);
     }
 
     @Override
     public <R> Result<R> map(Function<T, R> mapper) {
         R r = data == null ? null : mapper.apply(data);
-        return new DefaultResult<>(status, message, r, errors);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DefaultResult<?> that = (DefaultResult<?>) o;
-        return status == that.status && Objects.equals(message, that.message) && Objects.equals(data, that.data) && Objects.equals(errors, that.errors);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(status, message, data, errors);
-    }
-
-    @Override
-    public String toString() {
-        return "DefaultResult{" +
-            "status=" + status +
-            ", message='" + message + '\'' +
-            ", data=" + data +
-            ", errors=" + errors +
-            '}';
+        return new DefaultResult<>(status, code, message, r, errors);
     }
 
 }

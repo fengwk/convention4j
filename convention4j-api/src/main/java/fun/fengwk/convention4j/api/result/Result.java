@@ -1,8 +1,10 @@
 package fun.fengwk.convention4j.api.result;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.HttpStatus;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -19,7 +21,9 @@ public interface Result<T> extends Serializable {
      *
      * @return 调用结果是否成功。
      */
-    boolean isSuccess();
+    default boolean isSuccess() {
+        return HttpStatus.is2xx(getStatus());
+    }
 
     /**
      * 与http状态保持一致。
@@ -29,10 +33,16 @@ public interface Result<T> extends Serializable {
     int getStatus();
 
     /**
-     * 获取调用结果信息，如果调用成功，该信息可以为null，
-     * 如果调用失败，该信息应该简洁明了地让调用者快速了解失败原因。
+     * 获取编码。
      *
-     * @return nullable
+     * @return 编码。
+     */
+    String getCode();
+
+    /**
+     * 简洁明了的结果信息描述。
+     *
+     * @return 结果信息描述。
      */
     String getMessage();
 
@@ -49,14 +59,14 @@ public interface Result<T> extends Serializable {
      *
      * @return 错误信息表。
      */
-    Errors getErrors();
+    Map<String, Object> getErrors();
 
     /**
      * 获取错误编码。
      *
      * @return 错误码，如果调用结果是成功则返回null。
      */
-    ErrorCode getErrorCode();
+    ConventionErrorCode getErrorCode();
 
     /**
      * 将当前结果映射为其它类型。

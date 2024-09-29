@@ -115,7 +115,7 @@ convention:
     # 使用语言
     locale: zh_CN
 
-  error-code:
+  code:
     i18n:
       # 错误码i18n语言，与i18n.locale保持一致
       locale: ${convention.i18n.locale}

@@ -27,7 +27,7 @@ public class ResultJsonDeserializer extends GenericsJsonDeserializer<ResultJsonD
         }
         JavaType javaType = ctx.getTypeFactory().constructParametricType(ResultBean.class, gen0);
         ResultBean bean = ctx.readValue(p, javaType);
-        return new DefaultResult<>(bean.getStatus(), bean.getMessage(), bean.getData(), bean.getErrors());
+        return new DefaultResult<>(bean.getStatus(), bean.getCode(), bean.getMessage(), bean.getData(), bean.getErrors());
     }
 
 }

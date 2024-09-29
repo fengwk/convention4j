@@ -44,6 +44,6 @@ convention:
     base-name: string
     locale: zh_CN
 
-  error-code:
+  code:
     i18n: 
       locale: ${convention.i18n.locale}

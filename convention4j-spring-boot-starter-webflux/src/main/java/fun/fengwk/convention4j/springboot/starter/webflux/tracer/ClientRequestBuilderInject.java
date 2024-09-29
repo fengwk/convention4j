@@ -26,10 +26,12 @@ public class ClientRequestBuilderInject implements Inject<ClientRequest.Builder>
         if (spanContext == null || builder == null) {
             return;
         }
-        builder.header(PropagationConstants.TRACE_ID_HTTP_HEADER_NAME, spanContext.toTraceId());
-        builder.header(PropagationConstants.SPAN_ID_HTTP_HEADER_NAME, spanContext.toSpanId());
-        builder.header(PropagationConstants.BAGGAGE_HEADER_NAME,
-            TracerUtils.serializeHttpPropagationBaggage(spanContext.baggageItems()));
+        builder.headers(headers -> {
+            headers.set(PropagationConstants.TRACE_ID_HTTP_HEADER_NAME, spanContext.toTraceId());
+            headers.set(PropagationConstants.SPAN_ID_HTTP_HEADER_NAME, spanContext.toSpanId());
+            headers.set(PropagationConstants.BAGGAGE_HEADER_NAME,
+                TracerUtils.serializeHttpPropagationBaggage(spanContext.baggageItems()));
+        });
     }
 
 }

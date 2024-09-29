@@ -123,7 +123,8 @@ public class GsonTest {
         Result<String> res = Results.ok("ok");
         StringWriter w = new StringWriter();
         gson.toJson(res, Result.class, w);
-        assert "{\"status\":200,\"message\":\"OK\",\"data\":\"ok\"}".equals(w.toString());
+        System.out.println(w.toString());
+        assert "{\"status\":200,\"code\":\"OK\",\"message\":\"OK\",\"data\":\"ok\"}".equals(w.toString());
     }
 
     @Test

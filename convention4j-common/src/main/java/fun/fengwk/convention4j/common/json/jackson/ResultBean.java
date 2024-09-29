@@ -1,7 +1,8 @@
 package fun.fengwk.convention4j.common.json.jackson;
 
-import fun.fengwk.convention4j.api.result.Errors;
 import lombok.Data;
+
+import java.util.Map;
 
 /**
  * @author fengwk
@@ -9,9 +10,11 @@ import lombok.Data;
 @Data
 public class ResultBean<T> {
 
+    private boolean success;
     private int status;
+    private String code;
     private String message;
     private T data;
-    private Errors errors;
+    private Map<String, Object> errors;
 
 }

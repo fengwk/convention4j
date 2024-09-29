@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.oauth2.server.service.mode;
 
-import fun.fengwk.convention4j.api.code.ErrorCode;
+import fun.fengwk.convention4j.api.code.ConventionErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ScopeUtils;
@@ -63,7 +63,7 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
         if (result.getData() == null) {
             log.warn("Authenticate failed, result: {}, clientId: {}, certificate: {}",
                 result, client.getClientId(), certificate);
-            ErrorCode errorCode;
+            ConventionErrorCode errorCode;
             if (!result.isSuccess()) {
                 errorCode = result.getErrorCode();
             } else {

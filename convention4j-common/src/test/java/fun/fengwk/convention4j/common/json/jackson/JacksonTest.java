@@ -13,6 +13,7 @@ import fun.fengwk.convention4j.common.result.Results;
 import lombok.Data;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -131,11 +132,16 @@ public class JacksonTest {
         System.out.println(JacksonUtils.writeValueAsString(lObj));
     }
 
+    @Test
+    public void test13() {
+        LocalDateTime dateTime = LocalDateTime.now();
+        String s = JacksonUtils.writeValueAsString(dateTime);
+        System.out.println(s);
+    }
+
     @Data
     static class L {
         long l;
     }
-
-
 
 }

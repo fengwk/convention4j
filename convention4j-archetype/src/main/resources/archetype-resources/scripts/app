@@ -3,7 +3,10 @@
 script_home=$(readlink -f $(dirname $(readlink -f "$0")))
 app_home=$(readlink -f $(dirname $script_home))
 # 查找app java环境所在的目录
-java_home="$JAVA_HOME"
+java_home="$JAVA_HOME_17"
+if [ -z "$java_home" ]; then
+  java_home="$JAVA_HOME"
+fi
 if [ ! -d "$java_home" ]; then
   echo "cannot found java_home: $java_home"
   exit 1
@@ -21,6 +24,13 @@ app_runtime_home=$APP_RUNTIME_HOME
 if [ -z "$app_runtime_home" ]; then
     app_runtime_home=$app_home
 fi
+# 查找agent
+agent_jar=$(find . -maxdepth 1 -type f -name 'convention4j-agent-*.jar')
+# spring环境
+spring_profiles_active='prod'
+if [ -n "$SPRING_PROFILES_ACTIVE" ]; then
+  spring_profiles_active="$SPRING_PROFILES_ACTIVE"
+fi
 
 env() {
   echo "script_home: $script_home"
@@ -28,6 +38,8 @@ env() {
   echo "app_runtime_home: $app_runtime_home"
   echo "java_home: $java_home"
   echo "java_cmd: $java_cmd"
+  echo "agent_jar: $agent_jar"
+  echo "spring_profiles_active: $spring_profiles_active"
 }
 
 build() {
@@ -53,25 +65,35 @@ stop() {
 start() {
   set -e
   trap stop SIGINT SIGQUIT SIGTERM
-  JAVA_OPTS="-server -Xms64M -Xmx256M $JAVA_OPTS"
-  JAVA_OPTS="-Dsun.net.inetaddr.ttl=10 $JAVA_OPTS"
+  if [ -n "$JAVA_OPTS" ]; then
+    JAVA_OPTS=" $JAVA_OPTS"
+  fi
+  JAVA_OPTS="-server -Xms64M -Xmx256M$JAVA_OPTS"
+  JAVA_OPTS="$JAVA_OPTS -Dsun.net.inetaddr.ttl=10"
   #JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000 $JAVA_OPTS"
-  debug="$DEBUG"
-  if [ "$debug" == "true" ]; then
-    debug='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000'
+  if [ "$DEBUG" == "true" ]; then
+    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000"
   fi
-  JAVA_OPTS="$debug $JAVA_OPTS"
-  spring_profiles_active='prod'
-  if [ -n "$SPRING_PROFILES_ACTIVE" ]; then
-    spring_profiles_active="$SPRING_PROFILES_ACTIVE"
+  if [ -n "$agent_jar" ]; then
+    JAVA_OPTS="$JAVA_OPTS -javaagent:$agent_jar"
   fi
-  nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  if [ "$spring_profiles_active" == 'dev' ]; then
+    echo "$java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs"
+    $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar \
+      --spring.profiles.active=$spring_profiles_active \
+      --logging.path=$app_runtime_home/logs
+  else
+    echo "nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &"
+    nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar \
+      --spring.profiles.active=$spring_profiles_active \
+      --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+  fi
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid
 }
 
 help() {
-  echo "Usage: $0 {env|build|start|stop|await}"
+  echo "Usage: $0 {env|build|start|stop}"
 }
 
 case "$1" in

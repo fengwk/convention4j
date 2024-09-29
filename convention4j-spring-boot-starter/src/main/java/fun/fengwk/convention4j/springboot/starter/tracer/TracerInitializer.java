@@ -13,6 +13,7 @@ public class TracerInitializer implements ApplicationContextInitializer<Configur
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         TracerUtils.initializeGlobalTracer(new Slf4jSpanFinisher());
+        SpringBootSpanInitializer.setEnvironment(applicationContext.getEnvironment());
     }
 
 }

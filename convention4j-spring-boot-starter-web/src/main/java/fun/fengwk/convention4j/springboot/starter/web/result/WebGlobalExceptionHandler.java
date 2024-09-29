@@ -1,6 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.web.result;
 
-import fun.fengwk.convention4j.api.code.ThrowableErrorCode;
+import fun.fengwk.convention4j.api.code.Code;
+import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.ImmutableConventionErrorCode;
+import fun.fengwk.convention4j.api.code.ThrowableConventionErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
 import fun.fengwk.convention4j.common.result.Results;
@@ -34,10 +37,7 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.util.WebUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static fun.fengwk.convention4j.api.code.CommonErrorCodes.*;
 
@@ -240,10 +240,10 @@ public class WebGlobalExceptionHandler {
     }
 
     // 异常码抛出捕获
-    @ExceptionHandler(value = { ThrowableErrorCode.class })
+    @ExceptionHandler(value = { ThrowableConventionErrorCode.class })
     public ResponseEntity<Result<Void>> handleThrowableErrorCode(
-            ThrowableErrorCode ex, HttpServletRequest request) {
-        if (fun.fengwk.convention4j.api.code.HttpStatus.is4xx(ex)) {
+        ThrowableConventionErrorCode ex, HttpServletRequest request) {
+        if (fun.fengwk.convention4j.api.code.HttpStatus.is4xx(ex.getStatus())) {
             warn(request, ex);
         } else {
             error(request, ex);
@@ -263,12 +263,26 @@ public class WebGlobalExceptionHandler {
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = { Throwable.class })
-    public Result<Void> handleThrowable(
+    public ResponseEntity<Result<Void>> handleThrowable(
             Throwable ex, HttpServletRequest request) {
         error(request, ex);
-        return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
+        ConventionErrorCode retErrorCode = null;
+        HttpStatus retHttpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        if (ex instanceof ConventionErrorCode conventionErrorCode) {
+            retErrorCode = conventionErrorCode;
+            HttpStatus httpStatus = HttpStatus.resolve(conventionErrorCode.getStatus());
+            if (httpStatus != null) {
+                retHttpStatus = httpStatus;
+            }
+        } else if (ex instanceof Code code) {
+            retErrorCode = new ImmutableConventionErrorCode(
+                retHttpStatus.value(), code.getCode(), code.getMessage(), Collections.emptyMap());
+        }
+        if (retErrorCode == null) {
+            retErrorCode = ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex);
+        }
+        return new ResponseEntity<>(Results.error(retErrorCode), retHttpStatus);
     }
 
     private void warn(HttpServletRequest request, Throwable ex) {

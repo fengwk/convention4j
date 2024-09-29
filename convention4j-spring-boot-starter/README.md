@@ -157,7 +157,7 @@ StringManager stringManager = GlobalStringManagerFactory.getStringManager(Test.c
 
 ```yaml
 convention:
-  error-code:  
+  code:  
     i18n:
       # 指定当前语言环境，如不指定将使用系统默认的语言环境
       locale: zh_CN

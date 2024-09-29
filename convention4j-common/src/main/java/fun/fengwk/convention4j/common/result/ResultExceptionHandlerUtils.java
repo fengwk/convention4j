@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.common.result;
 
 import fun.fengwk.convention4j.api.code.ConventionErrorCode;
-import fun.fengwk.convention4j.api.code.ErrorCode;
 import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.api.result.Result;
 import jakarta.validation.ConstraintViolation;
@@ -51,19 +50,19 @@ public class ResultExceptionHandlerUtils {
         if (ex instanceof ConstraintViolationException) {
             warn(log, ex);
             Map<String, String> errors = ResultExceptionHandlerUtils.convertToErrors((ConstraintViolationException) ex);
-            ErrorCode errorCode = ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex);
+            ConventionErrorCode errorCode = ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex);
             if (errors.isEmpty()) {
                 return Results.error(errorCode);
             } else {
                 return Results.error(errorCode, errors);
             }
-        } else if (ex instanceof ErrorCode exErrorCode) {
-            if (HttpStatus.is4xx(exErrorCode)) {
-                warn(log, exErrorCode);
+        } else if (ex instanceof ConventionErrorCode errorCode) {
+            if (HttpStatus.is4xx(errorCode.getStatus())) {
+                warn(log, errorCode);
             } else {
-                errorUseShortFormat(log, exErrorCode);
+                errorUseShortFormat(log, errorCode);
             }
-            return Results.error((ErrorCode) ex);
+            return Results.error(errorCode);
         } else if (ex instanceof IllegalArgumentException) {
             warn(log, ex);
             return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
@@ -76,13 +75,13 @@ public class ResultExceptionHandlerUtils {
         }
     }
 
-    private static void warn(Logger log, ErrorCode errorCode) {
+    private static void warn(Logger log, ConventionErrorCode errorCode) {
         if (log != null) {
             log.warn("Catch exception, code: {}, message: {}", errorCode.getCode(), errorCode.getMessage());
         }
     }
 
-    private static void errorUseShortFormat(Logger log, ErrorCode errorCode) {
+    private static void errorUseShortFormat(Logger log, ConventionErrorCode errorCode) {
         if (log != null) {
             log.error("Catch exception, code: {}, message: {}", errorCode.getCode(), errorCode.getMessage());
         }
@@ -103,20 +102,20 @@ public class ResultExceptionHandlerUtils {
     /**
      * 将异常转化为指定类型的错误码。
      *
-     * @param conventionErrorCode
+     * @param errorCode
      * @param ex
      * @return
      */
-    public static ErrorCode toErrorCode(ConventionErrorCode conventionErrorCode, Throwable ex) {
+    public static ConventionErrorCode toErrorCode(ConventionErrorCode errorCode, Throwable ex) {
         String msg = ex.getLocalizedMessage();
         if (msg == null) {
             msg = ex.getMessage();
         }
-        ErrorCode finalErrorCode;
+        ConventionErrorCode finalErrorCode;
         if (msg == null || msg.trim().isEmpty()) {
-            finalErrorCode = conventionErrorCode;
+            finalErrorCode = errorCode;
         } else {
-            finalErrorCode = conventionErrorCode.create(msg);
+            finalErrorCode = errorCode.resolve(msg);
         }
         return finalErrorCode;
     }

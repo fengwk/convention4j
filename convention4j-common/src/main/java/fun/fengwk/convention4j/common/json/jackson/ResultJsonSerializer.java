@@ -19,6 +19,7 @@ public class ResultJsonSerializer extends JsonSerializer<Result> {
         } else {
             ResultBean bean = new ResultBean();
             bean.setStatus(value.getStatus());
+            bean.setCode(value.getCode());
             bean.setMessage(value.getMessage());
             bean.setData(value.getData());
             bean.setErrors(value.getErrors());
