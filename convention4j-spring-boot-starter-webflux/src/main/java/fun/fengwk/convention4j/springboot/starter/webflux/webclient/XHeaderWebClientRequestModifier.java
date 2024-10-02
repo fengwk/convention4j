@@ -16,7 +16,7 @@ public class XHeaderWebClientRequestModifier implements WebClientRequestModifier
             String headerName = xHeader.getName();
             String headerValue = webFluxContext.getRequest().getHeaders().getFirst(headerName);
             if (StringUtils.isNotBlank(headerValue)) {
-                builder.header(headerName, headerValue);
+                builder.headers(headers -> headers.set(headerName, headerValue));
             }
         }
     }

@@ -22,4 +22,9 @@ public class WebClientProperties {
      */
     private Duration responseTimeout = Duration.ofMillis(5000);
 
+    /**
+     * 忽略错误的http状态码返回，默认情况下WebClient会在检查到错误状态码时抛出异常
+     */
+    private boolean ignoreErrorHttpStatus = false;
+
 }

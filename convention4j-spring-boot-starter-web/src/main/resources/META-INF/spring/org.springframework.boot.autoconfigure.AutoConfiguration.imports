@@ -1,5 +1,5 @@
 fun.fengwk.convention4j.springboot.starter.web.error.WebErrorAutoConfiguration
-fun.fengwk.convention4j.springboot.starter.web.result.WebGlobalExceptionHandlerAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.web.result.WebExceptionResultHandlerAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.web.context.WebContextAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.web.context.WebContextInterceptorAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.web.tracer.TracerWebAutoConfiguration

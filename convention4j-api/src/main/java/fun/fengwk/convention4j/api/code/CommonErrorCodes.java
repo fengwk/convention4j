@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.api.code;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 通用错误码。
@@ -57,6 +58,18 @@ public enum CommonErrorCodes implements ConventionErrorCode {
 
     CommonErrorCodes(HttpStatus httpStatus) {
         this.httpStatus = httpStatus;
+    }
+
+    public static CommonErrorCodes ofStatus(Integer status) {
+        if (status == null) {
+            return null;
+        }
+        for (CommonErrorCodes code : values()) {
+            if (Objects.equals(code.getStatus(), status)) {
+                return code;
+            }
+        }
+        return null;
     }
 
     @Override

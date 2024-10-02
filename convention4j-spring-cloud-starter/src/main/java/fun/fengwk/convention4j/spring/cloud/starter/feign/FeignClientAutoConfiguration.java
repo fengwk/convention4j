@@ -17,4 +17,9 @@ public class FeignClientAutoConfiguration {
         return new TracerFeignInterceptor();
     }
 
+    @Bean
+    public FeignInternalInvokerInterceptor feignInternalInvokerInterceptor() {
+        return new FeignInternalInvokerInterceptor();
+    }
+
 }

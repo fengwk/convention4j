@@ -29,7 +29,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.MultipartException;
@@ -44,13 +43,15 @@ import static fun.fengwk.convention4j.api.code.CommonErrorCodes.*;
 /**
  * REST协议的异常处理程序。
  *
+ *
  * @see org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
  * @author fengwk
  */
-@RestControllerAdvice
-public class WebGlobalExceptionHandler {
+@Deprecated
+//@RestControllerAdvice
+public class LegacyWebGlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(WebGlobalExceptionHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(WebExceptionResultHandlerChain.class);
 
     @PostConstruct
     public void init() {
@@ -60,7 +61,7 @@ public class WebGlobalExceptionHandler {
     // 传入的HTTP请求方法不被允许
     @ExceptionHandler(value = { HttpRequestMethodNotSupportedException.class })
     public ResponseEntity<Result<Void>> handleHttpRequestMethodNotSupportedException(
-            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
         warn(request, ex);
 
         // 在响应头中加入当前接口允许的请求方法
@@ -71,13 +72,13 @@ public class WebGlobalExceptionHandler {
         }
 
         return new ResponseEntity<>(Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_IMPLEMENTED, ex)),
-                headers, HttpStatus.METHOD_NOT_ALLOWED);
+            headers, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     // 不支持的媒体类型，比如接口使用了@RequestBody注解要求application/json，但请求却使用了application/x-www-form-urlencoded就会抛出该异常
     @ExceptionHandler(value = { HttpMediaTypeNotSupportedException.class })
     public ResponseEntity<Result<Void>> handleHttpMediaTypeNotSupportedException(
-            HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
         warn(request, ex);
 
         // 在响应头中加入当前接口可接收的媒体类型
@@ -88,14 +89,14 @@ public class WebGlobalExceptionHandler {
         }
 
         return new ResponseEntity<>(Results.error(ResultExceptionHandlerUtils.toErrorCode(UNSUPPORTED_MEDIA_TYPE, ex)),
-                headers, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+            headers, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
     // 当接口产生的数据的媒体类型与客户端需要的媒体类型不符时将抛出该异常
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
     @ExceptionHandler(value = { HttpMediaTypeNotAcceptableException.class })
     public Result<Void> handleHttpMediaTypeNotAcceptableException(
-            HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
+        HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_ACCEPTABLE, ex));
     }
@@ -104,7 +105,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = { MissingPathVariableException.class })
     public Result<Void> handleMissingPathVariableException(
-            MissingPathVariableException ex, HttpServletRequest request, WebRequest webRequest) {
+        MissingPathVariableException ex, HttpServletRequest request, WebRequest webRequest) {
         warn(request, ex);
 
         webRequest.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST);
@@ -116,7 +117,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { MissingServletRequestParameterException.class })
     public Result<Void> handleMissingServletRequestParameterException(
-            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        MissingServletRequestParameterException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -125,7 +126,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { ServletRequestBindingException.class })
     public Result<Void> handleServletRequestBindingException(
-            ServletRequestBindingException ex, HttpServletRequest request) {
+        ServletRequestBindingException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -134,7 +135,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = { ConversionNotSupportedException.class })
     public Result<Void> handleConversionNotSupportedException(
-            ConversionNotSupportedException ex, HttpServletRequest request) {
+        ConversionNotSupportedException ex, HttpServletRequest request) {
         error(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
@@ -143,7 +144,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { TypeMismatchException.class })
     public Result<Void> handleTypeMismatchException(
-            TypeMismatchException ex, HttpServletRequest request) {
+        TypeMismatchException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -152,7 +153,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { HttpMessageNotReadableException.class })
     public Result<Void> handleHttpMessageNotReadableException(
-            HttpMessageNotReadableException ex, HttpServletRequest request) {
+        HttpMessageNotReadableException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -161,7 +162,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = { HttpMessageNotWritableException.class })
     public Result<Void> handleHttpMessageNotWritableException(
-            HttpMessageNotWritableException ex, HttpServletRequest request) {
+        HttpMessageNotWritableException ex, HttpServletRequest request) {
         error(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(INTERNAL_SERVER_ERROR, ex));
     }
@@ -170,7 +171,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { MethodArgumentNotValidException.class })
     public Result<Void> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        MethodArgumentNotValidException ex, HttpServletRequest request) {
         warn(request, ex);
         Map<String, String> errors = convertToErrors(ex);
         if (errors.isEmpty()) {
@@ -184,7 +185,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { MissingServletRequestPartException.class })
     public Result<Void> handleMissingServletRequestPartException(
-            MissingServletRequestPartException ex, HttpServletRequest request) {
+        MissingServletRequestPartException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -193,7 +194,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { BindException.class })
     public Result<Void> handleBindException(
-            BindException ex, HttpServletRequest request) {
+        BindException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -202,7 +203,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = { NoHandlerFoundException.class })
     public Result<Void> handleNoHandlerFoundException(
-            NoHandlerFoundException ex, HttpServletRequest request) {
+        NoHandlerFoundException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(NOT_FOUND, ex));
     }
@@ -211,7 +212,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     @ExceptionHandler(value = { AsyncRequestTimeoutException.class })
     public Result<Void> handleAsyncRequestTimeoutException(
-            AsyncRequestTimeoutException ex, HttpServletRequest request) {
+        AsyncRequestTimeoutException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(SERVICE_UNAVAILABLE, ex));
     }
@@ -220,7 +221,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { ConstraintViolationException.class })
     public Result<Void> handleConstraintViolationException(
-            ConstraintViolationException ex, HttpServletRequest request) {
+        ConstraintViolationException ex, HttpServletRequest request) {
         warn(request, ex);
         Map<String, String> errors = ResultExceptionHandlerUtils.convertToErrors(ex);
         if (errors.isEmpty()) {
@@ -234,7 +235,7 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { MultipartException.class })
     public Result<Void> handleMultipartException(
-            MultipartException ex, HttpServletRequest request) {
+        MultipartException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
@@ -258,14 +259,14 @@ public class WebGlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = { IllegalArgumentException.class })
     public Result<Void> handleIllegalArgumentException(
-            IllegalArgumentException ex, HttpServletRequest request) {
+        IllegalArgumentException ex, HttpServletRequest request) {
         warn(request, ex);
         return Results.error(ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex));
     }
 
     @ExceptionHandler(value = { Throwable.class })
     public ResponseEntity<Result<Void>> handleThrowable(
-            Throwable ex, HttpServletRequest request) {
+        Throwable ex, HttpServletRequest request) {
         error(request, ex);
         ConventionErrorCode retErrorCode = null;
         HttpStatus retHttpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -292,10 +293,10 @@ public class WebGlobalExceptionHandler {
     private void error(HttpServletRequest request, Throwable ex) {
         log.error("request failed, request: '{}'", formatRequest(request), ex);
     }
-    
+
     private String formatRequest(HttpServletRequest request) {
         return request.getMethod() + " " + request.getRequestURI()
-                + (request.getQueryString() == null || request.getQueryString().isEmpty() ? "" : "?" + request.getQueryString());
+            + (request.getQueryString() == null || request.getQueryString().isEmpty() ? "" : "?" + request.getQueryString());
     }
 
     private Map<String, String> convertToErrors(MethodArgumentNotValidException ex) {
