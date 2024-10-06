@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.classpath;
 
 import fun.fengwk.convention4j.common.util.AntPattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;

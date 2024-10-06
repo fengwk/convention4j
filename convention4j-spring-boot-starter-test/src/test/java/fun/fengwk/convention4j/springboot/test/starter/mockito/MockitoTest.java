@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.test.starter.mockito;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;

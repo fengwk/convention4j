@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author fengwk

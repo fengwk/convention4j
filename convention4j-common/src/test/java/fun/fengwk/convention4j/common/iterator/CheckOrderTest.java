@@ -1,9 +1,11 @@
 package fun.fengwk.convention4j.common.iterator;
 
 import fun.fengwk.convention4j.common.util.Order;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -26,76 +28,94 @@ public class CheckOrderTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test3() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, -1, 2, 3, 4, 5).iterator(), Order.ASC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, -1, 2, 3, 4, 5).iterator(), Order.ASC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test4() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, -1, 3, 4, 5).iterator(), Order.ASC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, -1, 3, 4, 5).iterator(), Order.ASC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test5() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, 2, -1, 4, 5).iterator(), Order.ASC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, 2, -1, 4, 5).iterator(), Order.ASC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test6() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, 2, 3, -1, 5).iterator(), Order.ASC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, 1, 2, 3, -1, 5).iterator(), Order.ASC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test7() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(2, 4, 3, 2).iterator(), Order.DESC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(2, 4, 3, 2).iterator(), Order.DESC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test8() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 8, 3, 2).iterator(), Order.DESC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 8, 3, 2).iterator(), Order.DESC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test9() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 4, 8, 2).iterator(), Order.DESC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 4, 8, 2).iterator(), Order.DESC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test10() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 4, 3, 8).iterator(), Order.DESC);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(5, 4, 3, 8).iterator(), Order.DESC);
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test11() {
-        OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, -1, 2, 3, 4, 5).iterator(), Order.ASC);
+        assertThrows(IllegalStateException.class, () -> {
+            OrderedIterator<Integer> iter = Iterators.checkOrder(Arrays.asList(0, -1, 2, 3, 4, 5).iterator(), Order.ASC);
 
-        assert iter.next() == 0;
-        iter.next();
+            assert iter.next() == 0;
+            iter.next();
+        });
     }
 
     @Test

@@ -1,7 +1,9 @@
 package fun.fengwk.convention4j.common;
 
 import fun.fengwk.convention4j.common.lang.CharSequenceView;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -23,9 +25,11 @@ public class CharSequenceViewTest {
         assert new CharSequenceView("0123456789", 7, 10).toString().equals("789");
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void test4() {
-        new CharSequenceView("0123456789", 11, 10);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            new CharSequenceView("0123456789", 11, 10);
+        });
     }
 
     @Test
@@ -43,14 +47,18 @@ public class CharSequenceViewTest {
         assert new CharSequenceView("0123456789", 10, 10).subSequence(0, 0).toString().equals("");
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void test8() {
-        new CharSequenceView("0123456789", 0, 10).subSequence(1, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            new CharSequenceView("0123456789", 0, 10).subSequence(1, 0);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void test9() {
-        new CharSequenceView("0123456789", 0, 10).subSequence(1, 11);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            new CharSequenceView("0123456789", 0, 10).subSequence(1, 11);
+        });
     }
 
 }

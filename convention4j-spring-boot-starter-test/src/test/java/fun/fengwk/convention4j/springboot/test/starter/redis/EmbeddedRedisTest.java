@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.test.starter.redis;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import redis.embedded.RedisServer;
 
 import java.io.IOException;

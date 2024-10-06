@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.classpath;
 
 import fun.fengwk.convention4j.common.util.AntPattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -18,9 +18,9 @@ public class JarScanDelegateTest {
     public void test() throws IOException {
         AntPattern pm = new AntPattern("**");
         List<Resource> collector = new ArrayList<>();
-        URL rootUrl = FileScanDelegateTest.class.getClassLoader().getResource("junit");
+        URL rootUrl = FileScanDelegateTest.class.getClassLoader().getResource("org/junit/jupiter/api");
         JarScanDelegate jsd = new JarScanDelegate();
-        jsd.scan(pm, collector, "junit", rootUrl);
+        jsd.scan(pm, collector, "org/junit/jupiter/api", rootUrl);
         boolean result = false;
         for (Resource resource : collector) {
             result |= resource.getURL().toString().endsWith(Test.class.getSimpleName() + ".class");

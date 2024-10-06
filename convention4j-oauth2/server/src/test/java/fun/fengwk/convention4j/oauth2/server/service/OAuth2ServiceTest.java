@@ -13,21 +13,20 @@ import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
 import fun.fengwk.convention4j.oauth2.share.model.OAuth2TokenDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /**
  * @author fengwk
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = OAuth2CoreTestApplication.class)
 public class OAuth2ServiceTest {
 
@@ -141,42 +140,48 @@ public class OAuth2ServiceTest {
         assert oauth2TokenDTO.getExpiresIn() > 0;
     }
 
-    @Test(expected = ThrowableErrorCode.class)
+    @Test
     public void testAuthenticationMode_InvalidPassword() {
-        UserCertificate certificate = new UserCertificate();
-        certificate.setUsername(TestConstants.USER1_USERNAME);
-        certificate.setPassword("error password");
-        DefaultAuthorizeContext<UserCertificate> authorizeContext = new DefaultAuthorizeContext<>();
-        authorizeContext.setResponseType(ResponseType.CODE.getCode());
-        authorizeContext.setClientId(TestConstants.CLIENT1_ID);
-        authorizeContext.setRedirectUri(TestConstants.CLIENT1_REDIRECT_URI);
-        authorizeContext.setScope(TestConstants.CLIENT1_SCOPE);
-        authorizeContext.setState("123");
-        authorizeContext.setCertificate(certificate);
-        oauth2Service.authorize(authorizeContext);
+        assertThrows(ThrowableErrorCode.class, () -> {
+            UserCertificate certificate = new UserCertificate();
+            certificate.setUsername(TestConstants.USER1_USERNAME);
+            certificate.setPassword("error password");
+            DefaultAuthorizeContext<UserCertificate> authorizeContext = new DefaultAuthorizeContext<>();
+            authorizeContext.setResponseType(ResponseType.CODE.getCode());
+            authorizeContext.setClientId(TestConstants.CLIENT1_ID);
+            authorizeContext.setRedirectUri(TestConstants.CLIENT1_REDIRECT_URI);
+            authorizeContext.setScope(TestConstants.CLIENT1_SCOPE);
+            authorizeContext.setState("123");
+            authorizeContext.setCertificate(certificate);
+            oauth2Service.authorize(authorizeContext);
+        });
     }
 
-    @Test(expected = ThrowableErrorCode.class)
+    @Test
     public void testAuthenticationMode_InvalidCode() {
-        DefaultTokenContext<?> tokenContext = new DefaultTokenContext<>();
-        tokenContext.setGrantType(GrantType.AUTHORIZATION_CODE.getCode());
-        tokenContext.setCode("123");
-        tokenContext.setRedirectUri(TestConstants.CLIENT1_REDIRECT_URI);
-        tokenContext.setClientId(TestConstants.CLIENT1_ID);
-        tokenContext.setClientSecret(TestConstants.CLIENT1_SECRET);
-        tokenContext.setScope(TestConstants.CLIENT1_SCOPE);
-        oauth2Service.token(tokenContext);
+        assertThrows(ThrowableErrorCode.class, () -> {
+            DefaultTokenContext<?> tokenContext = new DefaultTokenContext<>();
+            tokenContext.setGrantType(GrantType.AUTHORIZATION_CODE.getCode());
+            tokenContext.setCode("123");
+            tokenContext.setRedirectUri(TestConstants.CLIENT1_REDIRECT_URI);
+            tokenContext.setClientId(TestConstants.CLIENT1_ID);
+            tokenContext.setClientSecret(TestConstants.CLIENT1_SECRET);
+            tokenContext.setScope(TestConstants.CLIENT1_SCOPE);
+            oauth2Service.token(tokenContext);
+        });
     }
 
-    @Test(expected = ThrowableErrorCode.class)
+    @Test
     public void testClientCredentialsMode_InvalidClientSecret() {
-        DefaultTokenContext<?> tokenContext = new DefaultTokenContext<>();
-        tokenContext.setGrantType(GrantType.CLIENT_CREDENTIALS.getCode());
-        tokenContext.setClientId(TestConstants.CLIENT2_ID);
-        tokenContext.setClientSecret("error client secret");
-        tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
-        tokenContext.setSubjectId(String.valueOf(TestConstants.USER1_ID));
-        oauth2Service.token(tokenContext);
+        assertThrows(ThrowableErrorCode.class, () -> {
+            DefaultTokenContext<?> tokenContext = new DefaultTokenContext<>();
+            tokenContext.setGrantType(GrantType.CLIENT_CREDENTIALS.getCode());
+            tokenContext.setClientId(TestConstants.CLIENT2_ID);
+            tokenContext.setClientSecret("error client secret");
+            tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
+            tokenContext.setSubjectId(String.valueOf(TestConstants.USER1_ID));
+            oauth2Service.token(tokenContext);
+        });
     }
 
     @Test
@@ -254,34 +259,36 @@ public class OAuth2ServiceTest {
         assert Objects.equals(refreshedDTO, newOssOAuth2TokenDTO);
     }
 
-    @Test(expected = ThrowableErrorCode.class)
+    @Test
     public void testPasswordMode_SSO_Unsupported() {
-        UserCertificate certificate = new UserCertificate();
-        certificate.setUsername(TestConstants.USER2_USERNAME);
-        certificate.setPassword(TestConstants.USER2_PASSWORD);
-        DefaultTokenContext<UserCertificate> tokenContext = new DefaultTokenContext<>();
-        tokenContext.setGrantType(GrantType.PASSWORD.getCode());
-        tokenContext.setClientId(TestConstants.CLIENT2_ID);
-        tokenContext.setClientSecret(TestConstants.CLIENT2_SECRET);
-        tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
-        tokenContext.setCertificate(certificate);
-        OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(tokenContext);
-        assert oauth2TokenDTO != null;
-        assert StringUtils.isNotEmpty(oauth2TokenDTO.getAccessToken());
-        assert StringUtils.isNotEmpty(oauth2TokenDTO.getRefreshToken());
-        assert StringUtils.isNotEmpty(oauth2TokenDTO.getScope());
-        assert StringUtils.isNotEmpty(oauth2TokenDTO.getTokenType());
-        assert oauth2TokenDTO.getExpiresIn() > 0;
-        String ssoId = tokenContext.getSsoId();
-        assert ssoId != null;
+        assertThrows(ThrowableErrorCode.class, () -> {
+            UserCertificate certificate = new UserCertificate();
+            certificate.setUsername(TestConstants.USER2_USERNAME);
+            certificate.setPassword(TestConstants.USER2_PASSWORD);
+            DefaultTokenContext<UserCertificate> tokenContext = new DefaultTokenContext<>();
+            tokenContext.setGrantType(GrantType.PASSWORD.getCode());
+            tokenContext.setClientId(TestConstants.CLIENT2_ID);
+            tokenContext.setClientSecret(TestConstants.CLIENT2_SECRET);
+            tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
+            tokenContext.setCertificate(certificate);
+            OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(tokenContext);
+            assert oauth2TokenDTO != null;
+            assert StringUtils.isNotEmpty(oauth2TokenDTO.getAccessToken());
+            assert StringUtils.isNotEmpty(oauth2TokenDTO.getRefreshToken());
+            assert StringUtils.isNotEmpty(oauth2TokenDTO.getScope());
+            assert StringUtils.isNotEmpty(oauth2TokenDTO.getTokenType());
+            assert oauth2TokenDTO.getExpiresIn() > 0;
+            String ssoId = tokenContext.getSsoId();
+            assert ssoId != null;
 
-        tokenContext = new DefaultTokenContext<>();
-        tokenContext.setGrantType(GrantType.PASSWORD.getCode());
-        tokenContext.setClientId(TestConstants.CLIENT2_ID);
-        tokenContext.setClientSecret(TestConstants.CLIENT2_SECRET);
-        tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
-        tokenContext.setSsoId(ssoId);
-        oauth2Service.token(tokenContext);
+            tokenContext = new DefaultTokenContext<>();
+            tokenContext.setGrantType(GrantType.PASSWORD.getCode());
+            tokenContext.setClientId(TestConstants.CLIENT2_ID);
+            tokenContext.setClientSecret(TestConstants.CLIENT2_SECRET);
+            tokenContext.setScope(TestConstants.CLIENT2_SCOPE);
+            tokenContext.setSsoId(ssoId);
+            oauth2Service.token(tokenContext);
+        });
     }
 
 }

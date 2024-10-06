@@ -1,6 +1,6 @@
 //package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.commons.idgen.snowflakes;
 //
-//import org.junit.Test;
+//import org.junit.jupiter.api.Test;
 //import redis.clients.jedis.*;
 //import redis.clients.jedis.util.Pool;
 //

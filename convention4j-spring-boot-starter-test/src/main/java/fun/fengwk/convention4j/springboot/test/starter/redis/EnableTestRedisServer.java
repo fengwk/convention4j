@@ -9,7 +9,7 @@ import java.lang.annotation.*;
  *
  * @author fengwk
  */
-@Import(RedisServerTestConfig.class)
+@Import({RedisServerTestConfig.class, RedisEagerInitBeanFactoryPostProcessor.class})
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

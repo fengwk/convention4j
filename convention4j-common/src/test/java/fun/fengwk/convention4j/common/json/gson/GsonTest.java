@@ -11,7 +11,7 @@ import fun.fengwk.convention4j.api.page.PageQuery;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.page.Pages;
 import fun.fengwk.convention4j.common.result.Results;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringWriter;
 import java.util.Arrays;

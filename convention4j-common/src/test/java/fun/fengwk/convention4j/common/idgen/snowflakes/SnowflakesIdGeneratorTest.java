@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common.idgen.snowflakes;
 
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * 

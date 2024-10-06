@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.idgen;
 import fun.fengwk.convention4j.common.idgen.snowflakes.FixedWorkerIdClient;
 import fun.fengwk.convention4j.common.idgen.snowflakes.SnowflakesIdGenerator;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * 

@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common;
 
 import fun.fengwk.convention4j.common.util.Property;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * 

@@ -1,10 +1,12 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -131,34 +133,38 @@ public class PeekBackTest {
         assert iterator.next() == '4';
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void test5() {
-        String str = "0123456789";
-        Iterator<Character> charIterator = str.chars().mapToObj(c -> (char) c).iterator();
-        PeekBackIterator<Character> iterator = Iterators.peekBack(charIterator, 3);
+        assertThrows(NoSuchElementException.class, () -> {
+            String str = "0123456789";
+            Iterator<Character> charIterator = str.chars().mapToObj(c -> (char) c).iterator();
+            PeekBackIterator<Character> iterator = Iterators.peekBack(charIterator, 3);
 
-        assert iterator.next() == '0';
-        assert iterator.next() == '1';
-        assert iterator.next() == '2';
-        assert iterator.next() == '3';
+            assert iterator.next() == '0';
+            assert iterator.next() == '1';
+            assert iterator.next() == '2';
+            assert iterator.next() == '3';
 
-        iterator.putBack();
-        iterator.putBack();
-        iterator.putBack();
-        iterator.putBack();
+            iterator.putBack();
+            iterator.putBack();
+            iterator.putBack();
+            iterator.putBack();
+        });
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void test6() {
-        String str = "0123";
-        Iterator<Character> charIterator = str.chars().mapToObj(c -> (char) c).iterator();
-        PeekBackIterator<Character> iterator = Iterators.peekBack(charIterator, 3);
+        assertThrows(NoSuchElementException.class, () -> {
+            String str = "0123";
+            Iterator<Character> charIterator = str.chars().mapToObj(c -> (char) c).iterator();
+            PeekBackIterator<Character> iterator = Iterators.peekBack(charIterator, 3);
 
-        assert iterator.next() == '0';
-        assert iterator.next() == '1';
-        assert iterator.next() == '2';
-        assert iterator.next() == '3';
-        iterator.next();
+            assert iterator.next() == '0';
+            assert iterator.next() == '1';
+            assert iterator.next() == '2';
+            assert iterator.next() == '3';
+            iterator.next();
+        });
     }
 
 }

@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.expression;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;

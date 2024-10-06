@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common;
 
 import fun.fengwk.convention4j.common.util.DateUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Date;

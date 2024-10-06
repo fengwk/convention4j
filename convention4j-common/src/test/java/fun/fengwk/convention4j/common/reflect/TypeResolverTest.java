@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.reflect;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

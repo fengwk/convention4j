@@ -1,9 +1,11 @@
 package fun.fengwk.convention4j.common.iterator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Iterator;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -18,12 +20,14 @@ public class CheckNotNullElementTest {
         test.test3();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test2() {
-        Iterator<Integer> iter = Iterators.checkNotNullElement(Arrays.asList(0, 1, 2, null, 3, 4, 5).iterator());
-        while (iter.hasNext()) {
-            iter.next();
-        }
+        assertThrows(IllegalStateException.class, () -> {
+            Iterator<Integer> iter = Iterators.checkNotNullElement(Arrays.asList(0, 1, 2, null, 3, 4, 5).iterator());
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
 }

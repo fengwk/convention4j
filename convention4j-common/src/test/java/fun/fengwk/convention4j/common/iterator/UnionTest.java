@@ -1,10 +1,12 @@
 package fun.fengwk.convention4j.common.iterator;
 
 import fun.fengwk.convention4j.common.util.Order;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -19,11 +21,13 @@ public class UnionTest {
         assert !unionIter.hasNext();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test2() {
-        DistinctOrderedIterator<Integer> iter1 = Iterators.distinct(Iterators.checkOrder(Collections.<Integer>emptyIterator(), Order.ASC));
-        DistinctOrderedIterator<Integer> iter2 = Iterators.distinct(Iterators.checkOrder(Collections.<Integer>emptyIterator(), Order.DESC));
-        Iterators.union(Arrays.asList(iter1, iter2));
+        assertThrows(IllegalArgumentException.class, () -> {
+            DistinctOrderedIterator<Integer> iter1 = Iterators.distinct(Iterators.checkOrder(Collections.<Integer>emptyIterator(), Order.ASC));
+            DistinctOrderedIterator<Integer> iter2 = Iterators.distinct(Iterators.checkOrder(Collections.<Integer>emptyIterator(), Order.DESC));
+            Iterators.union(Arrays.asList(iter1, iter2));
+        });
     }
 
     @Test

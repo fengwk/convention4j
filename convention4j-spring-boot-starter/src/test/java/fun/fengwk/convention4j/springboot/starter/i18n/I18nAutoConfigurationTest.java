@@ -3,17 +3,14 @@ package fun.fengwk.convention4j.springboot.starter.i18n;
 import fun.fengwk.convention4j.common.i18n.StringManager;
 import fun.fengwk.convention4j.common.i18n.StringManagerFactory;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * 
  * @author fengwk
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 public class I18nAutoConfigurationTest {
 

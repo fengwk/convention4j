@@ -1,7 +1,7 @@
 package fun.fengwk.convention4j.common;
 
 import fun.fengwk.convention4j.common.lang.ClassUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

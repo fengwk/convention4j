@@ -1,12 +1,14 @@
 package fun.fengwk.convention4j.common.iterator;
 
 import fun.fengwk.convention4j.common.util.Order;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
@@ -39,53 +41,59 @@ public class CursorTest {
         assert db.equals(result);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test2() {
-        List<Integer> db = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            db.add(i);
-        }
-        CursorIterator<Integer, Integer> iter = Iterators.cursor(
+        assertThrows(IllegalStateException.class, () -> {
+            List<Integer> db = new ArrayList<>();
+            for (int i = 0; i < 30; i++) {
+                db.add(i);
+            }
+            CursorIterator<Integer, Integer> iter = Iterators.cursor(
                 (CursorQueryFunction<Integer, Integer>) (cursor, limit) -> query(db, cursor, limit),
                 Function.identity(),
                 Order.DESC,
                 1);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test3() {
-        List<Integer> db = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            db.add(i);
-        }
-        db.add(null);
-        CursorIterator<Integer, Integer> iter = Iterators.cursor(
+        assertThrows(IllegalStateException.class, () -> {
+            List<Integer> db = new ArrayList<>();
+            for (int i = 0; i < 30; i++) {
+                db.add(i);
+            }
+            db.add(null);
+            CursorIterator<Integer, Integer> iter = Iterators.cursor(
                 (CursorQueryFunction<Integer, Integer>) (cursor, limit) -> query(db, cursor, limit),
                 Function.identity(),
                 Order.ASC,
                 1);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test4() {
-        List<Integer> db = new ArrayList<>();
-        for (int i = 0; i < 30; i++) {
-            db.add(i);
-        }
-        CursorIterator<Integer, Integer> iter = Iterators.cursor(
+        assertThrows(IllegalStateException.class, () -> {
+            List<Integer> db = new ArrayList<>();
+            for (int i = 0; i < 30; i++) {
+                db.add(i);
+            }
+            CursorIterator<Integer, Integer> iter = Iterators.cursor(
                 (cursor, limit) -> query(db, cursor, limit),
                 e -> null,
                 Order.ASC,
                 1);
-        while (iter.hasNext()) {
-            iter.next();
-        }
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        });
     }
 
     @Test

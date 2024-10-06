@@ -1,19 +1,16 @@
 package fun.fengwk.convention4j.springboot.test.starter.redis;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
 import redis.embedded.RedisServer;
 
 /**
  * @author fengwk
  */
 @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = RedisTestApplication.class)
 public class RedisTest {
 

@@ -11,7 +11,9 @@ import java.io.IOException;
  */
 public class RedisServerTestConfig {
 
-    @Bean(initMethod = "start", destroyMethod = "stop")
+    static final String REDIS_SERVER_BEAN_NAME = "redisServer";
+
+    @Bean(name = REDIS_SERVER_BEAN_NAME, initMethod = "start", destroyMethod = "stop")
     public RedisServer redisServer(@Value("${spring.redis.port:6379}") int port) throws IOException {
         return new RedisServer(port);
     }

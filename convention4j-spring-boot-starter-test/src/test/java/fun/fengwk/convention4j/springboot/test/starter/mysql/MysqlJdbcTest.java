@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.springboot.test.starter.mysql;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -2,7 +2,7 @@ package fun.fengwk.convention4j.common;
 
 import fun.fengwk.convention4j.common.util.NullSafe;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author fengwk

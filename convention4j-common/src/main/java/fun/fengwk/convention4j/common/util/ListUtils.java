@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 简化列表操作，明确操作语义。
@@ -136,6 +137,22 @@ public class ListUtils {
         List<E> all = new ArrayList<>(NullSafe.of(list1));
         all.addAll(NullSafe.of(list2));
         return all;
+    }
+
+    /**
+     * 从列表中随机获取一个元素
+     *
+     * @param list
+     * @return
+     * @param <E>
+     */
+    public static <E> E randomGet(List<E> list) {
+        if (list.isEmpty()) {
+            return null;
+        }
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        int i = random.nextInt(0, list.size());
+        return list.get(i);
     }
 
 }

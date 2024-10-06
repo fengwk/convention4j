@@ -4,8 +4,8 @@ import fun.fengwk.convention4j.common.cache.metrics.CacheManagerMetrics;
 import fun.fengwk.convention4j.common.cache.metrics.LogCacheManagerMetrics;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.util.Ref;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
@@ -58,7 +58,7 @@ public class CacheManagerTest {
         });
     }
 
-    @Before
+    @BeforeEach
     public void reset() {
         cacheManagerMetrics.clear();
     }

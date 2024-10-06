@@ -3,21 +3,18 @@ package fun.fengwk.convention4j.oauth2.infra.repo;
 import fun.fengwk.convention4j.oauth2.infra.OAuth2InfraTestApplication;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author fengwk
  */
 @SpringBootTest(classes = OAuth2InfraTestApplication.class)
-@RunWith(SpringRunner.class)
 public class MysqlOAuth2TokenRepositoryTest {
 
     @Autowired

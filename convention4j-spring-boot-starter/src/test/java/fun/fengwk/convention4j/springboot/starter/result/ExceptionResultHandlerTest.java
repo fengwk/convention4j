@@ -5,17 +5,16 @@ import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
  */
 @Slf4j
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 public class ExceptionResultHandlerTest {
 
@@ -27,9 +26,11 @@ public class ExceptionResultHandlerTest {
         assert testService.test1().getStatus() == HttpStatus.INTERNAL_SERVER_ERROR.getStatus();
     }
 
-    @Test(expected = ArithmeticException.class)
+    @Test
     public void test2() {
-        testService.test2();
+        assertThrows(ArithmeticException.class, () -> {
+            testService.test2();
+        });
     }
 
     @Test
@@ -46,11 +47,13 @@ public class ExceptionResultHandlerTest {
         assert !result.isSuccess();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testProxy2() {
-        FooService fooService = new FooService();
-        FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService, log);
-        proxy.foo2();
+        assertThrows(IllegalArgumentException.class, () -> {
+            FooService fooService = new FooService();
+            FooService proxy = ResultExceptionHandlerUtils.getProxy(fooService, log);
+            proxy.foo2();
+        });
     }
 
     public static class FooService {

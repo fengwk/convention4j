@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.4</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -65,10 +65,9 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.0.2</convention4j.version>
+        <convention4j.version>1.0.4</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.44</auto-mapper.version>
         <spring-boot-dependencies.version>3.2.6</spring-boot-dependencies.version>
@@ -86,7 +85,6 @@
         <ognl.version>3.2.21</ognl.version>
         <guava.version>32.0.1-jre</guava.version>
         <jsr305.version>3.0.2</jsr305.version>
-        <junit.version>4.13.2</junit.version>
         <lombok.version>1.18.30</lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <auto-service.version>1.1.1</auto-service.version>
@@ -274,11 +272,6 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${jsr305.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>

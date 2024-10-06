@@ -2,29 +2,30 @@ package fun.fengwk.convention4j.springboot.starter.validation;
 
 import fun.fengwk.convention4j.springboot.starter.TestApplication;
 import jakarta.validation.ConstraintViolationException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author fengwk
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestApplication.class)
 public class UserServiceTest {
 
     @Autowired
     private UserService userService;
 
-    @Test(expected = ConstraintViolationException.class)
+    @Test
     public void test() {
-        User user = new User();
-        user.setId(1L);
+        assertThrows(ConstraintViolationException.class, () -> {
+            User user = new User();
+            user.setId(1L);
 //        user.setName("name");
-        user.setDesc("desc");
-        userService.checkUser(user);
+            user.setDesc("desc");
+            userService.checkUser(user);
+        });
     }
 
 }

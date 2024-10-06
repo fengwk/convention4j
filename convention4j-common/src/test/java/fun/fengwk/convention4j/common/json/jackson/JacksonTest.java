@@ -11,7 +11,7 @@ import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.page.Pages;
 import fun.fengwk.convention4j.common.result.Results;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author fengwk
