@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.util;
 
+import fun.fengwk.convention4j.common.lang.StringUtils;
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -578,6 +580,86 @@ public class NullSafe {
      */
     public static Object[] of(Object[] objects) {
         return objects == null ? new Object[0] : objects;
+    }
+
+    /**
+     * 如果s为空使用String的默认值""
+     *
+     * @param s
+     * @return
+     */
+    public static String of(String s) {
+        return of(s, StringUtils.EMPTY);
+    }
+
+    /**
+     * 如果b为空使用默认值false
+     *
+     * @param b
+     * @return
+     */
+    public static Boolean of(Boolean b) {
+        return of(b, false);
+    }
+
+    /**
+     * 如果b为空使用默认值0
+     *
+     * @param b
+     * @return
+     */
+    public static Byte of(Byte b) {
+        return of(b, (byte) 0);
+    }
+
+    /**
+     * 如果s为空使用默认值0
+     *
+     * @param s
+     * @return
+     */
+    public static Short of(Short s) {
+        return of(s, (short) 0);
+    }
+
+    /**
+     * 如果i为空使用默认值0
+     *
+     * @param i
+     * @return
+     */
+    public static Integer of(Integer i) {
+        return of(i, 0);
+    }
+
+    /**
+     * 如果l为空使用默认值0L
+     *
+     * @param l
+     * @return
+     */
+    public static Long of(Long l) {
+        return of(l, 0L);
+    }
+
+    /**
+     * 如果f为空使用默认值0f
+     *
+     * @param f
+     * @return
+     */
+    public static Float of(Float f) {
+        return of(f, 0f);
+    }
+
+    /**
+     * 如果d为空使用默认值0.
+     *
+     * @param d
+     * @return
+     */
+    public static Double of(Double d) {
+        return of(d, 0.);
     }
 
     /**
