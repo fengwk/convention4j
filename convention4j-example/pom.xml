@@ -7,7 +7,7 @@
     <parent>
         <artifactId>convention4j-parent</artifactId>
         <groupId>fun.fengwk.convention4j</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
 
     <artifactId>convention4j-example</artifactId>
