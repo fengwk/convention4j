@@ -29,6 +29,7 @@ public class CC {
 
         ClientServiceProvider provider = ClientServiceProvider.loadService();
 //        provider.newPushConsumerBuilder()
+
         SimpleConsumer consumer = provider.newSimpleConsumerBuilder()
             .setClientConfiguration(clientConfiguration)
             .setConsumerGroup("CID_test")
