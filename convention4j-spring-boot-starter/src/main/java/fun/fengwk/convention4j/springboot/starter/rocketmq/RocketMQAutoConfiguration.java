@@ -9,12 +9,14 @@ import org.apache.rocketmq.client.apis.producer.Producer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 /**
  * @author fengwk
  */
+@ConditionalOnProperty(prefix = "convention4j.rocketmq", name = "endpoints")
 @ConditionalOnClass({ Producer.class, PushConsumer.class })
 @EnableConfigurationProperties(RocketMQProperties.class)
 @AutoConfiguration
