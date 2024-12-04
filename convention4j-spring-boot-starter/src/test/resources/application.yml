@@ -47,3 +47,6 @@ convention:
   code:
     i18n: 
       locale: ${convention.i18n.locale}
+
+  rocketmq:
+    endpoints: 'vps-rocketmq-broker:8081'
