@@ -5,8 +5,6 @@ import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -18,29 +16,20 @@ import java.util.concurrent.ConcurrentMap;
  * @author fengwk
  */
 @Slf4j
-public class RocketMQConsumerManager implements AutoCloseable {
+public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsumerManager {
 
     private final ClientConfiguration clientConfiguration;
     private final PushConsumerBuilderProcessor pushConsumerBuilderProcessor;
     private final ConcurrentMap<Method, PushConsumer> registry = new ConcurrentHashMap<>();
 
-    public RocketMQConsumerManager(ClientConfiguration clientConfiguration,
-                                   PushConsumerBuilderProcessor pushConsumerBuilderProcessor) {
+    public PushConsumerRocketMQConsumerManager(ClientConfiguration clientConfiguration,
+                                               PushConsumerBuilderProcessor pushConsumerBuilderProcessor) {
         this.clientConfiguration = Objects.requireNonNull(clientConfiguration);
         this.pushConsumerBuilderProcessor = pushConsumerBuilderProcessor;
     }
 
-    public void registerIfNecessary(Object bean) throws ClientException {
-        Method[] allDeclaredMethods = ReflectionUtils.getAllDeclaredMethods(bean.getClass());
-        for (Method method : allDeclaredMethods) {
-            RocketMQMessageListener listenerAnnotation = AnnotationUtils.findAnnotation(method, RocketMQMessageListener.class);
-            if (listenerAnnotation != null) {
-                register(bean, method, listenerAnnotation);
-            }
-        }
-    }
-
-    private void register(Object bean, Method method, RocketMQMessageListener listenerAnnotation) throws ClientException {
+    @Override
+    protected void register(Object bean, Method method, RocketMQMessageListener listenerAnnotation) throws ClientException {
         PushConsumerBuilder pushConsumerBuilder = new PushConsumerBuilder();
         pushConsumerBuilder.setConsumerGroup(listenerAnnotation.consumerGroup());
         pushConsumerBuilder.setListener(new RocketMQMessageListenerAdapter(bean, method));

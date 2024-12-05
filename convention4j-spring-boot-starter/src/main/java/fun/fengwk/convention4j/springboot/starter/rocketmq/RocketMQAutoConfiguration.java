@@ -1,7 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
+import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQConsumerManager;
 import fun.fengwk.convention4j.common.rocketmq.ProducerBuilder;
-import fun.fengwk.convention4j.common.rocketmq.RocketMQConsumerManager;
+import fun.fengwk.convention4j.common.rocketmq.PushConsumerRocketMQConsumerManager;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
@@ -47,16 +48,16 @@ public class RocketMQAutoConfiguration {
 
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "close")
-    public RocketMQConsumerManager rocketMQConsumerManager(RocketMQProperties rocketMQProperties,
-                                                           ClientConfiguration rocketMQClientConfiguration) {
-        return new RocketMQConsumerManager(
+    public AbstractRocketMQConsumerManager rocketMQConsumerManager(RocketMQProperties rocketMQProperties,
+                                                                   ClientConfiguration rocketMQClientConfiguration) {
+        return new PushConsumerRocketMQConsumerManager(
             rocketMQClientConfiguration, new ConfigurablePushConsumerBuilderProcessor(rocketMQProperties));
     }
 
     @ConditionalOnMissingBean
     @Bean
     public RocketMQMessageListenerBeanPostProcessor rocketMQMessageListenerBeanPostProcessor(
-        RocketMQConsumerManager rocketMQConsumerManager) {
+        AbstractRocketMQConsumerManager rocketMQConsumerManager) {
         return new RocketMQMessageListenerBeanPostProcessor(rocketMQConsumerManager);
     }
 
