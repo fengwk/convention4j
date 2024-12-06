@@ -8,9 +8,11 @@ import org.apache.rocketmq.client.apis.producer.SendReceipt;
  */
 public class TestSendReceipt implements SendReceipt {
 
+    private final MessageId messageId = new TestMessageId();
+
     @Override
     public MessageId getMessageId() {
-        return new TestMessageId();
+        return messageId;
     }
 
 }

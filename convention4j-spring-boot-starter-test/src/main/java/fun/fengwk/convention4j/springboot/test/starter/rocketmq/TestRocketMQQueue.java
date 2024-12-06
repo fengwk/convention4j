@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
 
-import org.apache.rocketmq.client.apis.message.Message;
-
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -9,13 +7,13 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class TestRocketMQQueue {
 
-    private final LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<TestMessage> queue = new LinkedBlockingQueue<>();
 
-    public void enqueue(Message message) throws InterruptedException {
+    public void enqueue(TestMessage message) throws InterruptedException {
         queue.put(message);
     }
 
-    public Message dequeue() throws InterruptedException {
+    public TestMessage dequeue() throws InterruptedException {
         return queue.take();
     }
 
