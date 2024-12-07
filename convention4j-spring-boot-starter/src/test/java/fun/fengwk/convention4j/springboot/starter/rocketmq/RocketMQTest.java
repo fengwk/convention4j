@@ -18,7 +18,7 @@
 //    @Test
 //    public void test() throws ClientException, InterruptedException {
 //        testProducer.produce();
-//        Thread.sleep(1000 * 5L);
+//        Thread.sleep(1000 * 3L);
 //    }
 //
 //}
