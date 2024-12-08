@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * @author fengwk
  */
-@ConditionalOnProperty(prefix = "convention4j.rocketmq", name = "endpoints")
+@ConditionalOnProperty(prefix = "convention.rocketmq", name = "endpoints")
 @ConditionalOnClass({ Producer.class, PushConsumer.class })
 @EnableConfigurationProperties(RocketMQProperties.class)
 @AutoConfiguration

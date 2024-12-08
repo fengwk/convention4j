@@ -86,7 +86,7 @@ public class FileWatcherManagerTest {
             }
         }).start();
 
-        sleep(1500L); // 等待注册启动
+        sleep(3000L); // 等待注册启动
         fileWatcherManager.awaitClosed();
 
         assertEquals(2, createCounter.get());
