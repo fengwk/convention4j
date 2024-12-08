@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
 
+import lombok.Getter;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -7,13 +9,22 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class TestRocketMQQueue {
 
-    private final LinkedBlockingQueue<TestMessage> queue = new LinkedBlockingQueue<>();
+    @Getter
+    private final String topic;
+    @Getter
+    private final String consumerGroup;
+    private final LinkedBlockingQueue<TestRocketMQMessage> queue = new LinkedBlockingQueue<>();
 
-    public void enqueue(TestMessage message) throws InterruptedException {
+    public TestRocketMQQueue(String topic, String consumerGroup) {
+        this.topic = topic;
+        this.consumerGroup = consumerGroup;
+    }
+
+    public void enqueue(TestRocketMQMessage message) throws InterruptedException {
         queue.put(message);
     }
 
-    public TestMessage dequeue() throws InterruptedException {
+    public TestRocketMQMessage dequeue() throws InterruptedException {
         return queue.take();
     }
 

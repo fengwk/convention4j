@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * @author fengwk
  */
-public class TestMessageId implements MessageId {
+public class TestRocketMQMessageId implements MessageId {
 
     private final String id = UUID.randomUUID().toString();
 

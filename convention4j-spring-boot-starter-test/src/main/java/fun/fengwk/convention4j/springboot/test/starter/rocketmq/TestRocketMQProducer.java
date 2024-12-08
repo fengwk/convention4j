@@ -15,22 +15,19 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class TestRocketMQProducer implements Producer {
 
-    private final TestRocketMQQueue testRocketMQQueue;
+    private final TestRocketMQBroker broker;
 
-    public TestRocketMQProducer(TestRocketMQQueue testQueue) {
-        this.testRocketMQQueue = testQueue;
+    public TestRocketMQProducer(TestRocketMQBroker broker) {
+        this.broker = broker;
     }
 
     @Override
     public SendReceipt send(Message message) throws ClientException {
-        TestSendReceipt testSendReceipt = new TestSendReceipt();
-        TestMessage testMessage = new TestMessage(message, testSendReceipt.getMessageId());
         try {
-            testRocketMQQueue.enqueue(testMessage);
+            return broker.sendMessage(message);
         } catch (InterruptedException ex) {
             throw new ClientException(ex);
         }
-        return testSendReceipt;
     }
 
     @Override
@@ -57,7 +54,7 @@ public class TestRocketMQProducer implements Producer {
 
     @Override
     public Transaction beginTransaction() {
-        return new TestTransaction();
+        return new TestRocketMQTransaction();
     }
 
     @Override

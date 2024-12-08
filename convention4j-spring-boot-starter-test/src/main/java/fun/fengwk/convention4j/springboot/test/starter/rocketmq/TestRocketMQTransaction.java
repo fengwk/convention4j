@@ -6,7 +6,7 @@ import org.apache.rocketmq.client.apis.producer.Transaction;
 /**
  * @author fengwk
  */
-public class TestTransaction implements Transaction {
+public class TestRocketMQTransaction implements Transaction {
 
     @Override
     public void commit() throws ClientException {

@@ -8,6 +8,7 @@ import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,12 +18,12 @@ import org.springframework.context.annotation.Bean;
 /**
  * @author fengwk
  */
-@ConditionalOnProperty(prefix = "convention.rocketmq", name = "endpoints")
 @ConditionalOnClass({ Producer.class, PushConsumer.class })
 @EnableConfigurationProperties(RocketMQProperties.class)
 @AutoConfiguration
 public class RocketMQAutoConfiguration {
 
+    @ConditionalOnProperty(prefix = "convention.rocketmq", name = "endpoints")
     @ConditionalOnMissingBean
     @Bean
     public ClientConfiguration rocketMQClientConfiguration(RocketMQProperties rocketMQProperties) {
@@ -31,6 +32,7 @@ public class RocketMQAutoConfiguration {
             .build();
     }
 
+    @ConditionalOnBean(ClientConfiguration.class)
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "close")
     public Producer rocketMQProducer(RocketMQProperties rocketMQProperties,
@@ -46,6 +48,7 @@ public class RocketMQAutoConfiguration {
         return new TracerProducer(producer);
     }
 
+    @ConditionalOnBean(ClientConfiguration.class)
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "close")
     public AbstractRocketMQConsumerManager rocketMQConsumerManager(RocketMQProperties rocketMQProperties,
@@ -54,6 +57,7 @@ public class RocketMQAutoConfiguration {
             rocketMQClientConfiguration, new ConfigurablePushConsumerBuilderProcessor(rocketMQProperties));
     }
 
+    @ConditionalOnBean(AbstractRocketMQConsumerManager.class)
     @ConditionalOnMissingBean
     @Bean
     public RocketMQMessageListenerBeanPostProcessor rocketMQMessageListenerBeanPostProcessor(

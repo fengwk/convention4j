@@ -6,9 +6,9 @@ import org.apache.rocketmq.client.apis.producer.SendReceipt;
 /**
  * @author fengwk
  */
-public class TestSendReceipt implements SendReceipt {
+public class TestRocketMQSendReceipt implements SendReceipt {
 
-    private final MessageId messageId = new TestMessageId();
+    private final MessageId messageId = new TestRocketMQMessageId();
 
     @Override
     public MessageId getMessageId() {
