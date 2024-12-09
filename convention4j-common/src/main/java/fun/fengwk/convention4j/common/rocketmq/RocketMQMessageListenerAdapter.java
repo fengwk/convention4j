@@ -1,18 +1,13 @@
 package fun.fengwk.convention4j.common.rocketmq;
 
-import fun.fengwk.convention4j.common.json.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
 import org.apache.rocketmq.client.apis.message.MessageView;
 import org.springframework.util.ReflectionUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -44,16 +39,16 @@ public class RocketMQMessageListenerAdapter implements MessageListener {
         if (MessageView.class.isAssignableFrom(inputClass)) {
             this.inputAdapter = mv -> mv;
         } else if (CharSequence.class.isAssignableFrom(inputClass)) {
-            this.inputAdapter = this::messageViewToString;
+            this.inputAdapter = RocketMQUtils::getStringBody;
         } else {
             Type[] genericParameterTypes = method.getGenericParameterTypes();
             Type inputType = genericParameterTypes[0];
             this.inputAdapter = mv -> {
-                String bodyStr = messageViewToString(mv);
                 try {
-                    return JsonUtils.fromJson(bodyStr, inputType);
+                    return RocketMQUtils.getObjectBody(mv, inputType);
                 } catch (Exception ex) {
-                    log.error("convert rocket mq message error, messageView: {}, method: {}, bodyStr: {}", mv, method, bodyStr, ex);
+                    log.error("convert rocket mq message error, messageView: {}, method: {}, bodyStr: {}",
+                        mv, method, RocketMQUtils.getStringBody(mv), ex);
                     return null;
                 }
             };
@@ -95,18 +90,6 @@ public class RocketMQMessageListenerAdapter implements MessageListener {
     public ConsumeResult consume(MessageView messageView) {
         Object input = inputAdapter.apply(messageView);
         return outputAdapter.apply(messageView, () -> ReflectionUtils.invokeMethod(method, bean, input));
-    }
-
-    private String messageViewToString(MessageView messageView) {
-        ByteBuffer buf = messageView.getBody();
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            while (buf.hasRemaining()) {
-                out.write(buf.get());
-            }
-            return out.toString(StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
 }
