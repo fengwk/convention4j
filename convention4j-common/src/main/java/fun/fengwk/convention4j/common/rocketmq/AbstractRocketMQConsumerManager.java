@@ -28,4 +28,9 @@ public abstract class AbstractRocketMQConsumerManager implements AutoCloseable {
      */
     protected abstract void register(Object bean, Method method, RocketMQMessageListener listenerAnnotation) throws ClientException;
 
+    /**
+     * 启动所有消费者
+     */
+    public abstract void start() throws ClientException;
+
 }

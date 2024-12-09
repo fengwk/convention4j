@@ -10,6 +10,7 @@ import org.springframework.util.ReflectionUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -45,10 +46,12 @@ public class RocketMQMessageListenerAdapter implements MessageListener {
         } else if (CharSequence.class.isAssignableFrom(inputClass)) {
             this.inputAdapter = this::messageViewToString;
         } else {
+            Type[] genericParameterTypes = method.getGenericParameterTypes();
+            Type inputType = genericParameterTypes[0];
             this.inputAdapter = mv -> {
                 String bodyStr = messageViewToString(mv);
                 try {
-                    return JsonUtils.fromJson(bodyStr, inputClass);
+                    return JsonUtils.fromJson(bodyStr, inputType);
                 } catch (Exception ex) {
                     log.error("convert rocket mq message error, messageView: {}, method: {}, bodyStr: {}", mv, method, bodyStr, ex);
                     return null;

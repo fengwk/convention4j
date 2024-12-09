@@ -8,6 +8,7 @@ import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -20,7 +21,8 @@ public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsume
 
     private final ClientConfiguration clientConfiguration;
     private final PushConsumerBuilderProcessor pushConsumerBuilderProcessor;
-    private final ConcurrentMap<Method, PushConsumer> registry = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Method, PushConsumerBuilder> builderRegistry = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Method, PushConsumer> consumerRegistry = new ConcurrentHashMap<>();
 
     public PushConsumerRocketMQConsumerManager(ClientConfiguration clientConfiguration,
                                                PushConsumerBuilderProcessor pushConsumerBuilderProcessor) {
@@ -38,13 +40,20 @@ public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsume
         if (pushConsumerBuilderProcessor != null) {
             pushConsumerBuilderProcessor.postProcess(pushConsumerBuilder);
         }
-        PushConsumer pushConsumer = pushConsumerBuilder.build(clientConfiguration);
-        registry.put(method, pushConsumer);
+        builderRegistry.put(method, pushConsumerBuilder);
+    }
+
+    @Override
+    public void start() throws ClientException {
+        for (Map.Entry<Method, PushConsumerBuilder> entry : builderRegistry.entrySet()) {
+            PushConsumer pushConsumer = entry.getValue().build(clientConfiguration);
+            consumerRegistry.put(entry.getKey(), pushConsumer);
+        }
     }
 
     @Override
     public void close() {
-        for (PushConsumer consumer : registry.values()) {
+        for (PushConsumer consumer : consumerRegistry.values()) {
             try {
                 consumer.close();
             } catch (IOException ex) {

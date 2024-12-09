@@ -41,6 +41,11 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
     }
 
     @Override
+    public void start() {
+        // nothing to do
+    }
+
+    @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         log.info("start all consumers");
         for (TestRocketMQConsumer consumer : consumers) {
