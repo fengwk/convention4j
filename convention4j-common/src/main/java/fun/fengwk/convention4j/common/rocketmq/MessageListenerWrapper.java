@@ -6,6 +6,7 @@ import org.apache.rocketmq.client.apis.consumer.MessageListener;
 import org.apache.rocketmq.client.apis.message.MessageView;
 
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * @author fengwk
@@ -37,8 +38,9 @@ public class MessageListenerWrapper implements MessageListener {
     }
 
     private void postProcess(MessageView messageView, MessageListenerProcessorContext context) {
-        for (MessageListenerProcessor processor : PROCESSORS) {
-            processor.postProcess(messageView, context);
+        ListIterator<MessageListenerProcessor> listIterator = PROCESSORS.listIterator(PROCESSORS.size());
+        while (listIterator.hasPrevious()) {
+            listIterator.previous().postProcess(messageView, context);
         }
     }
 
