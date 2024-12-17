@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.persistence;
 
+import fun.fengwk.automapper.annotation.OnDuplicateKeyUpdateIgnore;
 import fun.fengwk.automapper.annotation.UpdateIncrement;
 import lombok.Data;
 
@@ -16,6 +17,7 @@ public abstract class ConventionDO<ID> extends BaseDO<ID> {
     /**
      * 创建时间。
      */
+    @OnDuplicateKeyUpdateIgnore
     private LocalDateTime createTime;
 
     /**
