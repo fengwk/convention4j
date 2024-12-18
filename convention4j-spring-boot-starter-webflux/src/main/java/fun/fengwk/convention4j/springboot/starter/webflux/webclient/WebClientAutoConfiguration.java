@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.webclient;
 
 import fun.fengwk.convention4j.common.json.jackson.ObjectMapperHolder;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.TraceInfo;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContext;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
@@ -31,6 +32,8 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
+import java.net.InetAddress;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -57,9 +60,22 @@ public class WebClientAutoConfiguration {
     @Bean
     public WebClient.Builder webClientBuilder(WebClientProperties webClientProperties,
                                               ObjectProvider<List<WebClientRequestModifier>> requestModifiersProvider) {
+        // @see InetAddressCachePolicy
+        Long cacheTtl = parseLong(System.getProperty("networkaddress.cache.ttl"));
+        Long negCacheTtl = parseLong(System.getProperty("networkaddress.cache.negative.ttl"));
+
         // 配置HttpClient
         HttpClient httpClient = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, webClientProperties.getConnectTimeout())
+            .resolver(spec -> {
+                if (cacheTtl != null) {
+                    spec.cacheMaxTimeToLive(Duration.ofSeconds(cacheTtl));
+                    spec.cacheMinTimeToLive(Duration.ofSeconds(cacheTtl));
+                }
+                if (negCacheTtl != null) {
+                    spec.cacheNegativeTimeToLive(Duration.ofSeconds(negCacheTtl));
+                }
+            })
             .responseTimeout(webClientProperties.getResponseTimeout());
         // 构建WebClient
         return WebClient.builder()
@@ -121,6 +137,17 @@ public class WebClientAutoConfiguration {
         CodecConfigurer.CustomCodecs customCodecs = configurer.customCodecs();
         customCodecs.register(new Jackson2JsonDecoder(ObjectMapperHolder.getInstance(), mimeType));
         customCodecs.register(new Jackson2JsonEncoder(ObjectMapperHolder.getInstance(), mimeType));
+    }
+
+    private Long parseLong(String s) {
+        if (StringUtils.isBlank(s)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(s);
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 
 }
