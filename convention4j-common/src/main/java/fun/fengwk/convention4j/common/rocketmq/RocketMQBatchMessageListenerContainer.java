@@ -30,6 +30,7 @@ public class RocketMQBatchMessageListenerContainer implements Runnable, AutoClos
     private SimpleConsumer consumer;
     private Thread thread;
     private CountDownLatch cdl;
+    private volatile boolean running;
 
     public RocketMQBatchMessageListenerContainer(BatchMessageListener batchMessageListener,
                                                  RocketMQBatchMessageListener listenerConfig) {
@@ -49,13 +50,14 @@ public class RocketMQBatchMessageListenerContainer implements Runnable, AutoClos
         this.consumer = scb.build(clientConfiguration);
         this.thread = new Thread(this);
         this.cdl = new CountDownLatch(1);
+        this.running = true;
         thread.start();
     }
 
     @Override
     public void run() {
         try {
-            while (!Thread.currentThread().isInterrupted()) {
+            while (running) {
                 try {
                     List<MessageView> messageViewList = consumer.receive(
                         listenerConfig.maxMessageNum(), Duration.ofMillis(listenerConfig.invisibleDurationMs()));
@@ -91,6 +93,7 @@ public class RocketMQBatchMessageListenerContainer implements Runnable, AutoClos
     @Override
     public synchronized void close() throws IOException, InterruptedException {
         consumer.close();
+        this.running = false;
         thread.interrupt();
         cdl.await();
 
