@@ -32,8 +32,8 @@
 //    @Test
 //    public void testConsumer() throws ClientException, IOException, ExecutionException, InterruptedException {
 //        SimpleConsumerBuilder scb = new SimpleConsumerBuilder();
-//        scb.setConsumerGroup("CID_test");
-//        scb.addSubscription(new Subscription("test", FilterExpression.SUB_ALL));
+//        scb.setConsumerGroup("CID_TEST");
+//        scb.addSubscription(new Subscription("TOPIC_TEST", FilterExpression.SUB_ALL));
 //        SimpleConsumer consumer = scb.build(clientConfiguration);
 //
 //        CompletableFuture<List<MessageView>> cf = consumer.receiveAsync(16, Duration.ofSeconds(15));
@@ -103,19 +103,19 @@
 //
 //    static class TestListener {
 //
-////        @RocketMQMessageListener(topic = "test", consumerGroup = "CID_test")
+////        @RocketMQMessageListener(topic = "TOPIC_TEST", consumerGroup = "CID_TEST")
 ////        public ConsumeResult handle1(MessageView mv) {
 ////            System.out.println("handle1, mv: " + mv);
 ////            return ConsumeResult.SUCCESS;
 ////        }
 //
-////        @RocketMQMessageListener(topic = "test", consumerGroup = "CID_test")
+////        @RocketMQMessageListener(topic = "TOPIC_TEST", consumerGroup = "CID_TEST")
 ////        public ConsumeResult handle2(String message) {
 ////            System.out.println("handle2, message: " + message);
 ////            return ConsumeResult.SUCCESS;
 ////        }
 //
-//        @RocketMQMessageListener(topic = "test", consumerGroup = "CID_test")
+//        @RocketMQMessageListener(topic = "TOPIC_TEST", consumerGroup = "CID_TEST")
 //        public ConsumeResult handle3(SimpleData simpleData) {
 //            System.out.println("handle3, simpleData: " + simpleData);
 //            return ConsumeResult.SUCCESS;

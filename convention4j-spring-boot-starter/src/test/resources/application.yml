@@ -49,4 +49,4 @@ convention:
       locale: ${convention.i18n.locale}
 
 #  rocketmq:
-#    endpoints: 'vps-rocketmq-broker:8081'
+#    endpoints: '${VPS_ROCKETMQ_BROKER_HOST}:${VPS_ROCKETMQ_BROKER_PORT}'

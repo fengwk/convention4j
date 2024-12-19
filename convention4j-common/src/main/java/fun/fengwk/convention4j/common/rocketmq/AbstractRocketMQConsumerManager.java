@@ -16,9 +16,16 @@ public abstract class AbstractRocketMQConsumerManager implements AutoCloseable {
     public void registerIfNecessary(Object bean) throws ClientException {
         Method[] allDeclaredMethods = ReflectionUtils.getAllDeclaredMethods(bean.getClass());
         for (Method method : allDeclaredMethods) {
-            RocketMQMessageListener listenerAnnotation = AnnotationUtils.findAnnotation(method, RocketMQMessageListener.class);
+            RocketMQMessageListener listenerAnnotation = AnnotationUtils.findAnnotation(
+                method, RocketMQMessageListener.class);
             if (listenerAnnotation != null) {
                 register(bean, method, listenerAnnotation);
+            }
+
+            RocketMQBatchMessageListener batchListenerAnnotation = AnnotationUtils.findAnnotation(
+                method, RocketMQBatchMessageListener.class);
+            if (batchListenerAnnotation != null) {
+                register(bean, method, batchListenerAnnotation);
             }
         }
     }
@@ -26,7 +33,14 @@ public abstract class AbstractRocketMQConsumerManager implements AutoCloseable {
     /**
      * 注册实现
      */
-    protected abstract void register(Object bean, Method method, RocketMQMessageListener listenerAnnotation) throws ClientException;
+    protected abstract void register(Object bean, Method method,
+                                     RocketMQMessageListener listenerAnnotation) throws ClientException;
+
+    /**
+     * 注册实现
+     */
+    protected abstract void register(Object bean, Method method,
+                                     RocketMQBatchMessageListener batchListenerAnnotation) throws ClientException;
 
     /**
      * 启动所有消费者

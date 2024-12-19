@@ -22,10 +22,10 @@ public class TestProducer {
     }
 
 //    @ConventionSpan(value = "test_produce", propagation = SpanPropagation.REQUIRED)
-    public void produce() throws ClientException {
+    public void produce(String val) throws ClientException {
         MessageBuilder mb = new MessageBuilder();
-        mb.setTopic("test");
-        mb.setStringBody("hello");
+        mb.setTopic("TOPIC_TEST");
+        mb.setStringBody("hello: " + val);
         Message message = mb.build();
         SendReceipt sendReceipt = producer.send(message);
         log.info("produce result: {}", sendReceipt);

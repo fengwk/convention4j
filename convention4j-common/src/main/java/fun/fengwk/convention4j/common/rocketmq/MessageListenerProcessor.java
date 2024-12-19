@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common.rocketmq;
 
+import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
 import org.apache.rocketmq.client.apis.message.MessageView;
 
 /**
@@ -13,14 +14,15 @@ public interface MessageListenerProcessor {
      * @param messageView MessageView
      * @param context context
      */
-    void preProcess(MessageView messageView, MessageListenerProcessorContext context);
+    void preProcess(MessageView messageView, ProcessorContext context);
 
     /**
      * 后处理
      *
      * @param messageView MessageView
      * @param context context
+     * @param consumeResult consumeResult
      */
-    void postProcess(MessageView messageView, MessageListenerProcessorContext context);
+    void postProcess(MessageView messageView, ProcessorContext context, ConsumeResult consumeResult);
 
 }

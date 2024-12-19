@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TestConsumer {
 
-    @RocketMQMessageListener(topic = "test", consumerGroup = "CID_test")
+    @RocketMQMessageListener(topic = "TOPIC_TEST", consumerGroup = "CID_TEST")
     public void consume(String message) {
         log.info("TestConsumer receive: {}", message);
     }

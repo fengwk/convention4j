@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * @author fengwk
  */
-public class MessageListenerProcessorContext {
+public class ProcessorContext {
 
     private Map<String, Object> attributes = new HashMap<>();
 

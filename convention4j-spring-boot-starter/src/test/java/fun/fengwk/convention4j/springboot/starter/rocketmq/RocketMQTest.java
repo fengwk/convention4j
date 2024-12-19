@@ -17,7 +17,9 @@ public class RocketMQTest {
 
     @Test
     public void test() throws ClientException, InterruptedException {
-        testProducer.produce();
+        testProducer.produce("1");
+        testProducer.produce("2");
+        testProducer.produce("3");
         Thread.sleep(1000L);
     }
 

@@ -115,9 +115,9 @@ public class WebClientAutoConfiguration {
                             HttpStatusCode httpStatusCode = resp.statusCode();
                             finishActiveSpan.setTag(Tags.HTTP_STATUS, httpStatusCode.value());
                             if (httpStatusCode.is2xxSuccessful()) {
-                                finishActiveSpan.setTag(Tags.ERROR, true);
-                            } else {
                                 finishActiveSpan.setTag(Tags.ERROR, false);
+                            } else {
+                                finishActiveSpan.setTag(Tags.ERROR, true);
                             }
                         }
                         return resp;

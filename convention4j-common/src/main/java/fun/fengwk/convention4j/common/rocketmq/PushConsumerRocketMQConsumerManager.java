@@ -21,8 +21,11 @@ public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsume
 
     private final ClientConfiguration clientConfiguration;
     private final PushConsumerBuilderProcessor pushConsumerBuilderProcessor;
+
     private final ConcurrentMap<Method, PushConsumerBuilder> builderRegistry = new ConcurrentHashMap<>();
     private final ConcurrentMap<Method, PushConsumer> consumerRegistry = new ConcurrentHashMap<>();
+
+    private final ConcurrentMap<Method, RocketMQBatchMessageListenerContainer> batchConsumerRegistry = new ConcurrentHashMap<>();
 
     public PushConsumerRocketMQConsumerManager(ClientConfiguration clientConfiguration,
                                                PushConsumerBuilderProcessor pushConsumerBuilderProcessor) {
@@ -44,10 +47,22 @@ public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsume
     }
 
     @Override
+    protected void register(Object bean, Method method, RocketMQBatchMessageListener batchListenerAnnotation) throws ClientException {
+        BatchMessageListenerAdapter batchListenerAdapter = new BatchMessageListenerAdapter(bean, method);
+        RocketMQBatchMessageListenerContainer batchListenerContainer = new RocketMQBatchMessageListenerContainer(
+            batchListenerAdapter, batchListenerAnnotation);
+        batchConsumerRegistry.put(method, batchListenerContainer);
+    }
+
+    @Override
     public void start() throws ClientException {
         for (Map.Entry<Method, PushConsumerBuilder> entry : builderRegistry.entrySet()) {
             PushConsumer pushConsumer = entry.getValue().build(clientConfiguration);
             consumerRegistry.put(entry.getKey(), pushConsumer);
+        }
+
+        for (RocketMQBatchMessageListenerContainer container : batchConsumerRegistry.values()) {
+            container.start(clientConfiguration);
         }
     }
 
@@ -58,6 +73,16 @@ public class PushConsumerRocketMQConsumerManager extends AbstractRocketMQConsume
                 consumer.close();
             } catch (IOException ex) {
                 log.error("close consumer error, consumer: {}", consumer, ex);
+            }
+        }
+
+        for (RocketMQBatchMessageListenerContainer container : batchConsumerRegistry.values()) {
+            try {
+                container.close();
+            } catch (IOException ex) {
+                log.error("close batch container error, container: {}", container, ex);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
         }
     }
