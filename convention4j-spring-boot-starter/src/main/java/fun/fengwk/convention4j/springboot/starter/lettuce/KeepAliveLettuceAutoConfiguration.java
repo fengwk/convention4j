@@ -1,12 +1,14 @@
 package fun.fengwk.convention4j.springboot.starter.lettuce;
 
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.RedisClient;
 import io.lettuce.core.SocketOptions;
 import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.resource.NettyCustomizer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.epoll.EpollChannelOption;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.data.redis.LettuceClientConfigurationBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 
@@ -14,6 +16,7 @@ import org.springframework.context.annotation.Bean;
  * @author fengwk
  * @see <a href="https://github.com/lettuce-io/lettuce-core/issues/1428">Lettuce cannot recover from connection problems</a>
  */
+@ConditionalOnClass(RedisClient.class)
 @AutoConfiguration
 public class KeepAliveLettuceAutoConfiguration {
 

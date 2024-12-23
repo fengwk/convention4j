@@ -17,6 +17,7 @@ import java.util.Map;
  *
  * @author fengwk
  */
+@Deprecated
 public class WebEnvironmentInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(WebEnvironmentInitializer.class);

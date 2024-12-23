@@ -4,12 +4,13 @@ import com.alibaba.cloud.commons.lang.StringUtils;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.cloud.nacos.event.NacosDiscoveryInfoChangedEvent;
 import com.alibaba.cloud.nacos.util.InetIPv6Utils;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.commons.util.InetUtils;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.Field;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @AllArgsConstructor
-public class NacosRegistrationIpCorrector implements Runnable {
+public class NacosRegistrationIpCorrector implements Runnable, ApplicationListener<ContextRefreshedEvent> {
 
     /**
      * @see NacosDiscoveryProperties#IPV4
@@ -62,10 +63,11 @@ public class NacosRegistrationIpCorrector implements Runnable {
     private final Environment environment;
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         executorService.scheduleWithFixedDelay(
             this, 1000, 1000, TimeUnit.MILLISECONDS);
+        log.info("{} running", getClass().getSimpleName());
     }
 
     @Override
@@ -78,10 +80,14 @@ public class NacosRegistrationIpCorrector implements Runnable {
                 Map<String, String> currentMetadata = new HashMap<>();
                 // @see NacosDiscoveryProperties#init
                 String currentIp = resolveIp(currentMetadata);
-                if (currentIp != null && !Objects.equals(ip, currentIp)) {
+                // 处理IPV6地址变化后无法感知的情况
+                // 执行完resolveIp后currentMetadata中将包含当前的IPV6地址，使用原始的metadata和当前的currentMetadata对比
+                // 如果不相等说明有IPV6地址发生变化，也需要重刷新
+                Map<String, String> metadata = nacosDiscoveryProperties.getMetadata();
+                Map<String, String> newMetadata = newMetadata(metadata, currentMetadata);
+                if (!Objects.equals(ip, currentIp) || !Objects.equals(metadata, newMetadata)) {
                     nacosDiscoveryProperties.setIp(currentIp);
-                    nacosDiscoveryProperties.setMetadata(
-                        newMetadata(nacosDiscoveryProperties.getMetadata(), currentMetadata));
+                    nacosDiscoveryProperties.setMetadata(newMetadata);
                     try {
                         applicationEventPublisher
                             .publishEvent(new NacosDiscoveryInfoChangedEvent(nacosDiscoveryProperties));
@@ -150,6 +156,7 @@ public class NacosRegistrationIpCorrector implements Runnable {
     @PreDestroy
     public void destroy() {
         executorService.shutdown();
+        log.info("{} destroy", getClass().getSimpleName());
     }
 
 }

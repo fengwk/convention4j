@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.13</version>
+    <version>1.1.14</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -67,7 +67,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.13</convention4j.version>
+        <convention4j.version>1.1.14</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.2.6</spring-boot-dependencies.version>
@@ -95,6 +95,7 @@
         <groovy.version>4.0.22</groovy.version>
         <tika.version>2.9.2</tika.version>
         <rocketmq-client.version>5.0.7</rocketmq-client.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     </properties>
 
@@ -377,6 +378,17 @@
 
     <build>
         <plugins>
+            <!-- 携带参数名进行编译 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
             <!-- 显示指定surefire版本，防止低版本的maven工具使用低版本的surefire插件导致无法兼容junit5 -->
             <!-- https://stackoverflow.com/questions/49441049/junit-5-does-not-execute-method-annotated-with-beforeeach -->
             <plugin>

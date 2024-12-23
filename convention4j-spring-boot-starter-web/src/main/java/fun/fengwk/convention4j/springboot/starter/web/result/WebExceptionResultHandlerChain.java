@@ -25,6 +25,8 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.util.WebUtils;
 
 import java.util.*;
@@ -38,7 +40,7 @@ import static fun.fengwk.convention4j.api.code.CommonErrorCodes.INTERNAL_SERVER_
  * @author fengwk
  */
 @RestControllerAdvice
-public class WebExceptionResultHandlerChain /*extends ResponseEntityExceptionHandler*/ {
+public class WebExceptionResultHandlerChain extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(WebExceptionResultHandlerChain.class);
 
@@ -57,13 +59,12 @@ public class WebExceptionResultHandlerChain /*extends ResponseEntityExceptionHan
 
     @ExceptionHandler(value = { Exception.class })
     public ResponseEntity<Object> handleThrowable(
-            Exception ex, HttpServletRequest request, WebRequest webRequest/*, HandlerMethod handlerMethod*/) /*throws Exception*/ {
+            Exception ex, HttpServletRequest request, WebRequest webRequest, HandlerMethod handlerMethod) throws Exception {
 
         // 如果不是Result返回值使用默认的方式处理
-        //
-//        if (!Result.class.isAssignableFrom(handlerMethod.getReturnType().getParameterType())) {
-//            return super.handleException(ex, webRequest);
-//        }
+        if (!Result.class.isAssignableFrom(handlerMethod.getReturnType().getParameterType())) {
+            return super.handleException(ex, webRequest);
+        }
 
         WebExceptionResultHandlerContext context = new WebExceptionResultHandlerContext();
         context.setRequest(request);

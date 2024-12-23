@@ -22,7 +22,7 @@ Base logback configuration provided for compatibility with Spring Boot 1.1
 
 	<root level="${LOG_LEVEL}">
 		<!-- 仅在指定测试环境下开启控制台输出 -->
-		<springProfile name="default,dev,test">
+		<springProfile name="default,dev,test,pre">
 			<appender-ref ref="CONSOLE"/>
 		</springProfile>
 		<appender-ref ref="ASYNC_ALL"/>
