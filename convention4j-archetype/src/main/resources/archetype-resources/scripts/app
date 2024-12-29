@@ -69,7 +69,7 @@ start() {
     JAVA_OPTS=" $JAVA_OPTS"
   fi
   JAVA_OPTS="-server -Xms64M -Xmx256M$JAVA_OPTS"
-  JAVA_OPTS="$JAVA_OPTS -Dnetworkaddress.cache.ttl=15 -Dnetworkaddress.cache.negative.ttl=5"
+  JAVA_OPTS="$JAVA_OPTS -Dsun.net.inetaddr.ttl=30 -Dsun.net.inetaddr.negative.ttl=5"
   #JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000 $JAVA_OPTS"
   if [ "$DEBUG" == "true" ]; then
     JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:10000"

@@ -61,8 +61,8 @@ public class WebClientAutoConfiguration {
     public WebClient.Builder webClientBuilder(WebClientProperties webClientProperties,
                                               ObjectProvider<List<WebClientRequestModifier>> requestModifiersProvider) {
         // @see InetAddressCachePolicy
-        Long cacheTtl = parseLong(System.getProperty("networkaddress.cache.ttl"));
-        Long negCacheTtl = parseLong(System.getProperty("networkaddress.cache.negative.ttl"));
+        Long cacheTtl = parseLong(System.getProperty("sun.net.inetaddr.ttl"));
+        Long negCacheTtl = parseLong(System.getProperty("sun.net.inetaddr.negative.ttl"));
 
         // 配置HttpClient
         HttpClient httpClient = HttpClient.create()
