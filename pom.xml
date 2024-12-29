@@ -12,7 +12,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.14</version>
+    <version>1.1.15</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -60,6 +60,7 @@
         <module>convention4j-example</module>
         <module>convention4j-archetype</module>
         <module>convention4j-spring-cloud-starter</module>
+        <module>convention4j-spring-boot-starter-xxljob</module>
     </modules>
 
     <properties>
@@ -67,7 +68,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.14</convention4j.version>
+        <convention4j.version>1.1.15</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.2.6</spring-boot-dependencies.version>

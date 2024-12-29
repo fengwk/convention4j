@@ -45,7 +45,7 @@ public @interface RocketMQBatchMessageListener {
     /**
      * 最多获取的消息数
      */
-    int maxMessageNum() default 50;
+    int maxMessageNum() default 100;
 
     /**
      * 消息对其它消费者不可见的时长，单位毫秒

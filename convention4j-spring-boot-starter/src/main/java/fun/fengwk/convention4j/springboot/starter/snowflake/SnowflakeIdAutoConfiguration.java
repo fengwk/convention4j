@@ -30,27 +30,27 @@ public class SnowflakeIdAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(SnowflakeIdAutoConfiguration.class);
 
-    @ConditionalOnProperty(prefix = "convention.snowflake-id", name = "worker-id")
-    @ConditionalOnMissingBean
-    @Bean
-    public WorkerIdClient fixedWorkerIdClient(SnowflakeIdProperties snowflakeIdProperties) {
-        WorkerIdClient workerIdClient = new FixedWorkerIdClient(snowflakeIdProperties.getWorkerId());
-        log.info("{} created", FixedWorkerIdClient.class.getSimpleName());
-        return workerIdClient;
-    }
-
-    @ConditionalOnClass(StringRedisTemplate.class)
-    @ConditionalOnBean(StringRedisTemplate.class)
-    @ConditionalOnMissingBean
-    @Bean
-    public WorkerIdClient redisWorkerIdClient(@Value("${spring.application.name}") String appName,
-                                              StringRedisTemplate redisTemplate) throws LifeCycleException {
-        WorkerIdClient workerIdClient = new RedisWorkerIdClient(appName, new RedisTemplateScriptExecutor(redisTemplate));
-        workerIdClient.init();
-        workerIdClient.start();
-        log.info("{} running", RedisWorkerIdClient.class.getSimpleName());
-        return workerIdClient;
-    }
+//    @ConditionalOnProperty(prefix = "convention.snowflake-id", name = "worker-id")
+//    @ConditionalOnMissingBean
+//    @Bean
+//    public WorkerIdClient fixedWorkerIdClient(SnowflakeIdProperties snowflakeIdProperties) {
+//        WorkerIdClient workerIdClient = new FixedWorkerIdClient(snowflakeIdProperties.getWorkerId());
+//        log.info("{} created", FixedWorkerIdClient.class.getSimpleName());
+//        return workerIdClient;
+//    }
+//
+//    @ConditionalOnClass(StringRedisTemplate.class)
+//    @ConditionalOnBean(StringRedisTemplate.class)
+//    @ConditionalOnMissingBean
+//    @Bean
+//    public WorkerIdClient redisWorkerIdClient(@Value("${spring.application.name}") String appName,
+//                                              StringRedisTemplate redisTemplate) throws LifeCycleException {
+//        WorkerIdClient workerIdClient = new RedisWorkerIdClient(appName, new RedisTemplateScriptExecutor(redisTemplate));
+//        workerIdClient.init();
+//        workerIdClient.start();
+//        log.info("{} running", RedisWorkerIdClient.class.getSimpleName());
+//        return workerIdClient;
+//    }
 
     @ConditionalOnMissingBean
     @Bean
@@ -70,6 +70,38 @@ public class SnowflakeIdAutoConfiguration {
                 snowflakeIdProperties.getInitialTimestamp());
 
         return namespaceIdGenerator;
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnProperty(prefix = "convention.snowflake-id", name = "worker-id")
+    public static class FixedWorkerIdClientConfig {
+
+        @ConditionalOnMissingBean
+        @Bean
+        public WorkerIdClient fixedWorkerIdClient(SnowflakeIdProperties snowflakeIdProperties) {
+            WorkerIdClient workerIdClient = new FixedWorkerIdClient(snowflakeIdProperties.getWorkerId());
+            log.info("{} created", FixedWorkerIdClient.class.getSimpleName());
+            return workerIdClient;
+        }
+
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(StringRedisTemplate.class)
+    @ConditionalOnBean(StringRedisTemplate.class)
+    public static class RedisWorkerIdClientConfig {
+
+        @ConditionalOnMissingBean
+        @Bean
+        public WorkerIdClient redisWorkerIdClient(@Value("${spring.application.name}") String appName,
+            StringRedisTemplate redisTemplate) throws LifeCycleException {
+            WorkerIdClient workerIdClient = new RedisWorkerIdClient(appName, new RedisTemplateScriptExecutor(redisTemplate));
+            workerIdClient.init();
+            workerIdClient.start();
+            log.info("{} running", RedisWorkerIdClient.class.getSimpleName());
+            return workerIdClient;
+        }
+
     }
 
 }

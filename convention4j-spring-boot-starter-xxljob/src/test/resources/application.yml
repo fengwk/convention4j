@@ -1,0 +1,16 @@
+spring:
+
+  application:
+    name: convention4j-spring-boot-starter-xxljob
+
+convention:
+  snowflake-id:
+    initial-timestamp: 1649308857236
+    worker-id: 0
+
+  code:
+    i18n:
+      locale: zh_CN
+
+  xxl-job:
+    admin-addresses: http://vps-app-xxl-job:8080
