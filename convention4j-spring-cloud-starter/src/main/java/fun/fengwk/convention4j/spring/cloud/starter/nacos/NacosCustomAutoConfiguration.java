@@ -18,14 +18,26 @@ import org.springframework.core.env.Environment;
 public class NacosCustomAutoConfiguration {
 
     @Bean
+    public NacosDiscoveryIpResolver nacosDiscoveryIpResolver(
+        InetIPv6Utils inetIPv6Utils,
+        InetUtils inetUtils) {
+        return new NacosDiscoveryIpResolver(inetIPv6Utils, inetUtils);
+    }
+
+    @Bean
+    public NacosDiscoveryPropertiesIpFixer nacosDiscoveryPropertiesIpFixer(
+        NacosDiscoveryIpResolver nacosDiscoveryIpResolver) {
+        return new NacosDiscoveryPropertiesIpFixer(nacosDiscoveryIpResolver);
+    }
+
+    @Bean
     public NacosRegistrationIpCorrector nacosRegistrationIpCorrector(
         NacosDiscoveryProperties nacosDiscoveryProperties,
-        InetIPv6Utils inetIPv6Utils,
-        InetUtils inetUtils,
         ApplicationEventPublisher applicationEventPublisher,
-        Environment environment) {
+        Environment environment,
+        NacosDiscoveryIpResolver nacosDiscoveryIpResolver) {
         return new NacosRegistrationIpCorrector(nacosDiscoveryProperties,
-            inetIPv6Utils, inetUtils, applicationEventPublisher, environment);
+            applicationEventPublisher, environment, nacosDiscoveryIpResolver);
     }
 
     @Bean

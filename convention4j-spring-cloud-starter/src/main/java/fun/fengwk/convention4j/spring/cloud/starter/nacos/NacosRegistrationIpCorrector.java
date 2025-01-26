@@ -1,21 +1,15 @@
 package fun.fengwk.convention4j.spring.cloud.starter.nacos;
 
-import com.alibaba.cloud.commons.lang.StringUtils;
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.alibaba.cloud.nacos.event.NacosDiscoveryInfoChangedEvent;
-import com.alibaba.cloud.nacos.util.InetIPv6Utils;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.commons.util.InetUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.env.Environment;
 
-import java.lang.reflect.Field;
-import java.net.*;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -33,34 +27,10 @@ import java.util.concurrent.TimeUnit;
 @AllArgsConstructor
 public class NacosRegistrationIpCorrector implements Runnable, ApplicationListener<ContextRefreshedEvent> {
 
-    /**
-     * @see NacosDiscoveryProperties#IPV4
-     */
-    private static final String IPV4;
-
-    /**
-     * @see NacosDiscoveryProperties#IPV6
-     */
-    private static final String IPV6;
-
-    static {
-        try {
-            Field ipv4 = NacosDiscoveryProperties.class.getDeclaredField("IPV4");
-            ipv4.setAccessible(true);
-            IPV4 = (String) ipv4.get(null);
-            Field ipv6 = NacosDiscoveryProperties.class.getDeclaredField("IPV6");
-            ipv6.setAccessible(true);
-            IPV6 = (String) ipv6.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
     private final NacosDiscoveryProperties nacosDiscoveryProperties;
-    private final InetIPv6Utils inetIPv6Utils;
-    private final InetUtils inetUtils;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final Environment environment;
+    private final NacosDiscoveryIpResolver nacosDiscoveryIpResolver;
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     @Override
@@ -79,7 +49,7 @@ public class NacosRegistrationIpCorrector implements Runnable, ApplicationListen
             if (ip != null) {
                 Map<String, String> currentMetadata = new HashMap<>();
                 // @see NacosDiscoveryProperties#init
-                String currentIp = resolveIp(currentMetadata);
+                String currentIp = nacosDiscoveryIpResolver.resolveIp(nacosDiscoveryProperties, currentMetadata);
                 // 处理IPV6地址变化后无法感知的情况
                 // 执行完resolveIp后currentMetadata中将包含当前的IPV6地址，使用原始的metadata和当前的currentMetadata对比
                 // 如果不相等说明有IPV6地址发生变化，也需要重刷新
@@ -100,52 +70,10 @@ public class NacosRegistrationIpCorrector implements Runnable, ApplicationListen
         }
     }
 
-    private String resolveIp(Map<String, String> metadata) {
-        String ip = null;
-        String networkInterface = nacosDiscoveryProperties.getNetworkInterface();
-        String ipType = nacosDiscoveryProperties.getIpType();
-        if (StringUtils.isEmpty(networkInterface)) {
-            if (ipType == null) {
-                ip = inetUtils.findFirstNonLoopbackHostInfo().getIpAddress();
-                String ipv6Addr = inetIPv6Utils.findIPv6Address();
-                metadata.put(IPV6, ipv6Addr);
-                if (ipv6Addr != null) {
-                    metadata.put(IPV6, ipv6Addr);
-                }
-            } else if (IPV4.equalsIgnoreCase(ipType)) {
-                ip = inetUtils.findFirstNonLoopbackHostInfo().getIpAddress();
-            } else if (IPV6.equalsIgnoreCase(ipType)) {
-                ip = inetIPv6Utils.findIPv6Address();
-                if (StringUtils.isEmpty(ip)) {
-                    ip = inetUtils.findFirstNonLoopbackHostInfo().getIpAddress();
-                }
-            }
-        } else {
-            try {
-                NetworkInterface netInterface = NetworkInterface.getByName(networkInterface);
-                if (netInterface != null) {
-                    Enumeration<InetAddress> inetAddress = netInterface.getInetAddresses();
-                    while (inetAddress.hasMoreElements()) {
-                        InetAddress currentAddress = inetAddress.nextElement();
-                        if (currentAddress instanceof Inet4Address
-                            || currentAddress instanceof Inet6Address
-                            && !currentAddress.isLoopbackAddress()) {
-                            ip = currentAddress.getHostAddress();
-                            break;
-                        }
-                    }
-                }
-            } catch (SocketException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return ip;
-    }
-
     private Map<String, String> newMetadata(Map<String, String> metadata, Map<String, String> curMetadata) {
         Map<String, String> newMetadata = new HashMap<>();
         for (Map.Entry<String, String> entry : metadata.entrySet()) {
-            if (!Objects.equals(entry.getKey(), IPV6)) {
+            if (!Objects.equals(entry.getKey(), NacosDiscoveryIpResolver.IPV6)) {
                 newMetadata.put(entry.getKey(), entry.getValue());
             }
         }
