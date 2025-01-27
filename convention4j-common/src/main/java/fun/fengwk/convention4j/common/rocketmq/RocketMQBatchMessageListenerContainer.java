@@ -78,7 +78,7 @@ public class RocketMQBatchMessageListenerContainer implements Runnable, AutoClos
                             }
                         }
                     } catch (Throwable err) {
-                        log.error("batch consume error, messageViewList: {}", messageViewList);
+                        log.error("batch consume error, messageViewList: {}", messageViewList, err);
                     }
                 } catch (Throwable err) {
                     log.error("receive message error", err);

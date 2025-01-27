@@ -2,6 +2,9 @@
 
 script_home=$(readlink -f $(dirname $(readlink -f "$0")))
 app_home=$(readlink -f $(dirname $script_home))
+
+cd $script_home
+
 # 查找app java环境所在的目录
 java_home="$JAVA_HOME_17"
 if [ -z "$java_home" ]; then
