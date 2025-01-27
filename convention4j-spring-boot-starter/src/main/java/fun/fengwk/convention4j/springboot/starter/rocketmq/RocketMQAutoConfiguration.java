@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
 import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQConsumerManager;
+import fun.fengwk.convention4j.common.rocketmq.DefaultRocketMQConsumerManager;
 import fun.fengwk.convention4j.common.rocketmq.ProducerBuilder;
-import fun.fengwk.convention4j.common.rocketmq.PushConsumerRocketMQConsumerManager;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 public class RocketMQAutoConfiguration {
 
+    @RefreshScope
     @ConditionalOnProperty(prefix = "convention.rocketmq", name = "endpoints")
     @ConditionalOnMissingBean
     @Bean
@@ -32,6 +34,7 @@ public class RocketMQAutoConfiguration {
             .build();
     }
 
+    @RefreshScope
     @ConditionalOnBean(ClientConfiguration.class)
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "close")
@@ -53,8 +56,15 @@ public class RocketMQAutoConfiguration {
     @Bean(destroyMethod = "close")
     public AbstractRocketMQConsumerManager rocketMQConsumerManager(RocketMQProperties rocketMQProperties,
                                                                    ClientConfiguration rocketMQClientConfiguration) {
-        return new PushConsumerRocketMQConsumerManager(
-            rocketMQClientConfiguration, new ConfigurablePushConsumerBuilderProcessor(rocketMQProperties));
+        return new DefaultRocketMQConsumerManager(
+            rocketMQClientConfiguration, new ConfigurableRocketMQConsumerManagerProcessor(rocketMQProperties));
+    }
+
+    @ConditionalOnBean(AbstractRocketMQConsumerManager.class)
+    @ConditionalOnMissingBean
+    @Bean
+    public RocketMQConsumerRefresher rocketMQConsumerRefresher(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
+        return new RocketMQConsumerRefresher(rocketMQConsumerManager);
     }
 
     @ConditionalOnBean(AbstractRocketMQConsumerManager.class)

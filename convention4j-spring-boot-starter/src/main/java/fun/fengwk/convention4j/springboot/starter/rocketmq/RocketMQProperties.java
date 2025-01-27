@@ -1,7 +1,14 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
+import fun.fengwk.convention4j.common.rocketmq.RocketMQBatchMessageListenerConfig;
+import fun.fengwk.convention4j.common.rocketmq.RocketMQMessageListenerConfig;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.util.List;
 
 /**
  * @author fengwk
@@ -23,7 +30,15 @@ public class RocketMQProperties {
     /**
      * 消费者配置
      */
-    private ConsumerConfig consumer;
+    private List<RocketMQMessageListenerConfig> consumers;
+
+    /**
+     * 批量消费者配置
+     */
+    private List<RocketMQBatchMessageListenerConfig> batchConsumers;
+
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Data
     public static class ProducerConfig {
@@ -35,24 +50,9 @@ public class RocketMQProperties {
 
     }
 
-    @Data
-    public static class ConsumerConfig {
-
-        /**
-         * 本地缓存的最大消息数
-         */
-        private Integer maxCacheMessageCount;
-
-        /**
-         * 本地缓存消息的最大字节数
-         */
-        private Integer maxCacheMessageSizeInBytes;
-
-        /**
-         * 消费者并行线程数
-         */
-        private Integer consumptionThreadCount;
-
+    @PostConstruct
+    public void init() {
+        applicationEventPublisher.publishEvent(new RocketMQPropertiesChangedEvent(this));
     }
 
 }

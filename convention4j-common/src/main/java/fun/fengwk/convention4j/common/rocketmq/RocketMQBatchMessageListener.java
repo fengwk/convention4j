@@ -50,6 +50,11 @@ public @interface RocketMQBatchMessageListener {
     /**
      * 消息对其它消费者不可见的时长，单位毫秒
      */
-    long invisibleDurationMs() default 1000 * 15L;
+    long invisibleDurationMs() default 1000 * 30L;
+
+    /**
+     * 并行消费线程数
+     */
+    int consumptionThreadCount() default 10;
 
 }

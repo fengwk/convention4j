@@ -24,11 +24,11 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
     }
 
     @Override
-    protected void register(Object bean, Method method, RocketMQMessageListener listenerAnnotation) {
-        String topic = listenerAnnotation.topic();
-        String consumerGroup = listenerAnnotation.consumerGroup();
+    protected void registerConsumer(Object bean, Method method, RocketMQMessageListenerConfig listenerConfig) {
+        String topic = listenerConfig.getTopic();
+        String consumerGroup = listenerConfig.getConsumerGroup();
         FilterExpression filterExpression = new FilterExpression(
-            listenerAnnotation.filterExpression(), listenerAnnotation.filterExpressionType());
+            listenerConfig.getFilterExpression(), listenerConfig.getFilterExpressionType());
 
         broker.registerQueueIfNecessary(topic, consumerGroup);
 
@@ -38,11 +38,11 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
     }
 
     @Override
-    protected void register(Object bean, Method method, RocketMQBatchMessageListener batchListenerAnnotation) {
-        String topic = batchListenerAnnotation.topic();
-        String consumerGroup = batchListenerAnnotation.consumerGroup();
+    protected void registerBatchConsumer(Object bean, Method method, RocketMQBatchMessageListenerConfig listenerConfig) {
+        String topic = listenerConfig.getTopic();
+        String consumerGroup = listenerConfig.getConsumerGroup();
         FilterExpression filterExpression = new FilterExpression(
-            batchListenerAnnotation.filterExpression(), batchListenerAnnotation.filterExpressionType());
+            listenerConfig.getFilterExpression(), listenerConfig.getFilterExpressionType());
 
         broker.registerQueueIfNecessary(topic, consumerGroup);
 
@@ -51,6 +51,18 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
         TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup,
             new BatchMessageListenerAdapterBridge(batchListenerAdapter), filterExpression);
         consumers.add(consumer);
+    }
+
+    @Override
+    public boolean refreshConsumer(String consumerGroup, String topic) {
+        // not support
+        return false;
+    }
+
+    @Override
+    public boolean refreshBatchConsumer(String consumerGroup, String topic) {
+        // not support
+        return false;
     }
 
     @Override

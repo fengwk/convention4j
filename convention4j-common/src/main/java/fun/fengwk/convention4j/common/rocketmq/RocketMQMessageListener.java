@@ -48,4 +48,19 @@ public @interface RocketMQMessageListener {
      */
     String filterExpression() default "*";
 
+    /**
+     * 最大缓存消息数
+     */
+    int maxCacheMessageCount() default 1024;
+
+    /**
+     * 最大缓存消息字节数
+     */
+    int maxCacheMessageSizeInBytes() default 64 * 1024 * 1024;
+
+    /**
+     * 并行消费线程数
+     */
+    int consumptionThreadCount() default 10;
+
 }
