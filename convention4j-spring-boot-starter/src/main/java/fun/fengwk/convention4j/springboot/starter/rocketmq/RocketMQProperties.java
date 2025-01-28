@@ -11,8 +11,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.util.List;
 
 /**
+ * 要避免后处理器依赖Properties，否则将导致Properties无法注册到ConfigurationPropertiesBeans
+ * PostProcessorRegistrationDelegate#registerBeanPostProcessors
+ *
  * @author fengwk
  */
+
 @Data
 @ConfigurationProperties(prefix = "convention.rocketmq")
 public class RocketMQProperties {
@@ -36,6 +40,8 @@ public class RocketMQProperties {
      * 批量消费者配置
      */
     private List<RocketMQBatchMessageListenerConfig> batchConsumers;
+
+    private String beanName;
 
     @Autowired
     private ApplicationEventPublisher applicationEventPublisher;

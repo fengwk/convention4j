@@ -21,8 +21,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
 
-    private static int QUEUE_SCALE = 10;
-
     private static final List<BatchMessageListenerProcessor> PROCESSORS = LazyServiceLoader
         .loadServiceIgnoreLoadFailed(BatchMessageListenerProcessor.class);
 
@@ -41,8 +39,9 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
         }
         this.batchMessageListener = Objects.requireNonNull(batchMessageListener);
         this.listenerConfig = Objects.requireNonNull(listenerConfig);
+        // 设置与并行消费线程数一致的队列，不要设置大队列因为获取的消息句柄长时间存储会失效导致ack失败
         this.batchMessagesQueue = new LinkedBlockingQueue<>(
-            listenerConfig.getConsumptionThreadCount() * QUEUE_SCALE);
+            listenerConfig.getConsumptionThreadCount());
     }
 
     public synchronized void start(ClientConfiguration clientConfiguration) throws ClientException {
@@ -79,20 +78,19 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
         }
         this.running = false;
 
-        // 需要先停止consumer
+        // 优雅停止，先停止poller和executors线程
+        poller.close();
+        for (ConsumerExecutor executor : executors) {
+            executor.close();
+        }
+
+        // 然后再关闭consumer
         IOException suppressedEx = null;
         try {
             consumer.close();
         } catch (IOException ex) {
             suppressedEx = ex;
         }
-
-        // 然后再停止poller和executors
-        poller.close();
-        for (ConsumerExecutor executor : executors) {
-            executor.close();
-        }
-
         if (suppressedEx != null) {
             throw suppressedEx;
         }
@@ -123,8 +121,8 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
     static abstract class AbstractConsumerComponent implements Runnable, AutoCloseable {
 
         protected Thread thread = new Thread(this);
-        protected final CountDownLatch cdl = new CountDownLatch(1);
-        protected volatile int status; // 0-init,1-start,2-closed
+        protected CountDownLatch cdl;
+        protected int status; // 0-init,1-start,2-closed
 
         public synchronized void start() {
             if (status == 1) {
@@ -134,6 +132,7 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
                 throw new IllegalStateException("the current runner has been closed");
             }
             this.status = 1;
+            this. cdl = new CountDownLatch(1);
             thread.start();
         }
 
@@ -143,10 +142,12 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
             }
             this.status = 2;
             thread.interrupt();
-            try {
-                cdl.await();
-            } catch (InterruptedException ignore) {
-                Thread.currentThread().interrupt();
+            if (cdl != null) {
+                try {
+                    cdl.await();
+                } catch (InterruptedException ignore) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 
@@ -195,38 +196,36 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
         public void run() {
             try {
                 while (running) {
+                    BatchMessages batchMessages;
                     try {
-                        BatchMessages batchMessages;
-                        try {
-                            batchMessages = batchMessagesQueue.take();
-                        } catch (InterruptedException ignore) {
-                            Thread.currentThread().interrupt();
-                            Thread.yield();
-                            continue;
-                        }
+                        batchMessages = batchMessagesQueue.take();
+                    } catch (InterruptedException ignore) {
+                        Thread.currentThread().interrupt();
+                        Thread.yield();
+                        continue;
+                    }
 
-                        List<MessageView> messageViewList = batchMessages.getMessageViewList();
-                        ProcessorContext context = new ProcessorContext();
-                        preProcess(messageViewList, context);
-                        try {
-                            Collection<MessageView> acks = batchMessageListener.consume(messageViewList);
-                            postProcess(messageViewList, context, acks);
-                            for (MessageView ack : acks) {
-                                try {
-                                    consumer.ack(ack);
-                                } catch (ClientException ex) {
-                                    log.error("batch consumer ack error, ack: {}", ack, ex);
+                    List<MessageView> messageViewList = batchMessages.getMessageViewList();
+                    ProcessorContext context = new ProcessorContext();
+                    preProcess(messageViewList, context);
+                    try {
+                        Collection<MessageView> acks = batchMessageListener.consume(messageViewList);
+                        postProcess(messageViewList, context, acks);
+                        for (MessageView ack : acks) {
+                            try {
+                                consumer.ack(ack);
+                            } catch (Throwable err) {
+                                if (err.getCause() instanceof InterruptedException) {
+                                    Thread.currentThread().interrupt();
+                                    Thread.yield();
+                                } else {
+                                    log.error("batch consumer ack error, ack: {}", ack, err);
+                                    Thread.yield();
                                 }
                             }
-                        } catch (Throwable err) {
-                            log.error("batch consume error, messageViewList: {}", messageViewList, err);
                         }
                     } catch (Throwable err) {
-                        if (err.getCause() instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        } else {
-                            log.error("receive message error", err);
-                        }
+                        log.error("batch consume error, messageViewList: {}", messageViewList, err);
                         Thread.yield();
                     }
                 }

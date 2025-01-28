@@ -16,9 +16,11 @@ public class TestRocketMQBroker {
     // topic -> consumerGroup -> queue
     private final ConcurrentMap<String , Map<String, TestRocketMQQueue>> registry = new ConcurrentHashMap<>();
 
-    public void registerQueueIfNecessary(String topic, String consumerGroup) {
+    public boolean registerQueueIfNecessary(String topic, String consumerGroup) {
         Map<String, TestRocketMQQueue> topicRegistry = registry.computeIfAbsent(topic, t -> new ConcurrentHashMap<>());
-        topicRegistry.computeIfAbsent(consumerGroup, c -> new TestRocketMQQueue(topic, consumerGroup));
+        TestRocketMQQueue queue = new TestRocketMQQueue(topic, consumerGroup);
+        TestRocketMQQueue oldQueue = topicRegistry.putIfAbsent(consumerGroup, queue);
+        return oldQueue == null;
     }
 
     public TestRocketMQSendReceipt sendMessage(Message message) throws InterruptedException {

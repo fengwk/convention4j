@@ -1,13 +1,13 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
-import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQConsumerManager;
-import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQMessageListenerConfig;
-import fun.fengwk.convention4j.common.rocketmq.RocketMQBatchMessageListenerConfig;
-import fun.fengwk.convention4j.common.rocketmq.RocketMQMessageListenerConfig;
-import fun.fengwk.convention4j.common.util.Pair;
+import fun.fengwk.convention4j.common.rocketmq.*;
+import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientException;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.util.*;
 
@@ -15,11 +15,10 @@ import java.util.*;
  * @author fengwk
  */
 @Slf4j
-public class RocketMQConsumerRefresher implements ApplicationListener<RocketMQPropertiesChangedEvent> {
+public class RocketMQConsumerRefresher implements ApplicationListener<ApplicationEvent> {
 
-    private List<RocketMQMessageListenerConfig> prevConsumerConfigs;
+    private boolean started = false;
     private List<RocketMQMessageListenerConfig> curConsumerConfigs;
-    private List<RocketMQBatchMessageListenerConfig> prevBatchConsumerConfigs;
     private List<RocketMQBatchMessageListenerConfig> curBatchConsumerConfigs;
 
     private final AbstractRocketMQConsumerManager rocketMQConsumerManager;
@@ -29,19 +28,53 @@ public class RocketMQConsumerRefresher implements ApplicationListener<RocketMQPr
     }
 
     @Override
-    public synchronized void onApplicationEvent(RocketMQPropertiesChangedEvent event) {
-        this.prevConsumerConfigs = curConsumerConfigs;
-        this.curConsumerConfigs = event.getRocketMQProperties().getConsumers();
-        this.prevBatchConsumerConfigs = curBatchConsumerConfigs;
-        this.curBatchConsumerConfigs = event.getRocketMQProperties().getBatchConsumers();
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof RocketMQPropertiesChangedEvent rocketMQPropertiesChangedEvent) {
+            onRocketMQPropertiesChangedEvent(rocketMQPropertiesChangedEvent);
+        } else if (event instanceof ContextRefreshedEvent contextRefreshedEvent) {
+            onContextRefreshedEvent(contextRefreshedEvent);
+        }
+    }
+
+    // 容器刷新完成后启动RocketMQConsumerManager
+    private synchronized void onContextRefreshedEvent(ContextRefreshedEvent event) {
+        if (started) {
+            return;
+        }
+        try {
+            log.info("rocket mq consumers starting...");
+            rocketMQConsumerManager.start();
+            log.info("rocket mq consumers started successfully");
+        } catch (ClientException ex) {
+            throw new RuntimeExecutionException(ex);
+        }
+        this.started = true;
+    }
+
+    // 配置变更后刷新消费者
+    private synchronized void onRocketMQPropertiesChangedEvent(RocketMQPropertiesChangedEvent event) {
+        List<RocketMQMessageListenerConfig> prevConsumerConfigs = curConsumerConfigs;
+        this.curConsumerConfigs = NullSafe.map2List(event.getRocketMQProperties().getConsumers(),
+            RocketMQMessageListenerConfig::copy);
+        List<RocketMQBatchMessageListenerConfig> prevBatchConsumerConfigs = curBatchConsumerConfigs;
+        this.curBatchConsumerConfigs = NullSafe.map2List(event.getRocketMQProperties().getBatchConsumers(),
+            RocketMQBatchMessageListenerConfig::copy);
+
+        // 还没有执行过start则无需刷新
+        if (!started) {
+            return;
+        }
 
         if (!equalsList(prevConsumerConfigs, curConsumerConfigs)) {
-            Set<Pair<String, String>> consumerGroupTopicSet = new HashSet<>(
+            Set<ConsumerGroupTopic> consumerGroupTopicSet = new HashSet<>(
                 collectConsumerGroupTopicSet(prevConsumerConfigs));
             consumerGroupTopicSet.addAll(collectConsumerGroupTopicSet(curConsumerConfigs));
-            for (Pair<String, String> consumerGroupTopic : consumerGroupTopicSet) {
+            for (ConsumerGroupTopic consumerGroupTopic : consumerGroupTopicSet) {
                 try {
-                    rocketMQConsumerManager.refreshConsumer(consumerGroupTopic.getKey(), consumerGroupTopic.getValue());
+                    rocketMQConsumerManager.refreshConsumer(consumerGroupTopic);
+                    log.info("rocket mq consumer refreshed successfully, consumerGroupTopic: {}", consumerGroupTopic);
+                } catch (IllegalArgumentException ex) {
+                    log.warn("refresh consumer arguments error, consumerGroupTopic: {}", consumerGroupTopic, ex);
                 } catch (ClientException ex) {
                     log.error("refresh consumer error, consumerGroupTopic: {}", consumerGroupTopic, ex);
                 }
@@ -49,12 +82,15 @@ public class RocketMQConsumerRefresher implements ApplicationListener<RocketMQPr
         }
 
         if (!equalsList(prevBatchConsumerConfigs, curBatchConsumerConfigs)) {
-            Set<Pair<String, String>> consumerGroupTopicSet = new HashSet<>(
+            Set<ConsumerGroupTopic> consumerGroupTopicSet = new HashSet<>(
                 collectConsumerGroupTopicSet(prevBatchConsumerConfigs));
             consumerGroupTopicSet.addAll(collectConsumerGroupTopicSet(curBatchConsumerConfigs));
-            for (Pair<String, String> consumerGroupTopic : consumerGroupTopicSet) {
+            for (ConsumerGroupTopic consumerGroupTopic : consumerGroupTopicSet) {
                 try {
-                    rocketMQConsumerManager.refreshBatchConsumer(consumerGroupTopic.getKey(), consumerGroupTopic.getValue());
+                    rocketMQConsumerManager.refreshBatchConsumer(consumerGroupTopic);
+                    log.info("rocket mq batch consumer refreshed successfully, consumerGroupTopic: {}", consumerGroupTopic);
+                } catch (IllegalArgumentException ex) {
+                    log.warn("refresh consumer arguments error, consumerGroupTopic: {}", consumerGroupTopic, ex);
                 } catch (ClientException ex) {
                     log.error("refresh batch consumer error, consumerGroupTopic: {}", consumerGroupTopic, ex);
                 }
@@ -62,16 +98,15 @@ public class RocketMQConsumerRefresher implements ApplicationListener<RocketMQPr
         }
     }
 
-    private Set<Pair<String, String>> collectConsumerGroupTopicSet(
+    private Set<ConsumerGroupTopic> collectConsumerGroupTopicSet(
         List<? extends AbstractRocketMQMessageListenerConfig> configList) {
         if (configList == null) {
             return Collections.emptySet();
         }
 
-        Set<Pair<String, String>> consumerGroupTopicSet = new HashSet<>();
+        Set<ConsumerGroupTopic> consumerGroupTopicSet = new HashSet<>();
         for (AbstractRocketMQMessageListenerConfig config : configList) {
-            Pair<String, String> consumerGroupTopic = Pair.of(config.getConsumerGroup(), config.getTopic());
-            consumerGroupTopicSet.add(consumerGroupTopic);
+            consumerGroupTopicSet.add(new ConsumerGroupTopic(config.getConsumerGroup(), config.getTopic()));
         }
         return consumerGroupTopicSet;
     }

@@ -2,79 +2,72 @@ package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
 
 import fun.fengwk.convention4j.common.rocketmq.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 
-import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author fengwk
  */
 @Slf4j
-public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager implements ApplicationListener<ContextRefreshedEvent> {
+public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager {
 
     private final TestRocketMQBroker broker;
     private final List<TestRocketMQConsumer> consumers = new CopyOnWriteArrayList<>();
 
-    public TestRocketMQConsumerManager(TestRocketMQBroker broker) {
-        this.broker = broker;
+    public TestRocketMQConsumerManager(RocketMQConsumerRegistry registry, TestRocketMQBroker broker) {
+        super(registry);
+        this.broker = Objects.requireNonNull(broker);
     }
 
     @Override
-    protected void registerConsumer(Object bean, Method method, RocketMQMessageListenerConfig listenerConfig) {
+    public void refreshConsumer(ConsumerGroupTopic consumerGroupTopic) throws ClientException {
+        ListenerDefinition listenerDefinition = registry.getListenerDefinition(consumerGroupTopic);
+        if (listenerDefinition == null) {
+            throw new IllegalArgumentException(String.format("listener definition [%s | %s] not registered",
+                consumerGroupTopic.getConsumerGroup(), consumerGroupTopic.getTopic()));
+        }
+
+        RocketMQMessageListenerConfig listenerConfig = listenerDefinition.getListenerConfig();
         String topic = listenerConfig.getTopic();
         String consumerGroup = listenerConfig.getConsumerGroup();
         FilterExpression filterExpression = new FilterExpression(
             listenerConfig.getFilterExpression(), listenerConfig.getFilterExpressionType());
 
-        broker.registerQueueIfNecessary(topic, consumerGroup);
-
-        RocketMQMessageListenerAdapter messageListener = new RocketMQMessageListenerAdapter(bean, method);
-        TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup, messageListener, filterExpression);
-        consumers.add(consumer);
-    }
-
-    @Override
-    protected void registerBatchConsumer(Object bean, Method method, RocketMQBatchMessageListenerConfig listenerConfig) {
-        String topic = listenerConfig.getTopic();
-        String consumerGroup = listenerConfig.getConsumerGroup();
-        FilterExpression filterExpression = new FilterExpression(
-            listenerConfig.getFilterExpression(), listenerConfig.getFilterExpressionType());
-
-        broker.registerQueueIfNecessary(topic, consumerGroup);
-
-        // 也使用单个消费的方式简单实现
-        BatchMessageListenerAdapter batchListenerAdapter = new BatchMessageListenerAdapter(bean, method);
-        TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup,
-            new BatchMessageListenerAdapterBridge(batchListenerAdapter), filterExpression);
-        consumers.add(consumer);
-    }
-
-    @Override
-    public boolean refreshConsumer(String consumerGroup, String topic) {
-        // not support
-        return false;
-    }
-
-    @Override
-    public boolean refreshBatchConsumer(String consumerGroup, String topic) {
-        // not support
-        return false;
-    }
-
-    @Override
-    public void start() {
-        // nothing to do
-    }
-
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        log.info("start all consumers");
-        for (TestRocketMQConsumer consumer : consumers) {
+        if (broker.registerQueueIfNecessary(topic, consumerGroup)) {
+            RocketMQMessageListenerAdapter messageListener = new RocketMQMessageListenerAdapter(
+                listenerDefinition.getBean(), listenerDefinition.getMethod());
+            TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup, messageListener, filterExpression);
             consumer.start();
+            consumers.add(consumer);
+        }
+    }
+
+    @Override
+    public void refreshBatchConsumer(ConsumerGroupTopic consumerGroupTopic) throws ClientException {
+        BatchListenerDefinition batchListenerDefinition = registry.getBatchListenerDefinition(consumerGroupTopic);
+        if (batchListenerDefinition == null) {
+            throw new IllegalArgumentException(String.format("batch listener definition [%s | %s] not registered",
+                consumerGroupTopic.getConsumerGroup(), consumerGroupTopic.getTopic()));
+        }
+
+        RocketMQBatchMessageListenerConfig batchListenerConfig = batchListenerDefinition.getListenerConfig();
+        String topic = batchListenerConfig.getTopic();
+        String consumerGroup = batchListenerConfig.getConsumerGroup();
+        FilterExpression filterExpression = new FilterExpression(
+            batchListenerConfig.getFilterExpression(), batchListenerConfig.getFilterExpressionType());
+
+        if (broker.registerQueueIfNecessary(topic, consumerGroup)) {
+            // 也使用单个消费的方式简单实现
+            BatchMessageListenerAdapter batchListenerAdapter = new BatchMessageListenerAdapter(
+                batchListenerDefinition.getBean(), batchListenerDefinition.getMethod());
+            TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup,
+                new BatchMessageListenerAdapterBridge(batchListenerAdapter), filterExpression);
+            consumer.start();
+            consumers.add(consumer);
         }
     }
 

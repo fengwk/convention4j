@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.springboot.starter.rocketmq;
 import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQConsumerManager;
 import fun.fengwk.convention4j.common.rocketmq.DefaultRocketMQConsumerManager;
 import fun.fengwk.convention4j.common.rocketmq.ProducerBuilder;
+import fun.fengwk.convention4j.common.rocketmq.RocketMQConsumerRegistry;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
@@ -15,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * @author fengwk
@@ -51,13 +53,28 @@ public class RocketMQAutoConfiguration {
         return new TracerProducer(producer);
     }
 
+    @ConditionalOnMissingBean
+    @Bean
+    public RocketMQConsumerRegistry rocketMQConsumerRegistry() {
+        return new RocketMQConsumerRegistry();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public ConfigurableRocketMQConsumerManagerProcessor configurableRocketMQConsumerManagerProcessor(
+        // RocketMQProperties将发布消息给监听器，监听器又会间接地引用RocketMQProperties
+        // 必须使用@Lazy注解来解决循环依赖问题
+        @Lazy RocketMQProperties rocketMQProperties) {
+        return new ConfigurableRocketMQConsumerManagerProcessor(rocketMQProperties);
+    }
+
     @ConditionalOnBean(ClientConfiguration.class)
     @ConditionalOnMissingBean
     @Bean(destroyMethod = "close")
-    public AbstractRocketMQConsumerManager rocketMQConsumerManager(RocketMQProperties rocketMQProperties,
-                                                                   ClientConfiguration rocketMQClientConfiguration) {
-        return new DefaultRocketMQConsumerManager(
-            rocketMQClientConfiguration, new ConfigurableRocketMQConsumerManagerProcessor(rocketMQProperties));
+    public AbstractRocketMQConsumerManager rocketMQConsumerManager(RocketMQConsumerRegistry rocketMQConsumerRegistry,
+                                                                   ClientConfiguration rocketMQClientConfiguration,
+                                                                   ConfigurableRocketMQConsumerManagerProcessor managerProcessor) {
+        return new DefaultRocketMQConsumerManager(rocketMQConsumerRegistry, rocketMQClientConfiguration, managerProcessor);
     }
 
     @ConditionalOnBean(AbstractRocketMQConsumerManager.class)
@@ -71,8 +88,8 @@ public class RocketMQAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public RocketMQMessageListenerBeanPostProcessor rocketMQMessageListenerBeanPostProcessor(
-        AbstractRocketMQConsumerManager rocketMQConsumerManager) {
-        return new RocketMQMessageListenerBeanPostProcessor(rocketMQConsumerManager);
+        RocketMQConsumerRegistry rocketMQConsumerRegistry) {
+        return new RocketMQMessageListenerBeanPostProcessor(rocketMQConsumerRegistry);
     }
 
 }

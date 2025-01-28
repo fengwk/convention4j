@@ -1,42 +1,27 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
-import fun.fengwk.convention4j.common.rocketmq.AbstractRocketMQConsumerManager;
-import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
-import org.apache.rocketmq.client.apis.ClientException;
+import fun.fengwk.convention4j.common.rocketmq.RocketMQConsumerRegistry;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
+
+import java.util.Objects;
 
 /**
+ *
  * @author fengwk
  */
-public class RocketMQMessageListenerBeanPostProcessor implements BeanPostProcessor, ApplicationListener<ContextRefreshedEvent> {
+public class RocketMQMessageListenerBeanPostProcessor implements BeanPostProcessor {
 
-    private final AbstractRocketMQConsumerManager rocketMQConsumerManager;
+    private final RocketMQConsumerRegistry rocketMQConsumerRegistry;
 
-    public RocketMQMessageListenerBeanPostProcessor(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
-        this.rocketMQConsumerManager = rocketMQConsumerManager;
+    public RocketMQMessageListenerBeanPostProcessor(RocketMQConsumerRegistry rocketMQConsumerRegistry) {
+        this.rocketMQConsumerRegistry = Objects.requireNonNull(rocketMQConsumerRegistry);
     }
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        try {
-            rocketMQConsumerManager.registerIfNecessary(bean);
-        } catch (ClientException ex) {
-            throw new BeanInitializationException("can not init consumer", ex);
-        }
+        rocketMQConsumerRegistry.registerIfNecessary(bean);
         return bean;
-    }
-
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        try {
-            rocketMQConsumerManager.start();
-        } catch (ClientException ex) {
-            throw new RuntimeExecutionException(ex);
-        }
     }
 
 }

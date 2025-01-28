@@ -23,4 +23,19 @@ public class RocketMQMessageListenerConfig extends AbstractRocketMQMessageListen
      */
     private Integer consumptionThreadCount;
 
+    public static RocketMQMessageListenerConfig copy(RocketMQMessageListenerConfig src) {
+        if (src == null) {
+            return null;
+        }
+        RocketMQMessageListenerConfig target = new RocketMQMessageListenerConfig();
+        target.setConsumerGroup(src.getConsumerGroup());
+        target.setTopic(src.getTopic());
+        target.setFilterExpressionType(src.getFilterExpressionType());
+        target.setFilterExpression(src.getFilterExpression());
+        target.setMaxCacheMessageCount(src.getMaxCacheMessageCount());
+        target.setMaxCacheMessageSizeInBytes(src.getMaxCacheMessageSizeInBytes());
+        target.setConsumptionThreadCount(src.getConsumptionThreadCount());
+        return target;
+    }
+
 }
