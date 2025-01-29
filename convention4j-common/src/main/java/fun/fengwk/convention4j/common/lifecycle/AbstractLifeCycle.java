@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.common.lifecycle;
 
-import fun.fengwk.convention4j.common.function.Func0T1;
-
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static fun.fengwk.convention4j.common.lifecycle.LifeCycleState.*;
@@ -28,7 +26,8 @@ public abstract class AbstractLifeCycle implements LifeCycle {
 
     @Override
     public boolean init() throws LifeCycleException {
-        return executeWithLifeCycleWriteLock(() -> {
+        getLifeCycleRwLock().writeLock().lock();
+        try {
             LifeCycleState state = getState();
 
             if (!canInit(state)) {
@@ -36,25 +35,30 @@ public abstract class AbstractLifeCycle implements LifeCycle {
             }
 
             setState(INITIALIZING);
-            onInitializing();
+        } finally {
+            getLifeCycleRwLock().writeLock().unlock();
+        }
 
-            try {
-                doInit();
-            } catch (LifeCycleException ex) {
-                fail(ex);
-                throw ex;
-            }
+        onInitializing();
 
-            setState(INITIALIZED);
-            onInitialized();
+        try {
+            doInit();
+        } catch (LifeCycleException ex) {
+            fail(ex);
+            throw ex;
+        }
 
-            return true;
-        });
+        setStateWithLock(INITIALIZED);
+
+        onInitialized();
+
+        return true;
     }
 
     @Override
     public boolean start() throws LifeCycleException {
-        return executeWithLifeCycleWriteLock(() -> {
+        getLifeCycleRwLock().writeLock().lock();
+        try {
             LifeCycleState state = getState();
 
             if (!canStart(state)) {
@@ -62,25 +66,30 @@ public abstract class AbstractLifeCycle implements LifeCycle {
             }
 
             setState(STARTING);
-            onStarting();
+        } finally {
+            getLifeCycleRwLock().writeLock().unlock();
+        }
 
-            try {
-                doStart();
-            } catch (LifeCycleException ex) {
-                fail(ex);
-                throw ex;
-            }
+        onStarting();
 
-            setState(STARTED);
-            onStarted();
+        try {
+            doStart();
+        } catch (LifeCycleException ex) {
+            fail(ex);
+            throw ex;
+        }
 
-            return true;
-        });
+        setStateWithLock(STARTED);
+
+        onStarted();
+
+        return true;
     }
 
     @Override
     public boolean stop() throws LifeCycleException {
-        return executeWithLifeCycleWriteLock(() -> {
+        getLifeCycleRwLock().writeLock().lock();
+        try {
             LifeCycleState state = getState();
 
             if (!canStop(state)) {
@@ -88,27 +97,32 @@ public abstract class AbstractLifeCycle implements LifeCycle {
             }
 
             setState(STOPPING);
-            onStopping();
+        } finally {
+            getLifeCycleRwLock().writeLock().unlock();
+        }
 
-            try {
-                doStop();
-            } catch (LifeCycleException ex) {
-                fail(ex);
-                throw ex;
-            }
+        onStopping();
 
-            setState(STOPPED);
-            onStopped();
+        try {
+            doStop();
+        } catch (LifeCycleException ex) {
+            fail(ex);
+            throw ex;
+        }
 
-            return true;
-        });
+        setStateWithLock(STOPPED);
+
+        onStopped();
+
+        return true;
     }
 
     @Override
     public boolean close() throws LifeCycleException {
-        return executeWithLifeCycleWriteLock(() -> {
-            stop(); // 先停止
+        stop(); // 先停止
 
+        getLifeCycleRwLock().writeLock().lock();
+        try {
             LifeCycleState state = getState();
 
             if (!canClose(state)) {
@@ -116,20 +130,24 @@ public abstract class AbstractLifeCycle implements LifeCycle {
             }
 
             setState(CLOSING);
-            onClosing();
+        } finally {
+            getLifeCycleRwLock().writeLock().unlock();
+        }
 
-            try {
-                doClose();
-            } catch (LifeCycleException ex) {
-                fail(ex);
-                throw ex;
-            }
+        onClosing();
 
-            setState(CLOSED);
-            onClosed();
+        try {
+            doClose();
+        } catch (LifeCycleException ex) {
+            fail(ex);
+            throw ex;
+        }
 
-            return true;
-        });
+        setStateWithLock(CLOSED);
+
+        onClosed();
+
+        return true;
     }
 
     @Override
@@ -141,17 +159,17 @@ public abstract class AbstractLifeCycle implements LifeCycle {
         state = update;
     }
 
-    protected ReentrantReadWriteLock getLifeCycleRwLock() {
-        return lifeCycleRwLock;
-    }
-
-    private boolean executeWithLifeCycleWriteLock(Func0T1<Boolean, LifeCycleException> func) throws LifeCycleException {
+    protected void setStateWithLock(LifeCycleState update) {
         getLifeCycleRwLock().writeLock().lock();
         try {
-            return func.apply();
+            setState(update);
         } finally {
             getLifeCycleRwLock().writeLock().unlock();
         }
+    }
+
+    protected ReentrantReadWriteLock getLifeCycleRwLock() {
+        return lifeCycleRwLock;
     }
 
     /**

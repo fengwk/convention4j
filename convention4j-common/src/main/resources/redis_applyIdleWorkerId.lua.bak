@@ -3,28 +3,6 @@ local clientId = ARGV[1]
 local lockTime = ARGV[2]
 local from = ARGV[3]
 local to = ARGV[4]
-
-for workerId = from, to, 1 do
-  local nodeKey = workerHashKey .. ':' .. tostring(workerId)
-  redis.call
-
-    local workerInfo = redis.call('hget', workerHashKey, workerId)
-    if workerInfo == false then
-        idleWorkerId = workerId
-        break
-    end
-    local workerExpiredTime = tonumber(string.sub(workerInfo, string.len(clientId) + 1, -1))
-    if tonumber(nowSecondsStr) > workerExpiredTime then
-        idleWorkerId = workerId
-        break
-    end
-end
-
-
-
-
-
-
 local nowSecondsStr = redis.call('time')[1]
 local idleWorkerId = nil
 for workerId = from, to, 1 do

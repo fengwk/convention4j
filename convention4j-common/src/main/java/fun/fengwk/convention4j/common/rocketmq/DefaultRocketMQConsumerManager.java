@@ -59,7 +59,7 @@ public class DefaultRocketMQConsumerManager extends AbstractRocketMQConsumerMana
             closeConsumer(consumerGroupTopic);
         }
         for (ConsumerGroupTopic consumerGroupTopic : registry.batchListenerConsumerGroupTopics()) {
-            closeConsumer(consumerGroupTopic);
+            closeBatchConsumer(consumerGroupTopic);
         }
     }
 

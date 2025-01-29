@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author fengwk
@@ -120,9 +121,11 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
 
     static abstract class AbstractConsumerComponent implements Runnable, AutoCloseable {
 
-        protected Thread thread = new Thread(this);
+        protected Thread thread = newThread(this);
         protected CountDownLatch cdl;
         protected int status; // 0-init,1-start,2-closed
+
+        protected abstract Thread newThread(Runnable runnable);
 
         public synchronized void start() {
             if (status == 1) {
@@ -154,6 +157,13 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
     }
 
     class ConsumerPoller extends AbstractConsumerComponent {
+
+        private static final AtomicInteger POLLER_ID = new AtomicInteger();
+
+        @Override
+        protected Thread newThread(Runnable runnable) {
+            return new Thread(runnable, "ConsumerPoller-" + POLLER_ID.incrementAndGet());
+        }
 
         @Override
         public void run() {
@@ -191,6 +201,13 @@ public class RocketMQBatchMessageListenerContainer implements AutoCloseable {
     }
 
     class ConsumerExecutor extends AbstractConsumerComponent {
+
+        private static final AtomicInteger EXECUTOR_ID = new AtomicInteger();
+
+        @Override
+        protected Thread newThread(Runnable runnable) {
+            return new Thread(runnable, "ConsumerExecutor-" + EXECUTOR_ID.incrementAndGet());
+        }
 
         @Override
         public void run() {

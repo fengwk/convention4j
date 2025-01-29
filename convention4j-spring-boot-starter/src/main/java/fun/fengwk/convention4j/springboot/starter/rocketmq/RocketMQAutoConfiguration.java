@@ -80,8 +80,8 @@ public class RocketMQAutoConfiguration {
     @ConditionalOnBean(AbstractRocketMQConsumerManager.class)
     @ConditionalOnMissingBean
     @Bean
-    public RocketMQConsumerRefresher rocketMQConsumerRefresher(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
-        return new RocketMQConsumerRefresher(rocketMQConsumerManager);
+    public RocketMQConsumerLifecycle rocketMQConsumerLifecycle(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
+        return new RocketMQConsumerLifecycle(rocketMQConsumerManager);
     }
 
     @ConditionalOnBean(AbstractRocketMQConsumerManager.class)

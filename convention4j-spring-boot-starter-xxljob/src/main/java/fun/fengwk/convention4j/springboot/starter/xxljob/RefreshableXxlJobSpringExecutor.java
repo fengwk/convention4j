@@ -4,15 +4,14 @@ import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import com.xxl.job.core.util.NetUtil;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
-import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.boot.web.context.WebServerGracefulShutdownLifecycle;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.SmartLifecycle;
 
 import java.io.IOException;
 import java.net.*;
@@ -26,7 +25,8 @@ import java.util.concurrent.TimeUnit;
  * @author fengwk
  */
 @Slf4j
-public class RefreshableXxlJobSpringExecutor implements Runnable, ApplicationListener<ApplicationEvent>, ApplicationContextAware {
+public class RefreshableXxlJobSpringExecutor
+    implements Runnable, ApplicationListener<XxlJobPropertiesChangedEvent>, ApplicationContextAware, SmartLifecycle {
 
     private static final int INIT = 0;
     private static final int RUNNING = 1;
@@ -78,7 +78,6 @@ public class RefreshableXxlJobSpringExecutor implements Runnable, ApplicationLis
         }
     }
 
-    @PreDestroy
     private synchronized void destroy() {
         this.status = DESTROY;
         if (this.xxlJobSpringExecutor != null) {
@@ -98,17 +97,8 @@ public class RefreshableXxlJobSpringExecutor implements Runnable, ApplicationLis
     }
 
     @Override
-    public synchronized void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof XxlJobPropertiesChangedEvent xxlJobPropertiesChangedEvent) {
-            this.xxlJobProperties = xxlJobPropertiesChangedEvent.getXxlJobProperties();
-        } else if (event instanceof ContextRefreshedEvent) {
-            // 在应用初始化完成后再启动以便解决循环依赖问题
-            try {
-                restart();
-            } catch (Exception ex) {
-                throw new RuntimeExecutionException(ex);
-            }
-        }
+    public synchronized void onApplicationEvent(XxlJobPropertiesChangedEvent event) {
+        this.xxlJobProperties = event.getXxlJobProperties();
     }
 
     @Override
@@ -231,6 +221,32 @@ public class RefreshableXxlJobSpringExecutor implements Runnable, ApplicationLis
             }
         }
         return null;
+    }
+
+    @Override
+    public void start() {
+        // 在应用初始化完成后再启动以便解决循环依赖问题
+        try {
+            restart();
+        } catch (Exception ex) {
+            throw new RuntimeExecutionException(ex);
+        }
+    }
+
+    @Override
+    public int getPhase() {
+        // 与WebServer同一批次下线
+        return WebServerGracefulShutdownLifecycle.SMART_LIFECYCLE_PHASE;
+    }
+
+    @Override
+    public void stop() {
+        destroy();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return status == RUNNING;
     }
 
     @Data

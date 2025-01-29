@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * @author fengwk
  */
-//@EnableTestRocketMQ
+@EnableTestRocketMQ
 @EnableTestRedisServer
 @BaseMapperScan
 @SpringBootApplication

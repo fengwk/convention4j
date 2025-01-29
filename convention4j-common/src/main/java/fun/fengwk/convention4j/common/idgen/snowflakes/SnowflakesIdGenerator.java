@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.common.idgen.snowflakes;
 
 import fun.fengwk.convention4j.common.idgen.AbstractIdGenerator;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
+import fun.fengwk.convention4j.common.runtimex.RuntimeLifeCycleException;
 
 import java.util.Objects;
 
@@ -84,8 +85,14 @@ public class SnowflakesIdGenerator extends AbstractIdGenerator<Long> {
 
     @Override
     public String toString() {
+        Long workId = null;
+        try {
+            workId = workerIdClient.tryGet();
+        } catch (RuntimeLifeCycleException ignore) {
+            // nothing to do
+        }
         return String.format("%s-[%d, %d]",
-                SnowflakesIdGenerator.class.getSimpleName(), workerIdClient.tryGet(), initialTimestamp);
+                SnowflakesIdGenerator.class.getSimpleName(), workId, initialTimestamp);
     }
 
     @Override

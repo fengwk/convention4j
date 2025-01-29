@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.20</version>
+        <version>1.1.21</version>
     </parent>
 
     <artifactId>convention4j-common</artifactId>
@@ -183,6 +183,11 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.kstyrc</groupId>
+            <artifactId>embedded-redis</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -16,5 +16,5 @@ Convention For Java共分为四个模块，模块的层次关系如下图所示�
 ## Quick Start
 
 ```shell
-mvn archetype:generate -DarchetypeGroupId=fun.fengwk.convention4j -DarchetypeArtifactId=convention4j-archetype -DarchetypeVersion=1.1.20
+mvn archetype:generate -DarchetypeGroupId=fun.fengwk.convention4j -DarchetypeArtifactId=convention4j-archetype -DarchetypeVersion=1.1.21
 ```

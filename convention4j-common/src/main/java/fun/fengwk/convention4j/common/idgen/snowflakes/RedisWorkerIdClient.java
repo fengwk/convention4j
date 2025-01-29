@@ -12,8 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -32,16 +30,6 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
     private static final Logger log = LoggerFactory.getLogger(RedisWorkerIdClient.class);
 
     /**
-     * 用于申请空闲workerId的LUA脚本。
-     */
-    private static final String LUA_APPLY_IDLE_WORKER_ID;
-
-    /**
-     * 用于续约workerId的LUA脚本。
-     */
-    private static final String LUA_RENEW_WORKER_ID;
-
-    /**
      * redis中存储所有workerId的hash结构的key。
      */
     private static final String WORKER_HASH_KEY = "REDIS_WORKER_ID_CLIENT:%s";
@@ -49,10 +37,10 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
     /**
      * 锁过期时间，默认60秒。设置过期时间是为了防止异常情况下锁一直被占有得不到释放。
      */
-    private static final String LOCK_EXPIRE = "60";
+    private static final long LOCK_EXPIRE = 1000 * 60L;
 
     /**
-     * 续约时间间隔，1秒。
+     * 续约时间间隔，5秒。
      */
     private static final long RENEW_INTERVAL = 1000L;
 
@@ -71,19 +59,10 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      */
     private static final int TO = 1024;
 
-    static {
-        try {
-            LUA_APPLY_IDLE_WORKER_ID = getLua("redis_applyIdleWorkerId.lua");
-            LUA_RENEW_WORKER_ID = getLua("redis_renewWorkerId.lua");
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError();
-        }
-    }
-
     /**
      * redis脚本执行器。
      */
-    private final RedisScriptExecutor scriptExecutor;
+    private final RedisExecutor redisExecutor;
 
     /**
      * 当前客户端的命名空间，可以用于应用隔离。
@@ -135,9 +114,9 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      *
      * @param scriptExecutor not null
      */
-    public RedisWorkerIdClient(String namespace, RedisScriptExecutor scriptExecutor) {
+    public RedisWorkerIdClient(String namespace, RedisExecutor scriptExecutor) {
         this.namespace = Objects.requireNonNull(namespace, "namespace cannot be null");
-        this.scriptExecutor = Objects.requireNonNull(scriptExecutor, "scriptExecutor cannot be null");
+        this.redisExecutor = Objects.requireNonNull(scriptExecutor, "redisExecutor cannot be null");
     }
 
     /**
@@ -186,11 +165,16 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
         }
         String workerHashKey = String.format(WORKER_HASH_KEY, namespace);
         log.info("Apply idle workerId from '{}' to '{}' in '{}'", from, to, workerHashKey);
-        return scriptExecutor.execute(
-                LUA_APPLY_IDLE_WORKER_ID,
-                Collections.singletonList(workerHashKey),
-                Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(from), String.valueOf(to - 1)),
-                Long.class);
+
+        Long workerId = null;
+        for (int n = from; n < to; n++) {
+            String workerKey = buildWorkerKey(workerHashKey, n);
+            if (redisExecutor.setIfAbsent(workerKey, clientId, LOCK_EXPIRE)) {
+                workerId = (long) n;
+                break;
+            }
+        }
+        return workerId;
     }
 
     /**
@@ -199,13 +183,18 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
      * @param workerId
      * @return
      */
-    private Long renewWorkerId(long workerId) throws Exception {
+    private boolean renewWorkerId(long workerId) throws Exception {
         String workerHashKey = String.format(WORKER_HASH_KEY, namespace);
-        return scriptExecutor.execute(
-                LUA_RENEW_WORKER_ID,
-                Collections.singletonList(workerHashKey),
-                Arrays.asList(clientId, LOCK_EXPIRE, String.valueOf(workerId)),
-                Long.class);
+        String workerKey = buildWorkerKey(workerHashKey, workerId);
+        if (redisExecutor.expire(workerKey, LOCK_EXPIRE)) {
+            String workerValue = redisExecutor.get(workerKey);
+            return Objects.equals(workerValue, clientId);
+        }
+        return false;
+    }
+
+    private String buildWorkerKey(String workerHashKey, long workerId) {
+        return workerHashKey + ":" + workerId;
     }
 
     @Override
@@ -366,23 +355,22 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
 
     @Override
     protected void doInit() throws LifeCycleException {
-        scriptExecutor.init();
-        applyWorkerIdThread.start();
+        // nothing to do
     }
 
     @Override
     protected void doStart() throws LifeCycleException {
-        scriptExecutor.start();
+        applyWorkerIdThread.start();
     }
 
     @Override
     protected void doStop() throws LifeCycleException {
-        scriptExecutor.stop();
+        // nothing to do
     }
 
     @Override
     protected void doClose() throws LifeCycleException {
-        scriptExecutor.close();
+        // nothing to do
     }
 
     @Override
@@ -537,7 +525,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                         return false;
                     }
 
-                    lifeCycleChange.await();
+                    lifeCycleChange.awaitUninterruptibly();
                 }
             } finally {
                 getLifeCycleRwLock().writeLock().unlock();
@@ -561,11 +549,16 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                             try {
                                 // 从[FROM..TO)区间中申请workerId
                                 workerId = applyIdleWorkerId(FROM, TO);
-                                log.info("Successfully applied for workId '{}'", workerId);
-                                // 通知已申请到workerId
-                                appliedWorkerId.signalAll();
-                                // 如果申请workerId成功，那么等待一个续约周期后将进入续约流程
-                                waitMs = RENEW_INTERVAL;
+                                if (workerId == null) {
+                                    log.warn("workId has been exhausted");
+                                    waitMs = APPLY_ERROR_INTERVAL;
+                                } else {
+                                    log.info("Successfully applied for workId '{}'", workerId);
+                                    // 通知已申请到workerId
+                                    appliedWorkerId.signalAll();
+                                    // 如果申请workerId成功，那么等待一个续约周期后将进入续约流程
+                                    waitMs = RENEW_INTERVAL;
+                                }
                             } catch (Exception ex) {
                                 log.error("Apply workerId error", ex);
                                 // 如果发生异常，需要等待一段时间后重试
@@ -574,7 +567,7 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                         } else {
                             // 如果workerId存在，尝试续约
                             try {
-                                if (renewWorkerId(workerId) == null) {
+                                if (renewWorkerId(workerId)) {
                                     log.warn("Renew workerId '{}' fail", workerId);
                                     // 续约失败，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
                                     workerId = null;

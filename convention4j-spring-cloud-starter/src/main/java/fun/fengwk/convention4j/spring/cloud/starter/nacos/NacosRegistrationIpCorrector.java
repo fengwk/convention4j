@@ -49,22 +49,29 @@ public class NacosRegistrationIpCorrector implements Runnable, ApplicationListen
             if (ip != null) {
                 Map<String, String> currentMetadata = new HashMap<>();
                 // @see NacosDiscoveryProperties#init
-                String currentIp = nacosDiscoveryIpResolver.resolveIp(nacosDiscoveryProperties, currentMetadata);
-                // 处理IPV6地址变化后无法感知的情况
-                // 执行完resolveIp后currentMetadata中将包含当前的IPV6地址，使用原始的metadata和当前的currentMetadata对比
-                // 如果不相等说明有IPV6地址发生变化，也需要重刷新
-                Map<String, String> metadata = nacosDiscoveryProperties.getMetadata();
-                Map<String, String> newMetadata = newMetadata(metadata, currentMetadata);
-                if (!Objects.equals(ip, currentIp) || !Objects.equals(metadata, newMetadata)) {
-                    nacosDiscoveryProperties.setIp(currentIp);
-                    nacosDiscoveryProperties.setMetadata(newMetadata);
-                    try {
-                        applicationEventPublisher
-                            .publishEvent(new NacosDiscoveryInfoChangedEvent(nacosDiscoveryProperties));
-                        log.info("Correct nacos registration ip from {} to {}", ip, currentIp);
-                    } catch (Exception ex) {
-                        log.error("Failed correct nacos registration ip from {} to {}", ip, currentIp, ex);
+                try {
+                    String currentIp = nacosDiscoveryIpResolver.resolveIp(nacosDiscoveryProperties, currentMetadata);
+                    // 处理IPV6地址变化后无法感知的情况
+                    // 执行完resolveIp后currentMetadata中将包含当前的IPV6地址，使用原始的metadata和当前的currentMetadata对比
+                    // 如果不相等说明有IPV6地址发生变化，也需要重刷新
+                    Map<String, String> metadata = nacosDiscoveryProperties.getMetadata();
+                    Map<String, String> newMetadata = newMetadata(metadata, currentMetadata);
+                    if (!Objects.equals(ip, currentIp) || !Objects.equals(metadata, newMetadata)) {
+                        try {
+                            nacosDiscoveryProperties.setIp(currentIp);
+                            nacosDiscoveryProperties.setMetadata(newMetadata);
+                            applicationEventPublisher
+                                .publishEvent(new NacosDiscoveryInfoChangedEvent(nacosDiscoveryProperties));
+                            log.info("correct nacos registration ip from {} to {}", ip, currentIp);
+                        } catch (Exception ex) {
+                            log.error("failed correct nacos registration ip from {} to {}", ip, currentIp, ex);
+                            // 失败后需要恢复数据
+                            nacosDiscoveryProperties.setIp(ip);
+                            nacosDiscoveryProperties.setMetadata(metadata);
+                        }
                     }
+                } catch (Exception ex) {
+                    log.error("resolve ip error", ex);
                 }
             }
         }

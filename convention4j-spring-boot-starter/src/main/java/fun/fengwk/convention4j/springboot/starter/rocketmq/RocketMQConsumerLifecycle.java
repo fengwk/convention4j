@@ -5,9 +5,10 @@ import fun.fengwk.convention4j.common.runtimex.RuntimeExecutionException;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientException;
-import org.springframework.context.ApplicationEvent;
+import org.springframework.boot.web.context.WebServerGracefulShutdownLifecycle;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.Lifecycle;
+import org.springframework.context.SmartLifecycle;
 
 import java.util.*;
 
@@ -15,32 +16,32 @@ import java.util.*;
  * @author fengwk
  */
 @Slf4j
-public class RocketMQConsumerRefresher implements ApplicationListener<ApplicationEvent> {
+public class RocketMQConsumerLifecycle implements ApplicationListener<RocketMQPropertiesChangedEvent>, SmartLifecycle {
 
-    private boolean started = false;
+    private volatile boolean running;
     private List<RocketMQMessageListenerConfig> curConsumerConfigs;
     private List<RocketMQBatchMessageListenerConfig> curBatchConsumerConfigs;
 
     private final AbstractRocketMQConsumerManager rocketMQConsumerManager;
 
-    public RocketMQConsumerRefresher(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
+    public RocketMQConsumerLifecycle(AbstractRocketMQConsumerManager rocketMQConsumerManager) {
         this.rocketMQConsumerManager = Objects.requireNonNull(rocketMQConsumerManager);
     }
 
     @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof RocketMQPropertiesChangedEvent rocketMQPropertiesChangedEvent) {
-            onRocketMQPropertiesChangedEvent(rocketMQPropertiesChangedEvent);
-        } else if (event instanceof ContextRefreshedEvent contextRefreshedEvent) {
-            onContextRefreshedEvent(contextRefreshedEvent);
-        }
+    public int getPhase() {
+        // 与WebServer同一批次下线
+        return WebServerGracefulShutdownLifecycle.SMART_LIFECYCLE_PHASE;
     }
 
-    // 容器刷新完成后启动RocketMQConsumerManager
-    private synchronized void onContextRefreshedEvent(ContextRefreshedEvent event) {
-        if (started) {
-            return;
-        }
+    @Override
+    public void onApplicationEvent(RocketMQPropertiesChangedEvent event) {
+        onRocketMQPropertiesChangedEvent(event);
+    }
+
+    @Override
+    public synchronized void start() {
+        running = true;
         try {
             log.info("rocket mq consumers starting...");
             rocketMQConsumerManager.start();
@@ -48,7 +49,24 @@ public class RocketMQConsumerRefresher implements ApplicationListener<Applicatio
         } catch (ClientException ex) {
             throw new RuntimeExecutionException(ex);
         }
-        this.started = true;
+    }
+
+    // 生命周期的stop早于bean的销毁，以此来做到优雅停机
+    @Override
+    public synchronized void stop() {
+        running = false;
+        try {
+            log.info("rocket mq consumers closing...");
+            rocketMQConsumerManager.close();
+            log.info("rocket mq consumers closed");
+        } catch (Exception ex) {
+            throw new RuntimeExecutionException(ex);
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 
     // 配置变更后刷新消费者
@@ -61,7 +79,7 @@ public class RocketMQConsumerRefresher implements ApplicationListener<Applicatio
             RocketMQBatchMessageListenerConfig::copy);
 
         // 还没有执行过start则无需刷新
-        if (!started) {
+        if (!running) {
             return;
         }
 

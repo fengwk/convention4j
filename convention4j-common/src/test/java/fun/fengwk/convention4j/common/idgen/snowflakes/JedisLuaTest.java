@@ -1,8 +1,11 @@
 //package fun.fengwk.convention4j.common.idgen.snowflakes;//package fun.fengwk.commons.idgen.snowflakes;
 //
+//import org.junit.jupiter.api.AfterAll;
+//import org.junit.jupiter.api.BeforeAll;
 //import org.junit.jupiter.api.Test;
 //import redis.clients.jedis.*;
 //import redis.clients.jedis.util.Pool;
+//import redis.embedded.RedisServer;
 //
 //import java.io.ByteArrayOutputStream;
 //import java.io.IOException;
@@ -14,7 +17,22 @@
 // */
 //public class JedisLuaTest {
 //
+//    private static final int PORT = 6379;
+//
+//    private static RedisServer redisServer;
+//
 //    private static final String WORKER_HASH_KEY = "workers";
+//
+//    @BeforeAll
+//    public static void before() throws IOException {
+//        redisServer = new RedisServer(PORT);
+//        redisServer.start();
+//    }
+//
+//    @AfterAll
+//    public static void destroy() {
+//        redisServer.stop();
+//    }
 //
 //    @Test
 //    public void test1() throws IOException {

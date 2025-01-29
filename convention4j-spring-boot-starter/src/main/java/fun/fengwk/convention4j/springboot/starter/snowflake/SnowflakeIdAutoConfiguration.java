@@ -95,7 +95,7 @@ public class SnowflakeIdAutoConfiguration {
         @Bean
         public WorkerIdClient redisWorkerIdClient(@Value("${spring.application.name}") String appName,
             StringRedisTemplate redisTemplate) throws LifeCycleException {
-            WorkerIdClient workerIdClient = new RedisWorkerIdClient(appName, new RedisTemplateScriptExecutor(redisTemplate));
+            WorkerIdClient workerIdClient = new RedisWorkerIdClient(appName, new RedisTemplateExecutor(redisTemplate));
             workerIdClient.init();
             workerIdClient.start();
             log.info("{} running", RedisWorkerIdClient.class.getSimpleName());
