@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.snowflake;
 
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
-import fun.fengwk.convention4j.common.idgen.snowflakes.JedisPoolExecutor;
 import fun.fengwk.convention4j.common.idgen.snowflakes.RedisTemplateExecutor;
 import fun.fengwk.convention4j.common.idgen.snowflakes.RedisWorkerIdClient;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;

@@ -568,12 +568,12 @@ public class RedisWorkerIdClient extends AbstractLifeCycle implements WorkerIdCl
                             // 如果workerId存在，尝试续约
                             try {
                                 if (renewWorkerId(workerId)) {
+                                    // 续约成功，那么等待一个续约周期后将再次进入续约流程
+                                    waitMs = RENEW_INTERVAL;
+                                } else {
                                     log.warn("Renew workerId '{}' fail", workerId);
                                     // 续约失败，将workerId重置为null，这样在下次循环中会尝试重新申请workerId
                                     workerId = null;
-                                } else {
-                                    // 续约成功，那么等待一个续约周期后将再次进入续约流程
-                                    waitMs = RENEW_INTERVAL;
                                 }
                             } catch (Exception ex) {
                                 log.error("Renew workerId error", ex);
