@@ -6,4 +6,13 @@ package fun.fengwk.convention4j.api.code;
  * @author fengwk
  */
 public interface ResolvedCode extends Code {
+
+    /**
+     * 获取已被解析过的message
+     *
+     * @return 已被解析过的message
+     */
+    @Override
+    String getMessage();
+
 }

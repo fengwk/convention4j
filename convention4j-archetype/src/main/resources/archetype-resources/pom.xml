@@ -5,7 +5,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.22</version>
+        <version>1.1.23</version>
     </parent>
 
     <groupId>${groupId}</groupId>
@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
         <${artifactId}.version>${version}</${artifactId}.version>
-        <gateway.version>0.0.1</gateway.version>
+        <gateway.version>1.0.8</gateway.version>
     </properties>
 
     <dependencyManagement>

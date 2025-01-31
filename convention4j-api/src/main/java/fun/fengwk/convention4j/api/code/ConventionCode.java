@@ -19,9 +19,12 @@ public interface ConventionCode extends Code, ResolveableCode {
     default ResolvedConventionCode resolve() {
         if (this instanceof ResolvedConventionCode) {
             return (ResolvedConventionCode) this;
+        } else if (this instanceof ResolvedCode) {
+            return new ImmutableResolvedConventionCode(getStatus(), getCode(), getMessage());
+        } else {
+            String resolvedMessage = CodeMessageResolverUtils.resolve(this);
+            return new ImmutableResolvedConventionCode(getStatus(), getCode(), resolvedMessage);
         }
-        String resolvedMessage = CodeMessageResolverUtils.resolve(this);
-        return new ImmutableResolvedConventionCode(getStatus(), getCode(), resolvedMessage);
     }
 
     @Override

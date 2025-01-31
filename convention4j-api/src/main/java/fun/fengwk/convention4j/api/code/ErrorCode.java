@@ -11,9 +11,9 @@ import java.util.Map;
 public interface ErrorCode extends Code {
 
     /**
-     * 获取错误信息上下文
+     * 获取不可变的错误信息上下文
      *
-     * @return 错误信息上下文。
+     * @return 返回不可变的错误信息上下文信息
      */
     Map<String, Object> getErrorContext();
 
@@ -48,5 +48,13 @@ public interface ErrorCode extends Code {
      * @return 错误码异常
      */
     ThrowableErrorCode asThrowable(Throwable cause, Object context);
+
+    /**
+     * 添加错误上下文
+     *
+     * @param errorContext 错误上下文
+     * @return 添加错误上下文后的ErrorCode
+     */
+    ErrorCode withErrorContext(Map<String, Object> errorContext);
 
 }

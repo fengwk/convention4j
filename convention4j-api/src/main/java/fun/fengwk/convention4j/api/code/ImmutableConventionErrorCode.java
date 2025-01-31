@@ -26,7 +26,7 @@ public class ImmutableConventionErrorCode extends ImmutableConventionCode implem
 
     @Override
     public Map<String, Object> getErrorContext() {
-        return errorContext;
+        return Collections.unmodifiableMap(errorContext);
     }
 
 }

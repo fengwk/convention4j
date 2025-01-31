@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.api.code;
 
+import java.util.Map;
+
 /**
  * 规约编码，在规约中使用HttpStatus作为Status
  *
@@ -11,9 +13,12 @@ public interface ConventionErrorCode extends ConventionCode, ErrorCode {
     default ResolvedConventionErrorCode resolve() {
         if (this instanceof ResolvedConventionErrorCode) {
             return (ResolvedConventionErrorCode) this;
+        } else if (this instanceof ResolvedCode) {
+            return new ImmutableResolvedConventionErrorCode(getStatus(), getCode(), getMessage(), getErrorContext());
+        } else {
+            String resolvedMessage = CodeMessageResolverUtils.resolve(this);
+            return new ImmutableResolvedConventionErrorCode(getStatus(), getCode(), resolvedMessage, getErrorContext());
         }
-        String resolvedMessage = CodeMessageResolverUtils.resolve(this);
-        return new ImmutableResolvedConventionErrorCode(getStatus(), getCode(), resolvedMessage, getErrorContext());
     }
 
     @Override
@@ -71,6 +76,15 @@ public interface ConventionErrorCode extends ConventionCode, ErrorCode {
             return (ThrowableConventionErrorCode) this;
         }
         return new ThrowableConventionErrorCode(resolve(resolvedMessage), cause);
+    }
+
+    @Override
+    default ConventionErrorCode withErrorContext(Map<String, Object> errorContext) {
+        if (this instanceof ResolvedCode) {
+            return new ImmutableResolvedConventionErrorCode(getStatus(), getCode(), getMessage(), errorContext);
+        } else {
+            return new ImmutableConventionErrorCode(getStatus(), getCode(), getMessage(), errorContext);
+        }
     }
 
 }
