@@ -51,6 +51,7 @@ public class RefreshableXxlJobSpringExecutor
     private final String appName;
     private volatile XxlJobSpringExecutor xxlJobSpringExecutor;
     private volatile XxlJobProperties xxlJobProperties;
+    private volatile XxlJobPropertiesSnapshot buildXxlJobPropertiesSnapshot;
     private volatile ApplicationContext applicationContext;
 
     public RefreshableXxlJobSpringExecutor(String appName) {
@@ -68,8 +69,10 @@ public class RefreshableXxlJobSpringExecutor
             this.xxlJobSpringExecutor = null;
         }
         try {
-            XxlJobSpringExecutor xxlJobSpringExecutor = buildXxlJobSpringExecutor();
+            XxlJobPropertiesSnapshot buildXxlJobPropertiesSnapshot = XxlJobPropertiesSnapshot.dump(xxlJobProperties);
+            XxlJobSpringExecutor xxlJobSpringExecutor = buildXxlJobSpringExecutor(buildXxlJobPropertiesSnapshot);
             startExecutor(xxlJobSpringExecutor);
+            this.buildXxlJobPropertiesSnapshot = buildXxlJobPropertiesSnapshot;
             this.xxlJobSpringExecutor = xxlJobSpringExecutor;
             this.status = RUNNING;
         } catch (Exception ex) {
@@ -118,9 +121,14 @@ public class RefreshableXxlJobSpringExecutor
             }
         } else if (status == RUNNING) {
             ReachableNetInfo reachableNetInfo = this.reachableNetInfo;
-            if (reachableNetInfo != null) {
+            if (reachableNetInfo != null) { // 首次在start中被初始化
                 try {
-                    if (!isReachable(reachableNetInfo.getXxlJobAdminAddress(), reachableNetInfo.getNetworkInterface())) {
+                    boolean shouldRestart = false;
+                    XxlJobPropertiesSnapshot nowXxlJobPropertiesSnapshot = XxlJobPropertiesSnapshot.dump(xxlJobProperties);
+                    if (!Objects.equals(nowXxlJobPropertiesSnapshot, buildXxlJobPropertiesSnapshot)) {
+                        // 如果配置变更了应该重启
+                        shouldRestart = true;
+                    } else if (!isReachable(reachableNetInfo.getXxlJobAdminAddress(), reachableNetInfo.getNetworkInterface())) {
                         // 去抖，避免是网络快速抖动导致的问题
                         for (int c = 0; c < DEBOUNCE_TIMES; c++) {
                             if (isReachable(reachableNetInfo.getXxlJobAdminAddress(), reachableNetInfo.getNetworkInterface())) {
@@ -133,6 +141,10 @@ public class RefreshableXxlJobSpringExecutor
                                 return;
                             }
                         }
+                        // 如果网络变得不可达了应该重启
+                        shouldRestart = true;
+                    }
+                    if (shouldRestart) {
                         // 重启执行器
                         try {
                             log.info("xxl job restarting...");
@@ -149,7 +161,7 @@ public class RefreshableXxlJobSpringExecutor
         }
     }
 
-    private XxlJobSpringExecutor buildXxlJobSpringExecutor()
+    private XxlJobSpringExecutor buildXxlJobSpringExecutor(XxlJobPropertiesSnapshot xxlJobProperties)
             throws SocketException, UnknownHostException, URISyntaxException {
 
         log.info("{} init", XxlJobSpringExecutor.class.getSimpleName());
@@ -192,7 +204,7 @@ public class RefreshableXxlJobSpringExecutor
         try {
             return hostAddress.isReachable(networkInterface, 0, 5000);
         } catch (IOException ex) {
-            log.debug("isReachable error", ex);
+            log.warn("isReachable error", ex);
             return false;
         }
     }
