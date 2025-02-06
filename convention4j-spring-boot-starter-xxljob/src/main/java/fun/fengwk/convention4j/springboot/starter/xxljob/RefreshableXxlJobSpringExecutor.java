@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class RefreshableXxlJobSpringExecutor
-    implements Runnable, ApplicationListener<XxlJobPropertiesChangedEvent>, ApplicationContextAware, SmartLifecycle {
+        implements Runnable, ApplicationListener<XxlJobPropertiesChangedEvent>, ApplicationContextAware, SmartLifecycle {
 
     private static final int INIT = 0;
     private static final int RUNNING = 1;
@@ -56,7 +56,7 @@ public class RefreshableXxlJobSpringExecutor
     public RefreshableXxlJobSpringExecutor(String appName) {
         this.appName = Objects.requireNonNull(appName);
         this.reachableMonitorService.scheduleWithFixedDelay(
-            this, 1000, 1000, TimeUnit.MILLISECONDS);
+                this, 1000, 1000, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void restart() throws Exception {
@@ -110,9 +110,11 @@ public class RefreshableXxlJobSpringExecutor
     public void run() {
         if (status == FAILED) {
             try {
+                log.info("xxl job retry restarting...");
                 restart();
+                log.info("xxl job retry restart successfully");
             } catch (Exception ex) {
-                log.error("failed to retry restart", ex);
+                log.error("xxl job retry restart failed", ex);
             }
         } else if (status == RUNNING) {
             ReachableNetInfo reachableNetInfo = this.reachableNetInfo;
@@ -133,9 +135,11 @@ public class RefreshableXxlJobSpringExecutor
                         }
                         // 重启执行器
                         try {
+                            log.info("xxl job restarting...");
                             restart();
+                            log.info("xxl job restart successfully");
                         } catch (Exception ex) {
-                            log.error("failed to restart due to unreachable network", ex);
+                            log.error("xxl job restart failed", ex);
                         }
                     }
                 } catch (UnknownHostException ex) {
@@ -146,7 +150,7 @@ public class RefreshableXxlJobSpringExecutor
     }
 
     private XxlJobSpringExecutor buildXxlJobSpringExecutor()
-        throws SocketException, UnknownHostException, URISyntaxException {
+            throws SocketException, UnknownHostException, URISyntaxException {
 
         log.info("{} init", XxlJobSpringExecutor.class.getSimpleName());
 
@@ -164,7 +168,7 @@ public class RefreshableXxlJobSpringExecutor
         }
 
         URI addressUri = new URI("http", null, reachableNetInfo.getInetAddress().getHostAddress(), port,
-            null, null, null);
+                null, null, null);
         String address = addressUri.toASCIIString();
 
         XxlJobSpringExecutor xxlJobSpringExecutor = new XxlJobSpringExecutor();
