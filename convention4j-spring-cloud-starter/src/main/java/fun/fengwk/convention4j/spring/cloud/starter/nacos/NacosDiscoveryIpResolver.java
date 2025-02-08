@@ -5,6 +5,7 @@ import com.alibaba.cloud.nacos.util.InetIPv6Utils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.commons.util.InetUtils;
+import org.springframework.cloud.commons.util.InetUtilsProperties;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
@@ -44,6 +45,7 @@ public class NacosDiscoveryIpResolver {
 
     private final InetIPv6Utils inetIPv6Utils;
     private final InetUtils inetUtils;
+    private final InetUtilsProperties properties;
 
     public String resolveIp(NacosDiscoveryProperties nacosDiscoveryProperties, Map<String, String> metadata) {
         String ip;
@@ -102,21 +104,32 @@ public class NacosDiscoveryIpResolver {
                 }
             }
 
-            if (IPV4.equalsIgnoreCase(ipType) && !StringUtils.isEmpty(ipv4)) {
+            if (IPV4.equalsIgnoreCase(ipType)) {
                 ip = ipv4;
-            }
-            else if (IPV6.equalsIgnoreCase(ipType) && !StringUtils.isEmpty(ipv6)) {
+                if (StringUtils.isEmpty(ip)) {
+                    ip = properties.getDefaultIpAddress();
+                }
+            } else if (IPV6.equalsIgnoreCase(ipType)) {
                 ip = ipv6;
+                if (StringUtils.isEmpty(ip)) {
+                    log.warn("There is no available IPv6 found in " + networkInterface + ". Spring Cloud Alibaba will automatically find IPv4.");
+                    ip = ipv4;
+                    if (StringUtils.isEmpty(ip)) {
+                        ip = properties.getDefaultIpAddress();
+                    }
+                }
             } else {
                 if (!StringUtils.isEmpty(ipv4)) {
                     ip = ipv4;
-                } else {
+                } else if (!StringUtils.isEmpty(ipv6)) {
                     ip = ipv6;
+                } else {
+                    ip = properties.getDefaultIpAddress();
                 }
             }
 
             if (StringUtils.isEmpty(ip)) {
-                throw new RuntimeException("cannot find available ip from"
+                throw new IllegalStateException("cannot find available ip from"
                     + " network interface " + networkInterface);
             }
 

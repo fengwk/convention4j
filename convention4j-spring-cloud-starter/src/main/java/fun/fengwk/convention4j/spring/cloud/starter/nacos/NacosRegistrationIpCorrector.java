@@ -36,7 +36,7 @@ public class NacosRegistrationIpCorrector implements Runnable, ApplicationListen
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         executorService.scheduleWithFixedDelay(
-            this, 1000, 1000, TimeUnit.MILLISECONDS);
+            this, 5000, 5000, TimeUnit.MILLISECONDS);
         log.info("{} running", getClass().getSimpleName());
     }
 
@@ -57,15 +57,16 @@ public class NacosRegistrationIpCorrector implements Runnable, ApplicationListen
                     Map<String, String> metadata = nacosDiscoveryProperties.getMetadata();
                     Map<String, String> newMetadata = newMetadata(metadata, currentMetadata);
                     if (!Objects.equals(ip, currentIp) || !Objects.equals(metadata, newMetadata)) {
+                        nacosDiscoveryProperties.setIp(currentIp);
+                        nacosDiscoveryProperties.setMetadata(newMetadata);
                         try {
-                            nacosDiscoveryProperties.setIp(currentIp);
-                            nacosDiscoveryProperties.setMetadata(newMetadata);
                             applicationEventPublisher
                                 .publishEvent(new NacosDiscoveryInfoChangedEvent(nacosDiscoveryProperties));
                             log.info("correct nacos registration ip from {} to {}", ip, currentIp);
                         } catch (Exception ex) {
                             log.error("failed correct nacos registration ip from {} to {}", ip, currentIp, ex);
                             // 失败后需要恢复数据
+                            // TODO 可能存在实际成功但抛出异常的情况，导致最终本地数据和nacos注册中心数据不一致
                             nacosDiscoveryProperties.setIp(ip);
                             nacosDiscoveryProperties.setMetadata(metadata);
                         }

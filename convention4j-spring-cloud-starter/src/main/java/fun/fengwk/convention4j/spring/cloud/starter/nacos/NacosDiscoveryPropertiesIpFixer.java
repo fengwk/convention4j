@@ -24,6 +24,7 @@ public class NacosDiscoveryPropertiesIpFixer implements InstantiationAwareBeanPo
             // 预计算ip
             String ip = nacosDiscoveryIpResolver.resolveIp(properties, properties.getMetadata());
             properties.setIp(ip);
+            log.info("fix nacos ip successfully, ip: {}", ip);
         }
         return bean;
     }

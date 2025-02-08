@@ -6,6 +6,7 @@ import com.alibaba.cloud.nacos.util.InetIPv6Utils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.commons.util.InetUtils;
+import org.springframework.cloud.commons.util.InetUtilsProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -20,8 +21,9 @@ public class NacosCustomAutoConfiguration {
     @Bean
     public NacosDiscoveryIpResolver nacosDiscoveryIpResolver(
         InetIPv6Utils inetIPv6Utils,
-        InetUtils inetUtils) {
-        return new NacosDiscoveryIpResolver(inetIPv6Utils, inetUtils);
+        InetUtils inetUtils,
+        InetUtilsProperties properties) {
+        return new NacosDiscoveryIpResolver(inetIPv6Utils, inetUtils, properties);
     }
 
     @Bean
