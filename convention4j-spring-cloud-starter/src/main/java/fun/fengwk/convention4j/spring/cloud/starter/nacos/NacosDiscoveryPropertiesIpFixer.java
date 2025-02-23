@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.spring.cloud.starter.nacos;
 
 import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -21,10 +22,14 @@ public class NacosDiscoveryPropertiesIpFixer implements InstantiationAwareBeanPo
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof NacosDiscoveryProperties properties) {
-            // 预计算ip
-            String ip = nacosDiscoveryIpResolver.resolveIp(properties, properties.getMetadata());
-            properties.setIp(ip);
-            log.info("fix nacos ip successfully, ip: {}", ip);
+            if (StringUtils.isNotEmpty(properties.getIp())) {
+                log.info("user specified ip, ip: {}", properties.getIp());
+            } else {
+                // 预计算ip
+                String ip = nacosDiscoveryIpResolver.resolveIp(properties, properties.getMetadata());
+                properties.setIp(ip);
+                log.info("fix nacos ip successfully, ip: {}", ip);
+            }
         }
         return bean;
     }

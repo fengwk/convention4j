@@ -19,13 +19,6 @@ public class SnowflakeIdProperties {
      */
     private Long workerId;
 
-    /**
-     * 自动获取工人id策略：
-     * redis: redis自增。
-     * zk:    zk有序节点。
-     */
-    private String autoWorkIdStrategy;
-
     public Long getInitialTimestamp() {
         return initialTimestamp;
     }
@@ -40,14 +33,6 @@ public class SnowflakeIdProperties {
 
     public void setWorkerId(Long workerId) {
         this.workerId = workerId;
-    }
-
-    public String getAutoWorkIdStrategy() {
-        return autoWorkIdStrategy;
-    }
-
-    public void setAutoWorkIdStrategy(String autoWorkIdStrategy) {
-        this.autoWorkIdStrategy = autoWorkIdStrategy;
     }
 
 }
