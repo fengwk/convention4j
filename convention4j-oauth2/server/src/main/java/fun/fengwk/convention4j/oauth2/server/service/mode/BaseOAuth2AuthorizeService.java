@@ -70,7 +70,7 @@ public abstract class BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE>
             redirectUriBuilder = UriComponentsBuilder.fromUriString(redirectUri);
             if (StringUtils.isBlank(redirectUriBuilder.build().getScheme())) {
                 // 如果无法解析schema可能是因为redirectUri是编码过的，解码后重新构建
-                redirectUriBuilder = UriComponentsBuilder.fromUriString(UriUtils.decodeUriComponent(redirectUri));
+                redirectUriBuilder = UriComponentsBuilder.fromUriString(UriUtils.fullDecodeUriComponent(redirectUri));
             }
         } catch (IllegalArgumentException ex) {
             log.warn("Invalid redirectUri, redirectUri: {}", redirectUri);

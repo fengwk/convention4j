@@ -119,7 +119,7 @@ public interface OAuth2Client {
             return true;
         }
         UriComponents uri = UriComponentsBuilder.fromUriString(
-            UriUtils.decodeUriComponent(redirectUri)).build();
+                UriUtils.fullDecodeUriComponent(redirectUri)).build();
         String scheme = uri.getScheme();
         String userInfo = uri.getUserInfo();
         String host = uri.getHost();
@@ -128,8 +128,7 @@ public interface OAuth2Client {
         String fragment = uri.getFragment();
         for (String supportRedirectUri : getRedirectUris()) {
             try {
-                UriComponents supportUri = UriComponentsBuilder.fromUriString(
-                    UriUtils.decodeUriComponent(supportRedirectUri)).build();
+                UriComponents supportUri = UriComponentsBuilder.fromUriString(supportRedirectUri).build();
                 String supportScheme = supportUri.getScheme();
                 String supportUserInfo = supportUri.getUserInfo();
                 String supportHost = supportUri.getHost();
