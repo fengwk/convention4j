@@ -94,12 +94,14 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
     protected String getSsoId(Object context) {
         String ssoId;
         if (context instanceof SsoContext ssoContext) {
-            if (ssoContext.isSsoAuthenticate()) {
-                ssoId = ssoContext.getSsoId();
-            } else {
-                ssoId = generateSsoId();
-                ssoContext.setSsoId(ssoId);
-            }
+            ssoId = generateSsoId();
+            ssoContext.setSsoId(ssoId);
+//            if (ssoContext.isSsoAuthenticate()) {
+//                ssoId = ssoContext.getSsoId();
+//            } else {
+//                ssoId = generateSsoId();
+//                ssoContext.setSsoId(ssoId);
+//            }
         } else {
             ssoId = generateSsoId();
         }

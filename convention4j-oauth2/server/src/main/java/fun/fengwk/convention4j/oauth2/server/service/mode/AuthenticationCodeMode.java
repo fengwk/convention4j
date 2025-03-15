@@ -79,31 +79,36 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
             @Override
             protected OAuth2Token generateOAuth2Token(AuthenticationCodeTokenContext context, OAuth2Client client) {
                 AuthenticationCode authenticationCode = checkAndGetAuthenticationCode(context.getCode());
-                if (authenticationCode.isSsoAuthenticate()) {
-                    // 单点登陆的情况，直接返回单点登陆对应的令牌
-                    OAuth2Token oauth2Token = oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
-                    log.debug("Sso authenticate, ssoId: {}, oauth2Token: {}",
-                        authenticationCode.getSsoId(), oauth2Token);
-
-                    // 如果访问令牌已过期则刷新，确保返回的令牌是可用的
-                    if (oauth2Token.accessTokenExpired(client.getAccessTokenExpireSeconds())) {
-                        oauth2Token.refresh();
-                        if (!oauth2TokenRepository.updateById(oauth2Token, client.getAuthorizeExpireSeconds())) {
-                            log.warn("Refresh token failed, clientId: {}, refreshToken: {}",
-                                    client.getClientId(), oauth2Token.getRefreshToken());
-                            throw OAuth2ErrorCodes.REFRESH_TOKEN_FAILED.asThrowable();
-                        }
-                    }
-
-                    return oauth2Token;
-                } else {
-                    // 走正常的登陆流程
-                    checkRedirectUri(context.getRedirectUri(), authenticationCode);
-                    OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
+                checkRedirectUri(context.getRedirectUri(), authenticationCode);
+                OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
                         client, authenticationCode.getSsoId());
-                    log.debug("Normal authenticate, oauth2Token: {}", oauth2Token);
-                    return oauth2Token;
-                }
+                log.debug("Authenticate, oauth2Token: {}", oauth2Token);
+                return oauth2Token;
+//                if (authenticationCode.isSsoAuthenticate()) {
+//                    // 单点登陆的情况，直接返回单点登陆对应的令牌
+//                    OAuth2Token oauth2Token = oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
+//                    log.debug("Sso authenticate, ssoId: {}, oauth2Token: {}",
+//                        authenticationCode.getSsoId(), oauth2Token);
+//
+//                    // 如果访问令牌已过期则刷新，确保返回的令牌是可用的
+//                    if (oauth2Token.accessTokenExpired(client.getAccessTokenExpireSeconds())) {
+//                        oauth2Token.refresh();
+//                        if (!oauth2TokenRepository.updateById(oauth2Token, client.getAuthorizeExpireSeconds())) {
+//                            log.warn("Refresh token failed, clientId: {}, refreshToken: {}",
+//                                    client.getClientId(), oauth2Token.getRefreshToken());
+//                            throw OAuth2ErrorCodes.REFRESH_TOKEN_FAILED.asThrowable();
+//                        }
+//                    }
+//
+//                    return oauth2Token;
+//                } else {
+//                    // 走正常的登陆流程
+//                    checkRedirectUri(context.getRedirectUri(), authenticationCode);
+//                    OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
+//                        client, authenticationCode.getSsoId());
+//                    log.debug("Normal authenticate, oauth2Token: {}", oauth2Token);
+//                    return oauth2Token;
+//                }
             }
         };
     }

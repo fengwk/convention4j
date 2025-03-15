@@ -2,11 +2,12 @@ package fun.fengwk.convention4j.oauth2.server.controller;
 
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultAuthorizeContext;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultTokenContext;
-import fun.fengwk.convention4j.oauth2.server.properties.OAuth2ServerProperties;
 import fun.fengwk.convention4j.oauth2.server.service.OAuth2Service;
 import fun.fengwk.convention4j.oauth2.server.util.SsoCookieUtils;
+import fun.fengwk.convention4j.oauth2.server.util.SsoIdInfo;
 import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
 import fun.fengwk.convention4j.oauth2.share.model.OAuth2TokenDTO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +25,6 @@ import java.util.Map;
 @AllArgsConstructor
 public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
 
-    protected final OAuth2ServerProperties oauth2ServerProperties;
     protected final OAuth2Service<SUBJECT, CERTIFICATE> oauth2Service;
 
     /**
@@ -38,21 +38,25 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         String redirectUri,
         String scope,
         String state,
-        HttpServletRequest request) {
+        HttpServletRequest request,
+        HttpServletResponse response) {
         DefaultAuthorizeContext<CERTIFICATE> context = new DefaultAuthorizeContext<>();
         context.setResponseType(responseType);
         context.setClientId(clientId);
         context.setRedirectUri(redirectUri);
         context.setScope(scope);
         context.setState(state);
-        Map<String, String> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
-        context.setSsoId(ssoIdMap.get(clientId));
+        Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
+        SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
+        context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
         try {
             URI uri = oauth2Service.authorize(context);
             log.debug("SSO authorize success, context: {}, uri: {}", context, uri);
+            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
             log.debug("SSO authorize failed, context: {}", context, ex);
+            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
             // 如果sso认证失败则返回空结果
             return Results.ok();
         }
@@ -79,16 +83,17 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setScope(scope);
         context.setState(state);
         context.setCertificate(certificate);
-        Map<String, String> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
-        context.setSsoId(ssoIdMap.get(clientId));
+        Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
+        SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
+        context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
         try {
             URI uri = oauth2Service.authorize(context);
             log.debug("Authorize success, context: {}, uri: {}", context, uri);
-            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
+            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
             log.debug("Authorize failed, context: {}", context);
-            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
+            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
             throw ex;
         }
     }
@@ -120,16 +125,17 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setSubjectId(subjectId);
         context.setRefreshToken(refreshToken);
         context.setCertificate(certificate);
-        Map<String, String> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
-        context.setSsoId(ssoIdMap.get(clientId));
+        Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
+        SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
+        context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
         try {
             OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(context);
             log.debug("Token success, context: {}, oauth2TokenDTO: {}", context, oauth2TokenDTO);
-            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
+            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
             return Results.created(oauth2TokenDTO);
         } catch (Exception ex) {
             log.debug("Token failed, context: {}", context);
-            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap, oauth2ServerProperties.getSsoStoreSeconds());
+            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
             throw ex;
         }
     }

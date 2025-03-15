@@ -47,4 +47,12 @@ public interface OAuth2Service<SUBJECT, CERTIFICATE> {
      */
     void revokeToken(String accessToken);
 
+    /**
+     * 获取sso存储时间
+     *
+     * @param clientId 客户端id
+     * @return 过期时间/秒
+     */
+    int getSsoStoreSeconds(String clientId);
+
 }

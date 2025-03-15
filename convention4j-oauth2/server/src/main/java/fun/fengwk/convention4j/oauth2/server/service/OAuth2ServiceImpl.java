@@ -108,4 +108,10 @@ public class OAuth2ServiceImpl<SUBJECT, CERTIFICATE> implements OAuth2Service<SU
         oauth2TokenRepository.removeByAccessToken(accessToken);
     }
 
+    @Override
+    public int getSsoStoreSeconds(String clientId) {
+        OAuth2Client client = oauth2ClientManager.getClient(clientId);
+        return client == null ? 0 : client.getAuthorizeExpireSeconds();
+    }
+
 }
