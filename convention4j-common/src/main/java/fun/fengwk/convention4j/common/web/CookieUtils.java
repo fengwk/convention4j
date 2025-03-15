@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.common.web;
 
-import fun.fengwk.convention4j.common.lang.StringUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,8 +12,6 @@ import java.util.Objects;
  * @author fengwk
  */
 public class CookieUtils {
-
-    private static final String HOST = "Host";
 
     private CookieUtils() {
     }
@@ -133,7 +130,7 @@ public class CookieUtils {
     }
 
     /**
-     * 默认的cookie设置方法，将cookie域名与当前请求保持一致，路径设置为/，且httponly，在大多数情况下适用
+     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
      *
      * @param request  request
      * @param response response
@@ -143,11 +140,7 @@ public class CookieUtils {
      */
     public static void setCookie(HttpServletRequest request, HttpServletResponse response,
                                  String name, String value, Integer maxAge) {
-        String host = request.getHeader(HOST);
         Cookie cookie = new Cookie(name, value);
-        if (StringUtils.isNotEmpty(host)) {
-            cookie.setDomain(host);
-        }
         cookie.setHttpOnly(true);
         cookie.setPath("/"); // 必须设置path，否则默认取的是请求地址的path
         if (maxAge != null) {

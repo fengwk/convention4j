@@ -1,10 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.util;
 
-import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.util.ListUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -89,7 +87,7 @@ public class ReactiveCookieUtils {
     }
 
     /**
-     * 默认的cookie设置方法，将cookie域名与当前请求保持一致，路径设置为/，且httponly，在大多数情况下适用
+     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
      *
      * @param request  request
      * @param response response
@@ -103,10 +101,6 @@ public class ReactiveCookieUtils {
             .from(name, value)
             .httpOnly(true)
             .path("/"); // 必须设置path，否则默认取的是请求地址的path
-        String host = request.getHeaders().getFirst(HttpHeaders.HOST);
-        if (StringUtils.isNotEmpty(host)) {
-            respCookieBuilder.domain(host);
-        }
         if (maxAge != null) {
             respCookieBuilder.maxAge(maxAge);
         }
@@ -143,7 +137,7 @@ public class ReactiveCookieUtils {
     }
 
     /**
-     * 默认的cookie设置方法，将cookie域名与当前请求保持一致，路径设置为/，且httponly，在大多数情况下适用
+     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
      *
      * @param request         request
      * @param responseBuilder responseBuilder
@@ -157,10 +151,6 @@ public class ReactiveCookieUtils {
             .from(name, value)
             .httpOnly(true)
             .path("/"); // 必须设置path，否则默认取的是请求地址的path
-        String host = request.headers().firstHeader(HttpHeaders.HOST);
-        if (StringUtils.isNotEmpty(host)) {
-            respCookieBuilder.domain(host);
-        }
         if (maxAge != null) {
             respCookieBuilder.maxAge(maxAge);
         }

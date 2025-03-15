@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.oauth2.server.util;
 import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.reflect.TypeToken;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.web.CookieUtils;
 import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.model.context.SsoContext;
@@ -30,7 +31,8 @@ public class SsoCookieUtils {
         if (ssoIdMapJson != null) {
             ssoIdMapJson = UriUtils.decodeUriComponent(ssoIdMapJson);
             try {
-                return JsonUtils.fromJson(ssoIdMapJson, new TypeToken<>() {});
+                Map<String, SsoIdInfo> ssoIdMap = JsonUtils.fromJson(ssoIdMapJson, new TypeToken<>() {});
+                return NullSafe.of(ssoIdMap);
             } catch (Exception ex) {
                 log.error("parse ssoIdMap error, ssoIdMapJson: {}", ssoIdMapJson, ex);
             }
