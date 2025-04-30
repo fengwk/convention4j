@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.common.httpclient;
 
 import fun.fengwk.convention4j.common.util.ListUtils;
 import lombok.Data;
-import org.apache.rocketmq.shaded.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,18 +27,25 @@ public class HttpSendResult {
     }
 
     public List<String> getHeaders(String name) {
+        if (name == null) {
+            return Collections.emptyList();
+        }
+
         if (headers == null) {
             return Collections.emptyList();
         }
+
         List<String> list = headers.get(name);
         if (list != null) {
             return list;
         }
+
         for (String key : headers.keySet()) {
-            if (StringUtils.equalsIgnoreCase(name, key)) {
+            if (name.equalsIgnoreCase(key)) {
                 return headers.get(key);
             }
         }
+
         return Collections.emptyList();
     }
 

@@ -8,7 +8,7 @@ import java.time.Duration;
  */
 public class HttpClientFactory {
 
-    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
     private static final ConfigurableListableProxies DEFAULT_LISTABLE_PROXIES = new DefaultConfigurableListableProxies();
     private static final HttpClient DEFAULT_HTTP_CLIENT = newDefaultHttpClient();
