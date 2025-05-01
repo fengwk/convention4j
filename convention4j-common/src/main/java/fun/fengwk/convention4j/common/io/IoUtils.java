@@ -20,13 +20,25 @@ public class IoUtils {
     }
 
     public static String readString(InputStream input, Charset charset) throws IOException {
+        try (ByteArrayOutputStream output = readByteArrayOutputStream(input)) {
+            return output.toString(charset);
+        }
+    }
+
+    public static byte[] readBytes(InputStream input) throws IOException {
+        try (ByteArrayOutputStream output = readByteArrayOutputStream(input)) {
+            return output.toByteArray();
+        }
+    }
+
+    private static ByteArrayOutputStream readByteArrayOutputStream(InputStream input) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buf = new byte[BYTE_BUFFER_SIZE];
         int len;
         while ((len = input.read(buf)) != -1) {
             out.write(buf, 0, len);
         }
-        return out.toString(charset);
+        return out;
     }
 
 }

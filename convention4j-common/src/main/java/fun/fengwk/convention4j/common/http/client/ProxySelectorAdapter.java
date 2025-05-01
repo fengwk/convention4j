@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.common.httpclient;
+package fun.fengwk.convention4j.common.http.client;
 
 import lombok.extern.slf4j.Slf4j;
 
