@@ -46,7 +46,7 @@ public class FragmentParser extends AbstractExpressionParser<InterpretContext> {
     }
 
     @Override
-    protected String doParse(String expression, InterpretContext ctx) throws ExpressionException {
+    protected String doParse(String expression, InterpretContext ctx, int lo, int hi) throws ExpressionException {
         Object val;
         try {
             val = Ognl.getValue(expression, ctx.getVarMap());

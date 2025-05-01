@@ -53,13 +53,10 @@ public abstract class AbstractExpressionParser<C> {
                 }
 
                 String expression = sbStack.pop().toString();
+                int lo = stack.pop();
+                int hi = i;
 
-                if (stack.isEmpty()) {
-                    throw new IllegalArgumentException(
-                            String.format("Expression error, cannot found open for close in pos %d", i));
-                }
-
-                String parsed = doParse(expression, ctx);
+                String parsed = doParse(expression, ctx, lo, hi);
                 StringBuilder peek = sbStack.peek();
                 assert peek != null;
                 peek.append(parsed);
@@ -99,10 +96,12 @@ public abstract class AbstractExpressionParser<C> {
     /**
      * 处理表达式解析，返回解析后的结果。
      *
-     * @param expression
-     * @param ctx
-     * @return
+     * @param expression 表达式，注意可能存在多层嵌套解析
+     * @param ctx 上下文
+     * @param lo 表示原表达式开始位置索引
+     * @param hi 表示原表达式结束位置索引+1
+     * @return 表达式解析后的字符串
      */
-    protected abstract String doParse(String expression, C ctx) throws ExpressionException;
+    protected abstract String doParse(String expression, C ctx, int lo, int hi) throws ExpressionException;
 
 }

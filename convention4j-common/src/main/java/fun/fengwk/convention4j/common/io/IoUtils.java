@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.common.io;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -20,13 +21,29 @@ public class IoUtils {
     }
 
     public static String readString(InputStream input, Charset charset) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ByteArrayOutputStream output = readByteArrayOutputStream(input)) {
+            return output.toString(charset);
+        }
+    }
+
+    public static byte[] readBytes(InputStream input) throws IOException {
+        try (ByteArrayOutputStream output = readByteArrayOutputStream(input)) {
+            return output.toByteArray();
+        }
+    }
+
+    public static void copy(InputStream input, OutputStream output) throws IOException {
         byte[] buf = new byte[BYTE_BUFFER_SIZE];
         int len;
         while ((len = input.read(buf)) != -1) {
-            out.write(buf, 0, len);
+            output.write(buf, 0, len);
         }
-        return out.toString(charset);
+    }
+
+    private static ByteArrayOutputStream readByteArrayOutputStream(InputStream input) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        copy(input, output);
+        return output;
     }
 
 }
