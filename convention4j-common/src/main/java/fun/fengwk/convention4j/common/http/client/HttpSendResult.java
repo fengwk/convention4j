@@ -23,6 +23,8 @@ public class HttpSendResult implements AutoCloseable {
     private InputStream body;
     private Map<String, List<String>> headers;
     private Throwable error;
+    private String bodyString;
+    private byte[] bodyBytes;
 
     public boolean is2xx() {
         return HttpUtils.is2xx(statusCode);
@@ -73,17 +75,23 @@ public class HttpSendResult implements AutoCloseable {
     }
 
     public String parseBodyString() throws IOException {
-        if (body == null) {
-            return null;
+        if (bodyString == null) {
+            if (body == null) {
+                return null;
+            }
+            bodyString = IoUtils.readString(body, charset());
         }
-        return IoUtils.readString(body, charset());
+        return bodyString;
     }
 
     public byte[] parseBodyBytes() throws IOException {
-        if (body == null) {
-            return null;
+        if (bodyBytes == null) {
+            if (body == null) {
+                return null;
+            }
+            bodyBytes = IoUtils.readBytes(body);
         }
-        return IoUtils.readBytes(body);
+        return bodyBytes;
     }
 
     /**
