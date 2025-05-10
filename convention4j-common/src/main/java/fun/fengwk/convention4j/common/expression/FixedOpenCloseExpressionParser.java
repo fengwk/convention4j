@@ -36,4 +36,12 @@ public abstract class FixedOpenCloseExpressionParser<C> extends AbstractExpressi
         return idx + close.length();
     }
 
+    public String getOpen() {
+        return open;
+    }
+
+    public String getClose() {
+        return close;
+    }
+
 }

@@ -43,7 +43,7 @@ public class OgnlExpressionParser<C> extends FixedOpenCloseExpressionParser<C> {
     }
 
     @Override
-    protected String doParse(String expression, C ctx) throws ExpressionException {
+    protected String doParse(String expression, C ctx, int lo, int hi) throws ExpressionException {
         try {
             return Objects.toString(Ognl.getValue(expression, ctx), nullValue);
         } catch (OgnlException e) {
