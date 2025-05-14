@@ -15,6 +15,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -185,7 +186,6 @@ public class HttpClientUtilsTest {
         }
     }
 
-
     @Test
     public void testAsyncWithLine() throws IOException, ExecutionException, InterruptedException {
         doTestAsyncWithLine(HttpRequest.newBuilder()
@@ -228,8 +228,6 @@ public class HttpClientUtilsTest {
 
                 @Override
                 public void onReceive(String line) {
-                    System.out.println("===============================");
-                    System.out.println(line);
                     lines.add(line);
                 }
 
@@ -247,7 +245,6 @@ public class HttpClientUtilsTest {
 
         HttpSendResult sendResult = future.get();
         Assertions.assertFalse(sendResult.hasError());
-        System.out.println(sendResult.parseBodyString());
 
         String ss = sendResult.parseBodyString();
         List<String> lines2 = new ArrayList<>();
@@ -256,12 +253,31 @@ public class HttpClientUtilsTest {
             lines2.add(scanner.nextLine());
         }
         scanner.close();
+
+        diffLines(lines, lines2);
         Assertions.assertEquals(lines, lines2);
 
         try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
             Assertions.assertTrue(sendResult2.is2xx());
             Assertions.assertFalse(sendResult2.hasError());
             Assertions.assertEquals(sendResult.parseBodyString(), sendResult2.parseBodyString());
+        }
+    }
+
+    private void diffLines(List<String> lines1, List<String> lines2) {
+        int i = 0;
+        while (i < lines1.size() || i < lines2.size()) {
+            String s1 = lines1.get(i);
+            String s2 = lines2.get(i);
+            if (!Objects.equals(s1, s2)) {
+                System.out.println("===================================");
+                System.out.println(s1);
+                System.out.println("===================================");
+                System.out.println(s2);
+                System.out.println("===================================");
+                break;
+            }
+            i++;
         }
     }
 

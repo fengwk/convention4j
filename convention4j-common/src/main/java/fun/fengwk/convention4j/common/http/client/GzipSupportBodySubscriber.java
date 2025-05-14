@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +27,7 @@ public class GzipSupportBodySubscriber
     private final Flow.Subscriber<? super List<ByteBuffer>> userSubscriber;
     private final NonblockingGzipDecoder gzipDecoder;
     private final CompletableFuture<List<ByteBuffer>> resultFuture = new CompletableFuture<>();
-    private final List<ByteBuffer> result = new ArrayList<>();
+    private final List<ByteBuffer> result = Collections.synchronizedList(new ArrayList<>());
 
     public GzipSupportBodySubscriber(HttpResponse.ResponseInfo responseInfo,
             Flow.Subscriber<? super List<ByteBuffer>> userSubscriber) {
@@ -63,34 +64,28 @@ public class GzipSupportBodySubscriber
                 }
             }
         }
-        synchronized (result) {
-            for (ByteBuffer bb : processedList) {
-                result.add(bb.duplicate());
-            }
+
+        for (ByteBuffer bb : processedList) {
+            result.add(copy(bb));
         }
+
         userSubscriber.onNext(processedList);
     }
 
     @Override
-    protected void onComplete0() {
+    protected void onComplete0() throws IOException {
         if (gzipDecoder != null) {
             synchronized (gzipDecoder) {
-                try {
-                    if (!gzipDecoder.isFinished()) {
-                        IOException ex = new IOException("gzip data is incomplete");
-                        userSubscriber.onError(ex);
-                        resultFuture.completeExceptionally(ex);
-                        return;
-                    }
-                } finally {
-                    gzipDecoder.destroy();
+                if (!gzipDecoder.isFinished()) {
+                    throw new IOException("gzip data is incomplete");
                 }
+                gzipDecoder.destroy();
             }
         }
-        synchronized (result) {
-            resultFuture.complete(result);
-        }
+
         userSubscriber.onComplete();
+
+        resultFuture.complete(result);
     }
 
     @Override
@@ -100,8 +95,18 @@ public class GzipSupportBodySubscriber
                 gzipDecoder.destroy();
             }
         }
-        resultFuture.completeExceptionally(throwable);
+
         userSubscriber.onError(throwable);
+
+        resultFuture.completeExceptionally(throwable);
+    }
+
+    private ByteBuffer copy(ByteBuffer bb) {
+        ByteBuffer source = bb.duplicate();
+        ByteBuffer copy = ByteBuffer.allocate(source.remaining());
+        copy.put(source);
+        copy.flip();
+        return copy;
     }
 
 }

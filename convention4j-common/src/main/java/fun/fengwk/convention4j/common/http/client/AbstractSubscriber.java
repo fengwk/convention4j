@@ -1,9 +1,9 @@
 package fun.fengwk.convention4j.common.http.client;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author fengwk
@@ -13,13 +13,13 @@ public abstract class AbstractSubscriber<T> implements Flow.Subscriber<T> {
 
     private volatile boolean done;
 
-    protected abstract void onSubscribe0(Subscription subscription);
+    protected abstract void onSubscribe0(Subscription subscription) throws Exception;
 
-    protected abstract void onNext0(T item);
+    protected abstract void onNext0(T item) throws Exception;
 
-    protected abstract void onComplete0();
+    protected abstract void onComplete0() throws Exception;
 
-    protected abstract void onError0(Throwable throwable);
+    protected abstract void onError0(Throwable throwable) throws Exception;
 
     @Override
     public void onSubscribe(Subscription subscription) {

@@ -19,4 +19,13 @@ public class AccessibleByteArrayOutputStream extends ByteArrayOutputStream {
         return buf[index];
     }
 
+    /**
+     * 获取底层字节数组
+     *
+     * @return 字节数组
+     */
+    public byte[] getBuf() {
+        return buf;
+    }
+
 }
