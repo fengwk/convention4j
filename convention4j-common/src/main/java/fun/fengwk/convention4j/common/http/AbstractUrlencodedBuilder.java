@@ -19,6 +19,10 @@ public abstract class AbstractUrlencodedBuilder {
         parameters.add(Pair.of(name, value));
     }
 
+    public String build() {
+        return build(HttpUtils.DEFAULT_CHARSET);
+    }
+
     public String build(Charset charset) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < parameters.size(); i++) {
