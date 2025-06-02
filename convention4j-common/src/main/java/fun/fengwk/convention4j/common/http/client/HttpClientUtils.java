@@ -52,7 +52,19 @@ public class HttpClientUtils {
     }
 
     /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求
+     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求，并使用SSE方式监听
+     *
+     * @param httpRequest {@link HttpRequest}
+     * @param sseListener 行字符串监听器
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<HttpSendResult> sendAsyncWithSSEListener(
+        HttpRequest httpRequest, SSEListener sseListener) {
+        return sendAsyncWithLineListener(HttpClientFactory.getDefaultHttpClient(), httpRequest, new SSEListenerAdapter(sseListener));
+    }
+
+    /**
+     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求，并逐行监听
      *
      * @param httpRequest {@link HttpRequest}
      * @param lineListener 行字符串监听器
@@ -101,7 +113,20 @@ public class HttpClientUtils {
     }
 
     /**
-     * 异步发送http请求
+     * 异步发送http请求，并使用SSE方式监听
+     *
+     * @param httpClient {@link HttpClient}
+     * @param httpRequest {@link HttpRequest}
+     * @param sseListener 行字符串监听器
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<HttpSendResult> sendAsyncWithSSEListener(
+        HttpClient httpClient, HttpRequest httpRequest, SSEListener sseListener) {
+        return sendAsyncWithLineListener(httpClient, httpRequest, new SSEListenerAdapter(sseListener));
+    }
+
+    /**
+     * 异步发送http请求，并逐行监听
      *
      * @param httpClient {@link HttpClient}
      * @param httpRequest {@link HttpRequest}
@@ -237,11 +262,7 @@ public class HttpClientUtils {
             HttpSendResult redirectSendResult = doSend(httpClient, httpRequest);
 
             // 关闭旧的结果
-            try {
-                sendResult.close();
-            } catch (IOException ex) {
-                log.error("close http send result error", ex);
-            }
+            sendResult.close();
 
             // 使用新的结果代替
             sendResult = redirectSendResult;

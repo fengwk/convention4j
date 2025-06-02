@@ -2,8 +2,8 @@ package fun.fengwk.convention4j.common.lang;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * 
@@ -69,7 +69,8 @@ public class ClassUtils {
      * @return 首个找到的注解。
      * @param <A> 注解。
      */
-    public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement, Class<A> annotationClass, boolean includeAncestors) {
+    public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement,
+                                                          Class<A> annotationClass, boolean includeAncestors) {
         if (includeAncestors) {
             return findAnnotationIncludeAncestors(annotatedElement.getAnnotations(), annotationClass);
         } else {
@@ -99,8 +100,8 @@ public class ClassUtils {
     /**
      * 如果是基本类型则进行装包。
      * 
-     * @param clazz
-     * @return
+     * @param clazz clazz
+     * @return 解包后的类型
      */
     public static Class<?> boxedIfPrimitiveType(Class<?> clazz) {
         Class<?> packClass = BOXED_MAP.get(clazz);
@@ -109,5 +110,28 @@ public class ClassUtils {
         }
         return clazz;
     }
-    
+
+    /**
+     * 获取所有定义的字段
+     *
+     * @param clazz clazz
+     * @param includeAncestors 是否要包含父类中继承的字段
+     * @return 所有字段
+     */
+    public static Set<Field> getAllDeclaredFields(Class<?> clazz, boolean includeAncestors) {
+        Field[] declaredFields = clazz.getDeclaredFields();
+        Set<Field> allDeclaredFields = new HashSet<>(Arrays.asList(declaredFields));
+        if (!includeAncestors) {
+            return allDeclaredFields;
+        }
+
+        clazz = clazz.getSuperclass();
+        while (clazz != null) {
+            declaredFields = clazz.getDeclaredFields();
+            allDeclaredFields.addAll(Arrays.asList(declaredFields));
+            clazz = clazz.getSuperclass();
+        }
+        return allDeclaredFields;
+    }
+
 }

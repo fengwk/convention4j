@@ -4,6 +4,7 @@ import fun.fengwk.convention4j.common.http.HttpUtils;
 import fun.fengwk.convention4j.common.io.IoUtils;
 import fun.fengwk.convention4j.common.util.ListUtils;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,7 @@ import java.util.Map;
 /**
  * @author fengwk
  */
+@Slf4j
 @Data
 public class HttpSendResult implements AutoCloseable {
 
@@ -72,6 +74,14 @@ public class HttpSendResult implements AutoCloseable {
         return ListUtils.tryGetFirst(headers);
     }
 
+    public String tryParseBodyString() {
+        try {
+            return parseBodyString();
+        } catch (IOException ignore) {
+            return null;
+        }
+    }
+
     public String parseBodyString() throws IOException {
         return parseBodyString(charset());
     }
@@ -82,6 +92,14 @@ public class HttpSendResult implements AutoCloseable {
             return null;
         }
         return new String(bodyBytes, charset);
+    }
+
+    public byte[] tryParseBodyBytes() {
+        try {
+            return parseBodyBytes();
+        } catch (IOException ignore) {
+            return null;
+        }
     }
 
     public byte[] parseBodyBytes() throws IOException {
@@ -108,9 +126,13 @@ public class HttpSendResult implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (body != null) {
-            body.close();
+            try {
+                body.close();
+            } catch (IOException ex) {
+                log.error("close body error", ex);
+            }
             body = null;
         }
     }

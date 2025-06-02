@@ -29,10 +29,11 @@ import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
  */
 public class HttpClientUtilsTest {
 
-    @Test
+//    @Test
     public void testSend() throws IOException {
+//        System.setProperty("javax.net.debug", "ssl,handshake");
         HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create("https://baidu.com"))
+            .uri(URI.create("https://baidu.com/"))
             .GET();
         try (HttpSendResult sendResult = HttpClientUtils.send(httpRequestBuilder.build())) {
             System.out.println(sendResult);
@@ -46,6 +47,77 @@ public class HttpClientUtilsTest {
             Assertions.assertTrue(sendResult.is2xx());
             Assertions.assertFalse(sendResult.hasError());
         }
+    }
+
+//    @Test
+    public void testAsyncWithSSE() throws IOException, ExecutionException, InterruptedException {
+        HttpRequest req = HttpRequest.newBuilder()
+            .uri(URI.create("https://api.deepseek.com/chat/completions"))
+            .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + System.getenv("OPENAI_API_KEY"))
+            .POST(HttpRequest.BodyPublishers.ofString(
+                 "{\n" +
+                    "  \"model\": \"deepseek-chat\",\n" +
+                    "  \"messages\": [\n" +
+                    "    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+                    "    {\"role\": \"user\", \"content\": \"Hello!\"}\n" +
+                    "  ],\n" +
+                    "  \"stream\": true\n" +
+                    "}", StandardCharsets.UTF_8))
+            .build();
+        CompletableFuture<HttpSendResult> future = HttpClientUtils.sendAsyncWithSSEListener(
+            req, new SSEListener() {
+                @Override
+                public void onInit(HttpResponse.ResponseInfo responseInfo) {
+                    System.out.println("[SSE] init");
+                }
+
+                @Override
+                public void onReceiveData(String data) {
+                    System.out.println("[SSE] data:" + data);
+                }
+
+                @Override
+                public void onReceiveEvent(String event) {
+                    System.out.println("[SSE] event:" + event);
+                }
+
+                @Override
+                public void onReceiveId(String id) {
+                    System.out.println("[SSE] id:" + id);
+                }
+
+                @Override
+                public void onReceiveRetry(String retry) {
+                    System.out.println("[SSE] retry:" + retry);
+                }
+
+                @Override
+                public void onReceiveComment(String comment) {
+                    System.out.println("[SSE] :" + comment);
+                }
+
+                @Override
+                public void onReceiveOther(String other) {
+                    System.out.println("[SSE] other:" + other);
+                }
+
+                @Override
+                public void onComplete() {
+                    System.out.println("[SSE] complete");
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    System.out.println("[SSE] error" + throwable);
+                }
+            });
+        HttpSendResult result = future.get();
+        Assertions.assertTrue(result.is2xx());
+        Assertions.assertFalse(result.hasError());
+        String body = result.parseBodyString();
+        System.out.println("SSE Body=====================================");
+        System.out.println(body);
     }
 
     @Test

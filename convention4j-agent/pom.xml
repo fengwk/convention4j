@@ -7,10 +7,12 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.38</version>
+        <version>1.1.39</version>
     </parent>
 
     <artifactId>convention4j-agent</artifactId>
+
+    <name>${project.artifactId}</name>
 
     <dependencies>
         <dependency>
