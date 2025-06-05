@@ -8,7 +8,6 @@ import fun.fengwk.convention4j.ai.tool.annotation.ToolFunction;
 import fun.fengwk.convention4j.ai.tool.annotation.ToolFunctionParam;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Collections;
@@ -20,7 +19,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class ChatClientTest {
 
-    @Test
+//    @Test
     public void testChatCompletions() {
         ChatClient chatClient = buildHttpChatClient();
 
@@ -35,7 +34,7 @@ public class ChatClientTest {
         System.out.println(content);
     }
 
-    @Test
+//    @Test
     public void testStreamChatCompletions() throws ExecutionException, InterruptedException {
         ChatClient chatClient = buildHttpChatClient();
 
@@ -63,7 +62,7 @@ public class ChatClientTest {
         System.out.println(content);
     }
 
-    @Test
+//    @Test
     public void testChatCompletionsWithTool() {
         ToolFunctionHandlersView registryView = buildToolRegistry();
         ChatClient chatClient = buildHttpChatClient();
@@ -80,7 +79,7 @@ public class ChatClientTest {
         System.out.println(content);
     }
 
-    @Test
+//    @Test
     public void testStreamChatCompletionsWithTool() throws ExecutionException, InterruptedException {
         ToolFunctionHandlersView registryView = buildToolRegistry();
         ChatClient chatClient = buildHttpChatClient();
