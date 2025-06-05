@@ -73,33 +73,18 @@ public class HttpClientUtilsTest {
                 }
 
                 @Override
-                public void onReceiveData(String data) {
-                    System.out.println("[SSE] data:" + data);
+                public void onReceive(String line) {
+                    System.out.println("[SSE] line: " + line);
                 }
 
                 @Override
-                public void onReceiveEvent(String event) {
-                    System.out.println("[SSE] event:" + event);
-                }
-
-                @Override
-                public void onReceiveId(String id) {
-                    System.out.println("[SSE] id:" + id);
-                }
-
-                @Override
-                public void onReceiveRetry(String retry) {
-                    System.out.println("[SSE] retry:" + retry);
+                public void onReceiveEvent(SSEEvent sseEvent) {
+                    System.out.println("[SSE] sseEvent: " + sseEvent);
                 }
 
                 @Override
                 public void onReceiveComment(String comment) {
-                    System.out.println("[SSE] :" + comment);
-                }
-
-                @Override
-                public void onReceiveOther(String other) {
-                    System.out.println("[SSE] other:" + other);
+                    System.out.println("[SSE] comment: " + comment);
                 }
 
                 @Override

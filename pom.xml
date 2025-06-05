@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.39</version>
+    <version>1.1.40</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -34,6 +34,7 @@
     <modules>
         <module>convention4j-api</module>
         <module>convention4j-common</module>
+        <module>convention4j-ai</module>
         <module>convention4j-agent</module>
         <module>convention4j-tracer</module>
         <module>convention4j-spring-boot-starter-test</module>
@@ -52,7 +53,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.39</convention4j.version>
+        <convention4j.version>1.1.40</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.2.6</spring-boot-dependencies.version>
@@ -95,6 +96,11 @@
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-common</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-ai</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>

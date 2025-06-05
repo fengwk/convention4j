@@ -3,3 +3,4 @@ fun.fengwk.convention4j.springboot.starter.web.result.WebExceptionResultHandlerA
 fun.fengwk.convention4j.springboot.starter.web.context.WebContextAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.web.context.WebContextInterceptorAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.web.tracer.TracerWebAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.web.converter.WebMvcMessageConverterAutoConfiguration

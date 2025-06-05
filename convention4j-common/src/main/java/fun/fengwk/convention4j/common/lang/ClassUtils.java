@@ -3,14 +3,14 @@ package fun.fengwk.convention4j.common.lang;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * 
  * @author fengwk
  */
 public class ClassUtils {
-    
+
     /**
      * 基本类型装包映射。
      */
@@ -28,20 +28,20 @@ public class ClassUtils {
         boxedMap.put(boolean.class, Boolean.class);
         BOXED_MAP = boxedMap;
     }
-    
-    private ClassUtils() {}
-    
+
+    private ClassUtils() {
+    }
+
     /**
      * copy from spring
-     * 
+     *
      * @return
      */
     public static ClassLoader getDefaultClassLoader() {
         ClassLoader cl = null;
         try {
             cl = Thread.currentThread().getContextClassLoader();
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             // Cannot access thread context ClassLoader - falling back...
         }
         if (cl == null) {
@@ -51,8 +51,7 @@ public class ClassUtils {
                 // getClassLoader() returning null indicates the bootstrap ClassLoader
                 try {
                     cl = ClassLoader.getSystemClassLoader();
-                }
-                catch (Throwable ex) {
+                } catch (Throwable ex) {
                     // Cannot access system ClassLoader - oh well, maybe the caller can live with null...
                 }
             }
@@ -61,45 +60,57 @@ public class ClassUtils {
     }
 
     /**
+     * 在被注解的元素上查找目标注解（包含继承的注解）
+     *
+     * @param annotatedElement 被注解标记的元素。
+     * @param annotationClass  注解的Class。
+     * @param <A>              注解。
+     * @return 首个找到的注解。
+     */
+    public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement,
+                                                          Class<A> annotationClass) {
+        return findAnnotation(annotatedElement, annotationClass, true);
+    }
+
+    /**
      * 在被注解的元素上查找目标注解。
      *
      * @param annotatedElement 被注解标记的元素。
-     * @param annotationClass 注解的Class。
+     * @param annotationClass  注解的Class。
      * @param includeAncestors 是否需要向注解的注解标记寻找，可以实现类似注解的继承关系功能。
+     * @param <A>              注解。
      * @return 首个找到的注解。
-     * @param <A> 注解。
      */
     public static <A extends Annotation> A findAnnotation(AnnotatedElement annotatedElement,
                                                           Class<A> annotationClass, boolean includeAncestors) {
         if (includeAncestors) {
-            return findAnnotationIncludeAncestors(annotatedElement.getAnnotations(), annotationClass);
+            return doFindAnnotation(annotatedElement, annotationClass, new HashSet<>());
         } else {
             return annotatedElement.getAnnotation(annotationClass);
         }
     }
 
-    private static <A extends Annotation> A findAnnotationIncludeAncestors(Annotation[] annotations, Class<A> annotationClass) {
+    private static <A extends Annotation> A doFindAnnotation(AnnotatedElement annotatedElement,
+                                                             Class<A> annotationType,
+                                                             Set<Class<? extends Annotation>> visited) {
+        Annotation[] annotations = annotatedElement.getDeclaredAnnotations();
         for (Annotation annotation : annotations) {
-            if (annotation.annotationType() == annotationClass) {
-                @SuppressWarnings("unchecked")
-                A found = (A) annotation;
-                return found;
+            if (visited.add(annotation.annotationType())) {
+                if (annotation.annotationType() == annotationType) {
+                    return annotationType.cast(annotation);
+                }
+                A superAnno = doFindAnnotation(annotation.annotationType(), annotationType, visited);
+                if (superAnno != null) {
+                    return superAnno;
+                }
             }
         }
-        
-        for (Annotation annotation : annotations) {
-            A found = findAnnotationIncludeAncestors(annotation.annotationType().getAnnotations(), annotationClass);
-            if (found != null) {
-                return found;
-            }
-        }
-        
         return null;
     }
-    
+
     /**
      * 如果是基本类型则进行装包。
-     * 
+     *
      * @param clazz clazz
      * @return 解包后的类型
      */
@@ -112,9 +123,19 @@ public class ClassUtils {
     }
 
     /**
-     * 获取所有定义的字段
+     * 获取所有定义的字段（包含父类中继承的字段）
      *
      * @param clazz clazz
+     * @return 所有字段
+     */
+    public static Set<Field> getAllDeclaredFields(Class<?> clazz) {
+        return getAllDeclaredFields(clazz, true);
+    }
+
+    /**
+     * 获取所有定义的字段
+     *
+     * @param clazz            clazz
      * @param includeAncestors 是否要包含父类中继承的字段
      * @return 所有字段
      */
@@ -132,6 +153,39 @@ public class ClassUtils {
             clazz = clazz.getSuperclass();
         }
         return allDeclaredFields;
+    }
+
+    /**
+     * 获取所有定义的方法（包含父类中继承的方法）
+     *
+     * @param clazz clazz
+     * @return 所有方法
+     */
+    public static Set<Method> getAllDeclaredMethods(Class<?> clazz) {
+        return getAllDeclaredMethods(clazz, true);
+    }
+
+    /**
+     * 获取所有定义的方法
+     *
+     * @param clazz            clazz
+     * @param includeAncestors 是否要包含父类中继承的方法
+     * @return 所有方法
+     */
+    public static Set<Method> getAllDeclaredMethods(Class<?> clazz, boolean includeAncestors) {
+        Method[] declaredFields = clazz.getDeclaredMethods();
+        Set<Method> allDeclaredMethods = new HashSet<>(Arrays.asList(declaredFields));
+        if (!includeAncestors) {
+            return allDeclaredMethods;
+        }
+
+        clazz = clazz.getSuperclass();
+        while (clazz != null) {
+            declaredFields = clazz.getDeclaredMethods();
+            allDeclaredMethods.addAll(Arrays.asList(declaredFields));
+            clazz = clazz.getSuperclass();
+        }
+        return allDeclaredMethods;
     }
 
 }
