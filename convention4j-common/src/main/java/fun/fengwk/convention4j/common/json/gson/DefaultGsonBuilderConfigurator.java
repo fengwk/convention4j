@@ -2,7 +2,6 @@ package fun.fengwk.convention4j.common.json.gson;
 
 import com.google.auto.service.AutoService;
 import com.google.gson.GsonBuilder;
-import com.google.gson.internal.bind.DateTypeAdapter;
 import fun.fengwk.convention4j.api.page.CursorPage;
 import fun.fengwk.convention4j.api.page.Page;
 import fun.fengwk.convention4j.api.result.Result;

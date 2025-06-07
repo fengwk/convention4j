@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.springframework.boot.web.context.WebServerGracefulShutdownLifecycle;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.Lifecycle;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.*;

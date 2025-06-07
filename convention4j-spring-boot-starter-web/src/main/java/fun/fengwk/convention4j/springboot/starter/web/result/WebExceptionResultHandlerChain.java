@@ -1,6 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.web.result;
 
-import fun.fengwk.convention4j.api.code.*;
+import fun.fengwk.convention4j.api.code.Code;
+import fun.fengwk.convention4j.api.code.CommonErrorCodes;
+import fun.fengwk.convention4j.api.code.ConventionErrorCode;
+import fun.fengwk.convention4j.api.code.ImmutableConventionErrorCode;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.ResultExceptionHandlerUtils;
 import fun.fengwk.convention4j.common.result.Results;
@@ -14,7 +17,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.http.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.FieldError;

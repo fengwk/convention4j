@@ -32,7 +32,6 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
-import java.net.InetAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
