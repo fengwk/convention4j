@@ -1,9 +1,12 @@
 package fun.fengwk.convention4j.spring.cloud.starter.feign;
 
 import feign.RequestInterceptor;
+import fun.fengwk.convention4j.springboot.starter.transport.TransportHeaders;
+import fun.fengwk.convention4j.springboot.starter.web.context.WebContext;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @author fengwk
@@ -13,13 +16,25 @@ import org.springframework.context.annotation.Bean;
 public class FeignClientAutoConfiguration {
 
     @Bean
-    public TracerFeignInterceptor tracerFeignInterceptor() {
-        return new TracerFeignInterceptor();
+    public TracerFeignClientInterceptor tracerFeignClientInterceptor() {
+        return new TracerFeignClientInterceptor();
     }
 
     @Bean
-    public FeignInternalInvokerInterceptor feignInternalInvokerInterceptor() {
-        return new FeignInternalInvokerInterceptor();
+    public InternalInvokerFeignClinetInterceptor internalInvokerFeignClinetInterceptor() {
+        return new InternalInvokerFeignClinetInterceptor();
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(WebContext.class)
+    static class TransportHeadersFeignClientConfiguration {
+
+        @Bean
+        public TransportHeadersFeignClientInterceptor transportHeadersFeignClientInterceptor(
+            WebContext webContext, TransportHeaders transportHeaders) {
+            return new TransportHeadersFeignClientInterceptor(webContext, transportHeaders);
+        }
+
     }
 
 }

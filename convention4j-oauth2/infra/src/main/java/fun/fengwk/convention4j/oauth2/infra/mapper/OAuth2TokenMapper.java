@@ -4,6 +4,8 @@ import fun.fengwk.automapper.annotation.AutoMapper;
 import fun.fengwk.convention4j.oauth2.infra.model.OAuth2TokenDO;
 import fun.fengwk.convention4j.springboot.starter.cache.mapper.CacheableMapper;
 
+import java.util.List;
+
 /**
  * @author fengwk
  */
@@ -21,5 +23,7 @@ public interface OAuth2TokenMapper extends CacheableMapper<OAuth2TokenDO, Long> 
     OAuth2TokenDO getByRefreshToken(String refreshToken);
 
     OAuth2TokenDO getBySsoId(String ssoId);
+
+    List<OAuth2TokenDO> listBySubjectId(String subjectId);
 
 }

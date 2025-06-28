@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,10 +60,16 @@ public class RedisOAuth2TokenRepositoryTest {
         found = redisOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken());
         assertEquals(oauth2Token, found);
 
+        List<OAuth2Token> oAuth2Tokens = redisOAuth2TokenRepository.listBySubjectId(oauth2Token.getSubjectId());
+        assertEquals(1, oAuth2Tokens.size());
+        assertEquals(oauth2Token, oAuth2Tokens.get(0));
+
         assertTrue(redisOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
         assertNull(redisOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
         assertNull(redisOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
         assertNull(redisOAuth2TokenRepository.getBySsoId(oauth2Token.getSsoId()));
+        oAuth2Tokens = redisOAuth2TokenRepository.listBySubjectId(oauth2Token.getSubjectId());
+        assertEquals(0, oAuth2Tokens.size());
     }
 
 }

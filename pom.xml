@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.41</version>
+    <version>1.1.43</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -45,6 +45,7 @@
         <module>convention4j-example</module>
         <module>convention4j-archetype</module>
         <module>convention4j-spring-cloud-starter</module>
+        <module>convention4j-spring-cloud-starter-gateway</module>
         <module>convention4j-spring-boot-starter-xxljob</module>
     </modules>
 
@@ -53,7 +54,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.41</convention4j.version>
+        <convention4j.version>1.1.43</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.4.3</spring-boot-dependencies.version>
@@ -126,17 +127,22 @@
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
-                <artifactId>convention4j-spring-cloud-starter</artifactId>
-                <version>${convention4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-spring-boot-starter-web</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-spring-boot-starter-webflux</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-cloud-starter</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-cloud-starter-gateway</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>

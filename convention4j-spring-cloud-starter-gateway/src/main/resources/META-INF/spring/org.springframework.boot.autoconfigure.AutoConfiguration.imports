@@ -1,0 +1,2 @@
+fun.fengwk.convention4j.spring.cloud.starter.gateway.dns.SpringCloudGatewayDnsCacheAutoConfiguration
+fun.fengwk.convention4j.spring.cloud.starter.gateway.filter.GatewayFilterAutoConfiguration

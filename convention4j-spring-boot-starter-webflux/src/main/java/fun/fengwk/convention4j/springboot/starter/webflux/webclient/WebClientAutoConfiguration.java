@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.webflux.webclient;
 
 import fun.fengwk.convention4j.common.json.jackson.ObjectMapperHolder;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.springboot.starter.transport.TransportHeaders;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.TraceInfo;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContext;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
@@ -43,6 +44,17 @@ import java.util.List;
 @EnableConfigurationProperties(WebClientProperties.class)
 @AutoConfiguration
 public class WebClientAutoConfiguration {
+
+    @Bean
+    public TransportHeadersWebClientRequestModifier tracerXHeaderWebClientRequestModifier(
+        TransportHeaders transportHeaders) {
+        return new TransportHeadersWebClientRequestModifier(transportHeaders);
+    }
+
+    @Bean
+    public InternalInvokerWebClientRequestModifier internalInvokerWebClientRequestModifier() {
+        return new InternalInvokerWebClientRequestModifier();
+    }
 
     /**
      * 配置自定义的序列化对象

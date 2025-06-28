@@ -2,6 +2,8 @@ package fun.fengwk.convention4j.oauth2.server.repo;
 
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 
+import java.util.List;
+
 /**
  * OAuth2令牌仓储
  *
@@ -65,5 +67,13 @@ public interface OAuth2TokenRepository {
      * @return OAuth2令牌
      */
     OAuth2Token getBySsoId(String ssoId);
+
+    /**
+     * 通过subjectId获取所有令牌
+     *
+     * @param subjectId 主体id
+     * @return 主体的所有令牌
+     */
+    List<OAuth2Token> listBySubjectId(String subjectId);
 
 }

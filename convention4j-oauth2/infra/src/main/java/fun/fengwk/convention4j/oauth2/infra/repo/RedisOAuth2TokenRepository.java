@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.oauth2.infra.repo;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author fengwk
@@ -23,6 +28,7 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
     private static final String REDIS_KEY_OAUTH2_TOKEN_ACCESS_TOKEN_INDEX = "OAUTH2_TOKEN_AT:%s";
     private static final String REDIS_KEY_OAUTH2_TOKEN_REFRESH_TOKEN_INDEX = "OAUTH2_TOKEN_RT:%s";
     private static final String REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX = "OAUTH2_TOKEN_SI:%s";
+    private static final String REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX = "OAUTH2_TOKEN_SUB:%s";
 
     private final NamespaceIdGenerator<Long> idGenerator;
     private final StringRedisTemplate redisTemplate;
@@ -38,22 +44,37 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         if (authorizeExpiresIn <= 0) {
             return false;
         }
+
         String tokenKey = String.format(REDIS_KEY_OAUTH2_TOKEN, oauth2Token.getId());
         String atKey = String.format(REDIS_KEY_OAUTH2_TOKEN_ACCESS_TOKEN_INDEX, oauth2Token.getAccessToken());
         String rtKey = String.format(REDIS_KEY_OAUTH2_TOKEN_REFRESH_TOKEN_INDEX, oauth2Token.getRefreshToken());
         String siKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, oauth2Token.getSsoId());
+        String subKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, oauth2Token.getSubjectId());
         String idValue = String.valueOf(oauth2Token.getId());
         String tokenValue = JsonUtils.toJson(oauth2Token);
+
+        // accessToken->tokenId
         redisTemplate.opsForValue().set(atKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
+        // refreshToken->tokenId
         redisTemplate.opsForValue().set(rtKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
+        // ssoId->tokenId
         redisTemplate.opsForValue().set(siKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
+        // subjectId->tokenId
+        redisTemplate.opsForSet().add(subKey, String.valueOf(oauth2Token.getId()));
+        long subExpire = redisTemplate.getExpire(subKey, TimeUnit.SECONDS);
+        subExpire = Math.max(subExpire, authorizeExpiresIn);
+        redisTemplate.expire(subKey, Duration.ofSeconds(subExpire));
+        // tokenId->token
         redisTemplate.opsForValue().set(tokenKey, tokenValue, authorizeExpiresIn, TimeUnit.SECONDS);
+
         log.debug("Add oauth2 token, set accessToken->tokenId, atKey: {}, idValue: {} authorizeExpiresIn: {}s",
             atKey, idValue, authorizeExpireSeconds);
         log.debug("Add oauth2 token, set refreshToken->tokenId, rtKey: {}, idValue: {} authorizeExpiresIn: {}s",
             rtKey, idValue, authorizeExpireSeconds);
         log.debug("Add oauth2 token, set ssoId->tokenId, siKey: {}, idValue: {} authorizeExpiresIn: {}s",
             siKey, idValue, authorizeExpireSeconds);
+        log.debug("Add oauth2 token, set subjectId->tokenId, subKey: {}, idValue: {} subExpire: {}s",
+            subKey, idValue, subExpire);
         log.debug("Add oauth2 token, set tokenId->token, tokenKey: {}, tokenValue: {} authorizeExpiresIn: {}s",
             tokenKey, tokenValue, authorizeExpireSeconds);
         return true;
@@ -73,12 +94,15 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         String oldAtKey = String.format(REDIS_KEY_OAUTH2_TOKEN_ACCESS_TOKEN_INDEX, oldToken.getAccessToken());
         String oldRtKey = String.format(REDIS_KEY_OAUTH2_TOKEN_REFRESH_TOKEN_INDEX, oldToken.getRefreshToken());
         String oldSiKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, oldToken.getSsoId());
+        String oldSubKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, oldToken.getSubjectId());
         redisTemplate.delete(oldAtKey);
         redisTemplate.delete(oldRtKey);
         redisTemplate.delete(oldSiKey);
+        redisTemplate.opsForSet().remove(oldSubKey, String.valueOf(oldToken.getId()));
         log.debug("Update oauth2 token, delete accessToken->tokenId, atKey: {}", oldAtKey);
         log.debug("Update oauth2 token, delete refreshToken->tokenId, rtToken: {}", oldRtKey);
         log.debug("Update oauth2 token, delete ssoId->tokenId, siKey: {}", oldSiKey);
+        log.debug("Update oauth2 token, remove subjectId->tokenId, subKey: {}", oldSubKey);
 
         // 重新添加令牌
         return add(oauth2Token, authorizeExpireSeconds);
@@ -102,14 +126,17 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         OAuth2Token token = JsonUtils.fromJson(tokenValue, OAuth2Token.class);
         String rtKey = String.format(REDIS_KEY_OAUTH2_TOKEN_REFRESH_TOKEN_INDEX, token.getRefreshToken());
         String siKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, token.getSsoId());
+        String subKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, token.getSubjectId());
         redisTemplate.delete(tokenKey);
         redisTemplate.delete(atKey);
         redisTemplate.delete(rtKey);
         redisTemplate.delete(siKey);
+        redisTemplate.opsForSet().remove(subKey, String.valueOf(token.getId()));
+        log.debug("Remove oauth2 token, delete tokenId->token, tokenKey: {}", tokenKey);
         log.debug("Remove oauth2 token, delete accessToken->tokenId, atKey: {}", atKey);
         log.debug("Remove oauth2 token, delete refreshToken->tokenId, rtKey: {}", rtKey);
         log.debug("Remove oauth2 token, delete ssoId->tokenId, siKey: {}", siKey);
-        log.debug("Remove oauth2 token, delete tokenId->token, tokenKey: {}", tokenKey);
+        log.debug("Remove oauth2 token, remove subjectId->tokenId, subKey: {}", subKey);
         return true;
     }
 
@@ -141,6 +168,19 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
             return null;
         }
         return getByIdValue(idValue);
+    }
+
+    @Override
+    public List<OAuth2Token> listBySubjectId(String subjectId) {
+        String subKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, subjectId);
+        Set<String> tokenIds = redisTemplate.opsForSet().members(subKey);
+        List<String> tokenKeys = NullSafe.of(tokenIds).stream()
+            .map(tid -> String.format(REDIS_KEY_OAUTH2_TOKEN, tid))
+            .collect(Collectors.toList());
+        List<String> tokenValues = redisTemplate.opsForValue().multiGet(tokenKeys);
+        return NullSafe.of(tokenValues).stream()
+            .map(v -> JsonUtils.fromJson(v, OAuth2Token.class))
+            .collect(Collectors.toList());
     }
 
     private OAuth2Token getByIdValue(String idValue) {

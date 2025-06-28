@@ -5,6 +5,7 @@ import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.springboot.test.starter.repo.AbstractTestRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -55,6 +56,11 @@ public class TestOAuth2TokenRepository
     @Override
     public OAuth2Token getBySsoId(String ssoId) {
         return doGet(tk -> Objects.equals(tk.getSsoId(), ssoId));
+    }
+
+    @Override
+    public List<OAuth2Token> listBySubjectId(String subjectId) {
+        return doList(tk -> Objects.equals(tk.getSubjectId(), subjectId));
     }
 
 }

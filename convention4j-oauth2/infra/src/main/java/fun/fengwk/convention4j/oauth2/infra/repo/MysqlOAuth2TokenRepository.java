@@ -8,6 +8,9 @@ import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @author fengwk
  */
@@ -62,6 +65,12 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
     public OAuth2Token getBySsoId(String ssoId) {
         OAuth2TokenDO oauth2TokenDO = oauth2TokenMapper.getBySsoId(ssoId);
         return convert(oauth2TokenDO);
+    }
+
+    @Override
+    public List<OAuth2Token> listBySubjectId(String subjectId) {
+        List<OAuth2TokenDO> oauth2TokenDOs = oauth2TokenMapper.listBySubjectId(subjectId);
+        return oauth2TokenDOs.stream().map(this::convert).collect(Collectors.toList());
     }
 
     private OAuth2TokenDO convert(OAuth2Token oauth2Token) {

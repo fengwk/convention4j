@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,10 +60,16 @@ public class MysqlOAuth2TokenRepositoryTest {
         found = mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken());
         assertEquals(oauth2Token, found);
 
+        List<OAuth2Token> oAuth2Tokens = mysqlOAuth2TokenRepository.listBySubjectId(oauth2Token.getSubjectId());
+        assertEquals(1, oAuth2Tokens.size());
+        assertEquals(oauth2Token, oAuth2Tokens.get(0));
+
         assertTrue(mysqlOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
         assertNull(mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
         assertNull(mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
         assertNull(mysqlOAuth2TokenRepository.getBySsoId(oauth2Token.getSsoId()));
+        oAuth2Tokens = mysqlOAuth2TokenRepository.listBySubjectId(oauth2Token.getSubjectId());
+        assertEquals(0, oAuth2Tokens.size());
     }
 
 }

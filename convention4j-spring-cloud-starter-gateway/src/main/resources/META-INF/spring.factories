@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationListener=\
+fun.fengwk.convention4j.spring.cloud.starter.gateway.security.SecurityApplicationListener
