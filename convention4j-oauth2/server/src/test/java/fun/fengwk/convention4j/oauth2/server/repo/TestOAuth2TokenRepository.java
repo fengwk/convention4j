@@ -39,8 +39,8 @@ public class TestOAuth2TokenRepository
     }
 
     @Override
-    public boolean removeByAccessToken(String accessToken) {
-        return doDelete(tk -> Objects.equals(tk.getAccessToken(), accessToken)) > 0;
+    public boolean removeById(long id) {
+        return doDelete(tk -> Objects.equals(tk.getId(), id)) > 0;
     }
 
     @Override

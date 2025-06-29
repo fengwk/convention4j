@@ -64,7 +64,7 @@ public class RedisOAuth2TokenRepositoryTest {
         assertEquals(1, oauth2Tokens.size());
         assertEquals(oauth2Token, oauth2Tokens.get(0));
 
-        assertTrue(redisOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
+        assertTrue(redisOAuth2TokenRepository.removeById(oauth2Token.getId()));
         assertNull(redisOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
         assertNull(redisOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
         assertTrue(redisOAuth2TokenRepository.listBySsoId(oauth2Token.getSsoId()).isEmpty());

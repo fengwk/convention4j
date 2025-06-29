@@ -43,9 +43,9 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
     }
 
     @Override
-    public boolean removeByAccessToken(String accessToken) {
-        boolean result = oauth2TokenMapper.deleteByAccessToken(accessToken) > 0;
-        log.debug("Remove oauth2 token from mysql, accessToken: {}, result: {}", accessToken, result);
+    public boolean removeById(long id) {
+        boolean result = oauth2TokenMapper.deleteById(id) > 0;
+        log.debug("Remove oauth2 token from mysql, accessToken: {}, result: {}", id, result);
         return result;
     }
 

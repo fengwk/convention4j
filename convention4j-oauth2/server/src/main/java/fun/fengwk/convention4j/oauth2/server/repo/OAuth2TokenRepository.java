@@ -39,10 +39,10 @@ public interface OAuth2TokenRepository {
     /**
      * 通过访问令牌删除
      *
-     * @param accessToken 访问令牌
+     * @param id 令牌id
      * @return 是否发生了删除
      */
-    boolean removeByAccessToken(String accessToken);
+    boolean removeById(long id);
 
     /**
      * 通过访问令牌获取OAuth2令牌

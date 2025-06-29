@@ -17,7 +17,7 @@ public interface OAuth2TokenMapper extends CacheableMapper<OAuth2TokenDO, Long> 
 
     int updateById(OAuth2TokenDO oauth2TokenDO);
 
-    int deleteByAccessToken(String accessToken);
+    int deleteById(long id);
 
     OAuth2TokenDO getByAccessToken(String accessToken);
 

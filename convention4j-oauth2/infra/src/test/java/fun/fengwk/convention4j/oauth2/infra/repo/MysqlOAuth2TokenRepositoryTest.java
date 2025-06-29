@@ -67,7 +67,7 @@ public class MysqlOAuth2TokenRepositoryTest {
 
         assertNotNull(mysqlOAuth2TokenRepository.getBySsoIdAndSsoDomain(oauth2Token.getSsoId(), oauth2Token.getSsoDomain()));
 
-        assertTrue(mysqlOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
+        assertTrue(mysqlOAuth2TokenRepository.removeById(oauth2Token.getId()));
         assertNull(mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
         assertNull(mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
         assertTrue(mysqlOAuth2TokenRepository.listBySsoId(oauth2Token.getSsoId()).isEmpty());

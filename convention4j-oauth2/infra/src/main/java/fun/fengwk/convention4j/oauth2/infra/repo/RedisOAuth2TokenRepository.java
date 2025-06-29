@@ -109,14 +109,7 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
     }
 
     @Override
-    public boolean removeByAccessToken(String accessToken) {
-        String atKey = String.format(REDIS_KEY_OAUTH2_TOKEN_ACCESS_TOKEN_INDEX, accessToken);
-        String idValue = redisTemplate.opsForValue().get(atKey);
-        if (StringUtils.isBlank(idValue)) {
-            return false;
-        }
-
-        long id = NumberUtils.toLong(idValue);
+    public boolean removeById(long id) {
         String tokenKey = String.format(REDIS_KEY_OAUTH2_TOKEN, id);
         String tokenValue = redisTemplate.opsForValue().get(tokenKey);
         if (StringUtils.isBlank(tokenValue)) {
@@ -124,6 +117,7 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         }
 
         OAuth2Token token = JsonUtils.fromJson(tokenValue, OAuth2Token.class);
+        String atKey = String.format(REDIS_KEY_OAUTH2_TOKEN_ACCESS_TOKEN_INDEX, token.getAccessToken());
         String rtKey = String.format(REDIS_KEY_OAUTH2_TOKEN_REFRESH_TOKEN_INDEX, token.getRefreshToken());
         String siKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, token.getSsoId());
         String subKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, token.getSubjectId());
