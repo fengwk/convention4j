@@ -9,8 +9,10 @@ import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -39,8 +41,53 @@ public class WebFluxTracerContext {
     }
 
     /**
+     * 追踪Mono
+     *
+     * @param monoSupplier Mono Supplier
+     * @return 返回执行后的Mono
+     * @param <T> 类型
+     */
+    public static <T> Mono<T> traceMono(Supplier<Mono<T>> monoSupplier) {
+        return traceMono(tc -> monoSupplier.get());
+    }
+
+    /**
+     * 追踪Mono
+     *
+     * @param monoSupplier Mono Supplier
+     * @return 返回执行后的Mono
+     * @param <T> 类型
+     */
+    public static <T> Mono<T> traceMono(Function<WebFluxTracerContext, Mono<T>> monoSupplier) {
+        return get().flatMap(tc -> tc.execute(() -> monoSupplier.apply(tc)));
+    }
+
+    /**
+     * 追踪Flux
+     *
+     * @param fluxSupplier Flux Supplier
+     * @return 返回执行后的Mono
+     * @param <T> 类型
+     */
+    public static <T> Flux<T> traceFlux(Supplier<Flux<T>> fluxSupplier) {
+        return traceFlux(tc -> fluxSupplier.get());
+    }
+
+    /**
+     * 追踪Flux
+     *
+     * @param fluxSupplier Flux Supplier
+     * @return 返回执行后的Mono
+     * @param <T> 类型
+     */
+    public static <T> Flux<T> traceFlux(Function<WebFluxTracerContext, Flux<T>> fluxSupplier) {
+        return get().flatMapMany(tc -> tc.execute(() -> fluxSupplier.apply(tc)));
+    }
+
+    /**
      * 在tracer上下文中执行
      *
+     * @param executor 执行器
      * @return 返回WebFluxContext
      */
     public <T> T execute(Supplier<T> executor) {
@@ -90,6 +137,7 @@ public class WebFluxTracerContext {
         if (traceInfo == null) {
             return;
         }
+
         WebFluxSpan webFluxSpan = traceInfo.getWebFluxSpan();
         Scope scope = traceInfo.getScope();
         try {

@@ -57,6 +57,11 @@ public class OAuth2Token {
     private String ssoId;
 
     /**
+     * 单点登陆id
+     */
+    private String ssoDomain;
+
+    /**
      * 最后一次刷新的时间
      */
     private LocalDateTime lastRefreshTime;
@@ -69,7 +74,8 @@ public class OAuth2Token {
     /**
      * 生成OAuth2令牌BO
      */
-    public static OAuth2Token generate(long id, String clientId, String subjectId, String scope, String ssoId) {
+    public static OAuth2Token generate(long id, String clientId, String subjectId, String scope,
+                                       String ssoId, String ssoDomain) {
         OAuth2Token oauth2Token = new OAuth2Token();
         oauth2Token.setId(id);
         oauth2Token.setClientId(clientId);
@@ -79,6 +85,7 @@ public class OAuth2Token {
         oauth2Token.setAccessToken(generateToken());
         oauth2Token.setRefreshToken(generateToken());
         oauth2Token.setSsoId(ssoId);
+        oauth2Token.setSsoDomain(ssoDomain);
         LocalDateTime now = LocalDateTime.now();
         oauth2Token.setLastRefreshTime(now);
         oauth2Token.setAuthorizeTime(now);

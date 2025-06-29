@@ -247,7 +247,7 @@ public class OAuth2ServiceTest {
         code = uriComponents.getQueryParams().getFirst("code");
         String newSsoId = authorizeContext.getSsoId();
         assert StringUtils.isNotEmpty(newSsoId);
-        assert !Objects.equals(ssoId, newSsoId);
+        assert Objects.equals(ssoId, newSsoId);
 
         tokenContext = new DefaultTokenContext<>();
         tokenContext.setGrantType(GrantType.AUTHORIZATION_CODE.getCode());
@@ -258,11 +258,11 @@ public class OAuth2ServiceTest {
         tokenContext.setScope(TestConstants.CLIENT1_SCOPE);
         OAuth2TokenDTO newOssOAuth2TokenDTO = oauth2Service.token(tokenContext);
         assert newOssOAuth2TokenDTO != null;
-        assert !Objects.equals(refreshedDTO, newOssOAuth2TokenDTO);
+        assert Objects.equals(refreshedDTO, newOssOAuth2TokenDTO);
     }
 
     @Test
-    public void testPasswordMode_SSO_Unsupported() {
+    public void testPasswordMode_SSO_NotAllow() {
         assertThrows(ThrowableErrorCode.class, () -> {
             UserCertificate certificate = new UserCertificate();
             certificate.setUsername(TestConstants.USER2_USERNAME);

@@ -8,10 +8,12 @@ import fun.fengwk.convention4j.oauth2.server.model.context.PasswordTokenContext;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author fengwk
  */
+@Slf4j
 public class PasswordMode<SUBJECT, CERTIFICATE>
     extends BaseOAuth2TokenService<SUBJECT, CERTIFICATE, PasswordTokenContext<CERTIFICATE>> {
 
@@ -30,8 +32,7 @@ public class PasswordMode<SUBJECT, CERTIFICATE>
     protected OAuth2Token generateOAuth2Token(PasswordTokenContext<CERTIFICATE> context, OAuth2Client client) {
         checkScope(client, context.getScope());
         String subjectId = authenticate(client, context.getCertificate(), context.getScope(), context);
-        String ssoId = getSsoId(context);
-        return generateToken(subjectId, context.getScope(), client, ssoId);
+        return reuseOrGenerateOAuth2Token(client, context, subjectId, context.getScope());
     }
 
 }

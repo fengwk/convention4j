@@ -10,6 +10,7 @@ import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
 import fun.fengwk.convention4j.oauth2.share.constant.ResponseType;
 import fun.fengwk.convention4j.oauth2.share.constant.TokenType;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -17,6 +18,7 @@ import java.net.URI;
 /**
  * @author fengwk
  */
+@Slf4j
 public class ImplicitMode<SUBJECT, CERTIFICATE> extends BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE> {
 
     public ImplicitMode(OAuth2ClientManager clientManager,
@@ -35,9 +37,8 @@ public class ImplicitMode<SUBJECT, CERTIFICATE> extends BaseOAuth2AuthorizeServi
                                        OAuth2Client client,
                                        UriComponentsBuilder redirectUriBuilder,
                                        String subjectId) {
-        String ssoId = getSsoId(context);
-        OAuth2Token oauth2TokenDTO = generateToken(subjectId, context.getScope(), client, ssoId);
-        return buildAuthorizeURI(redirectUriBuilder, oauth2TokenDTO, context.getState(), client);
+        OAuth2Token oauth2Token = reuseOrGenerateOAuth2Token(client, context, subjectId, context.getScope());
+        return buildAuthorizeURI(redirectUriBuilder, oauth2Token, context.getState(), client);
     }
 
     private URI buildAuthorizeURI(UriComponentsBuilder redirectUriBuilder,

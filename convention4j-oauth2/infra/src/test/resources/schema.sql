@@ -7,6 +7,7 @@ create table if not exists oauth2_token (
     access_token         varchar(128) not null comment '访问令牌',
     refresh_token        varchar(128) not null comment '刷新令牌',
     sso_id               varchar(128) not null comment '单点登陆id',
+    sso_domain           varchar(128) not null comment '单点登陆域名',
     last_refresh_time    datetime(3) not null comment '最后一次刷新的时间',
     authorize_time       datetime(3) not null comment '授权的时间',
     create_time          datetime(3) not null default current_timestamp(3) comment '创建时间',
@@ -15,7 +16,7 @@ create table if not exists oauth2_token (
     primary key (id),
     unique uk_accessToken (access_token),
     unique uk_refreshToken (refresh_token),
-    unique uk_ssoId (sso_id),
+    unique idx_ssoId_ssoDomain (sso_id, sso_domain),
     index idx_clientId_subjectId (client_id, subject_id),
     index idx_subjectId (subject_id),
     index idx_authorizeTime (authorize_time)

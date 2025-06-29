@@ -54,8 +54,14 @@ public class TestOAuth2TokenRepository
     }
 
     @Override
-    public OAuth2Token getBySsoId(String ssoId) {
-        return doGet(tk -> Objects.equals(tk.getSsoId(), ssoId));
+    public OAuth2Token getBySsoIdAndSsoDomain(String ssoId, String ssoDomain) {
+        return doGet(tk ->
+            Objects.equals(tk.getSsoId(), ssoId) && Objects.equals(tk.getSsoDomain(), ssoDomain));
+    }
+
+    @Override
+    public List<OAuth2Token> listBySsoId(String ssoId) {
+        return doList(tk -> Objects.equals(tk.getSsoId(), ssoId));
     }
 
     @Override

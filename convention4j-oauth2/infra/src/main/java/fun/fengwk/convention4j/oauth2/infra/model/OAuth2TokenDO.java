@@ -49,6 +49,11 @@ public class OAuth2TokenDO extends ConventionDO<Long> {
     private String ssoId;
 
     /**
+     * 单点登陆id
+     */
+    private String ssoDomain;
+
+    /**
      * 最后一次刷新的时间
      */
     private LocalDateTime lastRefreshTime;

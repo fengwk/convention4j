@@ -25,6 +25,7 @@ public enum OAuth2ErrorCodes implements DomainConventionErrorCodeEnumAdapter {
     AUTHORIZE_EXPIRED(HttpStatus.UNAUTHORIZED),
     AUTHENTICATE_FAILED(HttpStatus.UNAUTHORIZED),
     INVALID_AUTHENTICATION_CODE(HttpStatus.UNAUTHORIZED),
+    INVALID_SSO(HttpStatus.UNAUTHORIZED),
 
     CLIENT_NOT_FOUND(HttpStatus.NOT_FOUND),
 

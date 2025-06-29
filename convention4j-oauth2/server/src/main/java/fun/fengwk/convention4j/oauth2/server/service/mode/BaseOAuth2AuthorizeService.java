@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.oauth2.server.service.mode;
 
-import fun.fengwk.convention4j.common.lang.StringUtils;
-import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ClientManager;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2SubjectManager;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;
@@ -65,17 +63,7 @@ public abstract class BaseOAuth2AuthorizeService<SUBJECT, CERTIFICATE>
     }
 
     private UriComponentsBuilder checkAndGetRedirectUriBuilder(OAuth2Client client, String redirectUri) {
-        UriComponentsBuilder redirectUriBuilder;
-        try {
-            redirectUriBuilder = UriComponentsBuilder.fromUriString(redirectUri);
-            if (StringUtils.isBlank(redirectUriBuilder.build().getScheme())) {
-                // 如果无法解析schema可能是因为redirectUri是编码过的，解码后重新构建
-                redirectUriBuilder = UriComponentsBuilder.fromUriString(UriUtils.fullDecodeUriComponent(redirectUri));
-            }
-        } catch (IllegalArgumentException ex) {
-            log.warn("Invalid redirectUri, redirectUri: {}", redirectUri);
-            throw OAuth2ErrorCodes.INVALID_REDIRECT_URI.asThrowable();
-        }
+        UriComponentsBuilder redirectUriBuilder = toUriComponentBuilder(redirectUri);
         if (!client.supportRedirectUri(redirectUri)) {
             log.warn("Client unsupported redirectUri, clientId: {}, clientRedirectUris: {}, redirectUri: {}, ",
                 client.getClientId(), client.getRedirectUris(), redirectUri);

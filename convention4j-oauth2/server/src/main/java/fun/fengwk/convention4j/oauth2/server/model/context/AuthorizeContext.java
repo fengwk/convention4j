@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.oauth2.server.model.context;
 /**
  * @author fengwk
  */
-public interface AuthorizeContext<CERTIFICATE> {
+public interface AuthorizeContext<CERTIFICATE> extends RedirectUriProvider {
 
     /**
      * 必须，表示授权类型
@@ -18,6 +18,7 @@ public interface AuthorizeContext<CERTIFICATE> {
     /**
      * 必须，表示重定向URI
      */
+    @Override
     String getRedirectUri();
 
     /**

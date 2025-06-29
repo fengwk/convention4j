@@ -84,8 +84,6 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setState(state);
         context.setCertificate(certificate);
         Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
-        SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
-        context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
         try {
             URI uri = oauth2Service.authorize(context);
             log.debug("Authorize success, context: {}, uri: {}", context, uri);
@@ -126,8 +124,6 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         context.setRefreshToken(refreshToken);
         context.setCertificate(certificate);
         Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
-        SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
-        context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
         try {
             OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(context);
             log.debug("Token success, context: {}, oauth2TokenDTO: {}", context, oauth2TokenDTO);

@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
-import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractNameValueGatewayFilterFactory;
@@ -21,7 +20,7 @@ public class PreSetResponseHeaderGatewayFilterFactory extends AbstractNameValueG
     public GatewayFilter apply(NameValueConfig config) {
         return new TracerContextGatewayFilter() {
             @Override
-            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain, WebFluxTracerContext tc) {
+            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain) {
                 String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
                 exchange.getResponse().getHeaders().set(config.getName(), value);
                 return chain.filter(exchange);

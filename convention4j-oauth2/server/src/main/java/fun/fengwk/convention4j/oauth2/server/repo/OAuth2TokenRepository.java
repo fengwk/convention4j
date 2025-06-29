@@ -61,12 +61,21 @@ public interface OAuth2TokenRepository {
     OAuth2Token getByRefreshToken(String refreshToken);
 
     /**
+     * 使用单点登陆id和单点登陆域名获取
+     *
+     * @param ssoId 单点登陆id
+     * @param ssoDomain 单点登陆域名
+     * @return OAuth2令牌
+     */
+    OAuth2Token getBySsoIdAndSsoDomain(String ssoId, String ssoDomain);
+
+    /**
      * 使用单点登陆id获取
      *
      * @param ssoId 单点登陆id
      * @return OAuth2令牌
      */
-    OAuth2Token getBySsoId(String ssoId);
+    List<OAuth2Token> listBySsoId(String ssoId);
 
     /**
      * 通过subjectId获取所有令牌

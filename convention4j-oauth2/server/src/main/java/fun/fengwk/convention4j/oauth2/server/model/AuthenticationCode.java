@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.oauth2.server.model;
 
+import fun.fengwk.convention4j.oauth2.server.model.context.RedirectUriProvider;
+import fun.fengwk.convention4j.oauth2.server.model.context.SsoProvider;
 import fun.fengwk.convention4j.oauth2.share.constant.ResponseType;
 import lombok.Data;
 
@@ -10,7 +12,7 @@ import java.util.UUID;
  * @author fengwk
  */
 @Data
-public class AuthenticationCode {
+public class AuthenticationCode implements SsoProvider, RedirectUriProvider {
 
     /**
      * 授权码

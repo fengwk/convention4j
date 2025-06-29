@@ -8,7 +8,7 @@ import fun.fengwk.convention4j.oauth2.server.model.OAuth2Client;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.model.context.AuthenticationCodeTokenContext;
 import fun.fengwk.convention4j.oauth2.server.model.context.AuthorizeContext;
-import fun.fengwk.convention4j.oauth2.server.model.context.SsoContext;
+import fun.fengwk.convention4j.oauth2.server.model.context.SsoProvider;
 import fun.fengwk.convention4j.oauth2.server.repo.AuthenticationCodeRepository;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
@@ -52,12 +52,16 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
                                                OAuth2Client client,
                                                UriComponentsBuilder redirectUriBuilder,
                                                String subjectId) {
-                String ssoId = getSsoId(context);
                 boolean ssoAuthenticate = false;
-                if (context instanceof SsoContext ssoContext) {
-                    ssoAuthenticate = ssoContext.isSsoAuthenticate();
+                String ssoId = null;
+                if (context instanceof SsoProvider ssoProvider && ssoProvider.isSsoAuthenticate()) {
+                    ssoAuthenticate = true;
+                    ssoId = ssoProvider.getSsoId();
                 }
-                String code = generateAuthenticationCode(getResponseType(), client, context.getRedirectUri(),
+                if (ssoId == null) {
+                    ssoId = generateSsoId(context);
+                }
+                String code = generateAndStoreAuthenticationCode(getResponseType(), client, context.getRedirectUri(),
                     context.getScope(), subjectId, ssoId, ssoAuthenticate);
                 return buildAuthorizeUri(redirectUriBuilder, code, context.getState());
             }
@@ -79,40 +83,11 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
             @Override
             protected OAuth2Token generateOAuth2Token(AuthenticationCodeTokenContext context, OAuth2Client client) {
                 AuthenticationCode authenticationCode = checkAndGetAuthenticationCode(context.getCode());
-                checkRedirectUri(context.getRedirectUri(), authenticationCode);
-                OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
-                        client, authenticationCode.getSsoId());
-                log.debug("Authenticate, oauth2Token: {}", oauth2Token);
-                return oauth2Token;
-//                if (authenticationCode.isSsoAuthenticate()) {
-//                    // 单点登陆的情况，直接返回单点登陆对应的令牌
-//                    OAuth2Token oauth2Token = oauth2TokenRepository.getBySsoId(authenticationCode.getSsoId());
-//                    log.debug("Sso authenticate, ssoId: {}, oauth2Token: {}",
-//                        authenticationCode.getSsoId(), oauth2Token);
-//
-//                    // 如果访问令牌已过期则刷新，确保返回的令牌是可用的
-//                    if (oauth2Token.accessTokenExpired(client.getAccessTokenExpireSeconds())) {
-//                        oauth2Token.refresh();
-//                        if (!oauth2TokenRepository.updateById(oauth2Token, client.getAuthorizeExpireSeconds())) {
-//                            log.warn("Refresh token failed, clientId: {}, refreshToken: {}",
-//                                    client.getClientId(), oauth2Token.getRefreshToken());
-//                            throw OAuth2ErrorCodes.REFRESH_TOKEN_FAILED.asThrowable();
-//                        }
-//                    }
-//
-//                    return oauth2Token;
-//                } else {
-//                    // 走正常的登陆流程
-//                    checkRedirectUri(context.getRedirectUri(), authenticationCode);
-//                    OAuth2Token oauth2Token = generateToken(authenticationCode.getSubjectId(), authenticationCode.getScope(),
-//                        client, authenticationCode.getSsoId());
-//                    log.debug("Normal authenticate, oauth2Token: {}", oauth2Token);
-//                    return oauth2Token;
-//                }
+                return reuseOrGenerateOAuth2Token(client, authenticationCode,
+                    authenticationCode.getSubjectId(), authenticationCode.getScope());
             }
         };
     }
-
 
     @Override
     public String supportResponseType() {
@@ -134,7 +109,7 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
         return tokenDelegate.token(context);
     }
 
-    private String generateAuthenticationCode(
+    private String generateAndStoreAuthenticationCode(
         ResponseType responseType, OAuth2Client client, String redirectUri,
         String scope, String subjectId, String ssoId, boolean ssoAuthenticate) {
         // 生成授权码

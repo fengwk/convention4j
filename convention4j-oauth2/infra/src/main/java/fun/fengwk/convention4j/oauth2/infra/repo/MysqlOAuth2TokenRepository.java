@@ -62,9 +62,15 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
     }
 
     @Override
-    public OAuth2Token getBySsoId(String ssoId) {
-        OAuth2TokenDO oauth2TokenDO = oauth2TokenMapper.getBySsoId(ssoId);
+    public OAuth2Token getBySsoIdAndSsoDomain(String ssoId, String ssoDomain) {
+        OAuth2TokenDO oauth2TokenDO = oauth2TokenMapper.getBySsoIdAndSsoDomain(ssoId, ssoDomain);
         return convert(oauth2TokenDO);
+    }
+
+    @Override
+    public List<OAuth2Token> listBySsoId(String ssoId) {
+        return oauth2TokenMapper.listBySsoId(ssoId).stream()
+            .map(this::convert).collect(Collectors.toList());
     }
 
     @Override
@@ -86,6 +92,7 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
         oauth2TokenDO.setAccessToken(oauth2Token.getAccessToken());
         oauth2TokenDO.setRefreshToken(oauth2Token.getRefreshToken());
         oauth2TokenDO.setSsoId(oauth2Token.getSsoId());
+        oauth2TokenDO.setSsoDomain(oauth2Token.getSsoDomain());
         oauth2TokenDO.setLastRefreshTime(oauth2Token.getLastRefreshTime());
         oauth2TokenDO.setAuthorizeTime(oauth2Token.getAuthorizeTime());
         return oauth2TokenDO;
@@ -95,18 +102,19 @@ public class MysqlOAuth2TokenRepository implements OAuth2TokenRepository {
         if (oauth2TokenDO == null) {
             return null;
         }
-        OAuth2Token oAuth2Token = new OAuth2Token();
-        oAuth2Token.setId(oauth2TokenDO.getId());
-        oAuth2Token.setClientId(oauth2TokenDO.getClientId());
-        oAuth2Token.setSubjectId(oauth2TokenDO.getSubjectId());
-        oAuth2Token.setScope(oauth2TokenDO.getScope());
-        oAuth2Token.setTokenType(oauth2TokenDO.getTokenType());
-        oAuth2Token.setAccessToken(oauth2TokenDO.getAccessToken());
-        oAuth2Token.setRefreshToken(oauth2TokenDO.getRefreshToken());
-        oAuth2Token.setSsoId(oauth2TokenDO.getSsoId());
-        oAuth2Token.setLastRefreshTime(oauth2TokenDO.getLastRefreshTime());
-        oAuth2Token.setAuthorizeTime(oauth2TokenDO.getAuthorizeTime());
-        return oAuth2Token;
+        OAuth2Token oauth2Token = new OAuth2Token();
+        oauth2Token.setId(oauth2TokenDO.getId());
+        oauth2Token.setClientId(oauth2TokenDO.getClientId());
+        oauth2Token.setSubjectId(oauth2TokenDO.getSubjectId());
+        oauth2Token.setScope(oauth2TokenDO.getScope());
+        oauth2Token.setTokenType(oauth2TokenDO.getTokenType());
+        oauth2Token.setAccessToken(oauth2TokenDO.getAccessToken());
+        oauth2Token.setRefreshToken(oauth2TokenDO.getRefreshToken());
+        oauth2Token.setSsoId(oauth2TokenDO.getSsoId());
+        oauth2Token.setSsoDomain(oauth2TokenDO.getSsoDomain());
+        oauth2Token.setLastRefreshTime(oauth2TokenDO.getLastRefreshTime());
+        oauth2Token.setAuthorizeTime(oauth2TokenDO.getAuthorizeTime());
+        return oauth2Token;
     }
 
 }

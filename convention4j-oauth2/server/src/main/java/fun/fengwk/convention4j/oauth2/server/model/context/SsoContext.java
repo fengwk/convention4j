@@ -3,7 +3,9 @@ package fun.fengwk.convention4j.oauth2.server.model.context;
 /**
  * @author fengwk
  */
-public interface SsoContext {
+public interface SsoContext extends SsoProvider {
+
+    String EMPTY_SSO_DOMAIN = "";
 
     /**
      * 获取客户端id
@@ -13,25 +15,11 @@ public interface SsoContext {
     String getClientId();
 
     /**
-     * 获取单点登陆id
-     *
-     * @return 单点登陆id
-     */
-    String getSsoId();
-
-    /**
      * 设置单点登陆id
      *
      * @param ssoId 单点登陆id
      */
     void setSsoId(String ssoId);
-
-    /**
-     * 检查当前上下文是否进行了sso认证
-     *
-     * @return 是否进行了sso认证
-     */
-    boolean isSsoAuthenticate();
 
     /**
      * 设置当前上下文是否使用sso认证

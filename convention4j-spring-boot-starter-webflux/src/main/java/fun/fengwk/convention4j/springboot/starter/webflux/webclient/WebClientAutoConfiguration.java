@@ -37,6 +37,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+import static fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext.traceMono;
+
 /**
  * @author fengwk
  */
@@ -92,8 +94,8 @@ public class WebClientAutoConfiguration {
         return WebClient.builder()
             .codecs(this::configure)
             .clientConnector(new ReactorClientHttpConnector(httpClient))
-            .filter((request, next) -> WebFluxTracerContext.get()
-                .flatMap(tc -> tc.execute(() -> {
+            .filter((request, next) ->
+                traceMono(tc -> {
                     // 开启WebClient的trace
                     SpanInfo spanInfo = SpanInfo.builder()
                         .operationName(request.url().toString())
@@ -140,7 +142,7 @@ public class WebClientAutoConfiguration {
                         }
                         tc.finish(activateTi);
                     });
-                })));
+                }));
     }
 
     private void configure(CodecConfigurer configurer) {

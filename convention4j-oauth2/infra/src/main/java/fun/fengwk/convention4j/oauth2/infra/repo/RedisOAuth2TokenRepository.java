@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.oauth2.infra.repo;
 import fun.fengwk.convention4j.common.idgen.NamespaceIdGenerator;
 import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.CollectionUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
@@ -12,7 +13,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -58,12 +61,9 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         // refreshToken->tokenId
         redisTemplate.opsForValue().set(rtKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
         // ssoId->tokenId
-        redisTemplate.opsForValue().set(siKey, idValue, authorizeExpiresIn, TimeUnit.SECONDS);
+        long siExpire = addToSet(siKey, idValue, authorizeExpiresIn);
         // subjectId->tokenId
-        redisTemplate.opsForSet().add(subKey, String.valueOf(oauth2Token.getId()));
-        long subExpire = redisTemplate.getExpire(subKey, TimeUnit.SECONDS);
-        subExpire = Math.max(subExpire, authorizeExpiresIn);
-        redisTemplate.expire(subKey, Duration.ofSeconds(subExpire));
+        long subExpire = addToSet(subKey, idValue, authorizeExpiresIn);
         // tokenId->token
         redisTemplate.opsForValue().set(tokenKey, tokenValue, authorizeExpiresIn, TimeUnit.SECONDS);
 
@@ -71,8 +71,8 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
             atKey, idValue, authorizeExpireSeconds);
         log.debug("Add oauth2 token, set refreshToken->tokenId, rtKey: {}, idValue: {} authorizeExpiresIn: {}s",
             rtKey, idValue, authorizeExpireSeconds);
-        log.debug("Add oauth2 token, set ssoId->tokenId, siKey: {}, idValue: {} authorizeExpiresIn: {}s",
-            siKey, idValue, authorizeExpireSeconds);
+        log.debug("Add oauth2 token, set ssoId->tokenId, siKey: {}, idValue: {} siExpire: {}s",
+            siKey, idValue, siExpire);
         log.debug("Add oauth2 token, set subjectId->tokenId, subKey: {}, idValue: {} subExpire: {}s",
             subKey, idValue, subExpire);
         log.debug("Add oauth2 token, set tokenId->token, tokenKey: {}, tokenValue: {} authorizeExpiresIn: {}s",
@@ -97,11 +97,11 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         String oldSubKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, oldToken.getSubjectId());
         redisTemplate.delete(oldAtKey);
         redisTemplate.delete(oldRtKey);
-        redisTemplate.delete(oldSiKey);
+        redisTemplate.opsForSet().remove(oldSiKey, String.valueOf(oldToken.getId()));
         redisTemplate.opsForSet().remove(oldSubKey, String.valueOf(oldToken.getId()));
         log.debug("Update oauth2 token, delete accessToken->tokenId, atKey: {}", oldAtKey);
         log.debug("Update oauth2 token, delete refreshToken->tokenId, rtToken: {}", oldRtKey);
-        log.debug("Update oauth2 token, delete ssoId->tokenId, siKey: {}", oldSiKey);
+        log.debug("Update oauth2 token, remove ssoId->tokenId, siKey: {}", oldSiKey);
         log.debug("Update oauth2 token, remove subjectId->tokenId, subKey: {}", oldSubKey);
 
         // 重新添加令牌
@@ -130,7 +130,7 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         redisTemplate.delete(tokenKey);
         redisTemplate.delete(atKey);
         redisTemplate.delete(rtKey);
-        redisTemplate.delete(siKey);
+        redisTemplate.opsForSet().remove(siKey, String.valueOf(token.getId()));
         redisTemplate.opsForSet().remove(subKey, String.valueOf(token.getId()));
         log.debug("Remove oauth2 token, delete tokenId->token, tokenKey: {}", tokenKey);
         log.debug("Remove oauth2 token, delete accessToken->tokenId, atKey: {}", atKey);
@@ -161,19 +161,33 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
     }
 
     @Override
-    public OAuth2Token getBySsoId(String ssoId) {
-        String siKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, ssoId);
-        String idValue = redisTemplate.opsForValue().get(siKey);
-        if (StringUtils.isBlank(idValue)) {
-            return null;
+    public OAuth2Token getBySsoIdAndSsoDomain(String ssoId, String ssoDomain) {
+        for (OAuth2Token oauth2Token : listBySsoId(ssoId)) {
+            if (Objects.equals(oauth2Token.getSsoDomain(), ssoDomain)) {
+                return oauth2Token;
+            }
         }
-        return getByIdValue(idValue);
+        return null;
+    }
+
+    @Override
+    public List<OAuth2Token> listBySsoId(String ssoId) {
+        String siKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SSO_ID_INDEX, ssoId);
+        Set<String> tokenIds = redisTemplate.opsForSet().members(siKey);
+        return getByTokenIds(tokenIds);
     }
 
     @Override
     public List<OAuth2Token> listBySubjectId(String subjectId) {
         String subKey = String.format(REDIS_KEY_OAUTH2_TOKEN_SUBJECT_ID_INDEX, subjectId);
         Set<String> tokenIds = redisTemplate.opsForSet().members(subKey);
+        return getByTokenIds(tokenIds);
+    }
+
+    private List<OAuth2Token> getByTokenIds(Set<String> tokenIds) {
+        if (CollectionUtils.isEmpty(tokenIds)) {
+            return Collections.emptyList();
+        }
         List<String> tokenKeys = NullSafe.of(tokenIds).stream()
             .map(tid -> String.format(REDIS_KEY_OAUTH2_TOKEN, tid))
             .collect(Collectors.toList());
@@ -191,6 +205,14 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
             return null;
         }
         return JsonUtils.fromJson(tokenValue, OAuth2Token.class);
+    }
+
+    private long addToSet(String setKey, String value, int valueExpire) {
+        redisTemplate.opsForSet().add(setKey, value);
+        long expire = redisTemplate.getExpire(setKey, TimeUnit.SECONDS);
+        expire = Math.max(expire, valueExpire);
+        redisTemplate.expire(setKey, Duration.ofSeconds(expire));
+        return expire;
     }
 
 }

@@ -29,8 +29,7 @@ public class ClientCredentialsMode<SUBJECT, CERTIFICATE>
     @Override
     protected OAuth2Token generateOAuth2Token(ClientCredentialsTokenContext context, OAuth2Client client) {
         checkScope(client, context.getScope());
-        String ssoId = getSsoId(context);
-        return generateToken(context.getSubjectId(), context.getScope(), client, ssoId);
+        return reuseOrGenerateOAuth2Token(client, context, context.getSubjectId(), context.getScope());
     }
 
 }

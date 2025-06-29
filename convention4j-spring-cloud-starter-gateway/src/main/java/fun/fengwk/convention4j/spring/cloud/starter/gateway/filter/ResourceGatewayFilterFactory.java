@@ -3,7 +3,6 @@ package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.tika.ThreadLocalTika;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.RequestPathUtils;
-import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -77,9 +76,10 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
         if (!resource404.isReadable()) {
             throw new IllegalStateException("404.html not found");
         }
+
         return new TracerContextGatewayFilter() {
             @Override
-            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain, WebFluxTracerContext tc) {
+            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain) {
                 Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
                 if (route == null || route.getUri() == null) {
                     HttpHeaders reqHeaders = exchange.getRequest().getHeaders();

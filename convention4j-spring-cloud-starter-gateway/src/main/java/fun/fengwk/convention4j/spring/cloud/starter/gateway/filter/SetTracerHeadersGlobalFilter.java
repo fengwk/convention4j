@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
-import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
 import fun.fengwk.convention4j.springboot.starter.webflux.tracer.ServerHttpRequestBuilderInject;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -14,6 +13,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import static fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext.traceMono;
+
 /**
  * 注入Tracer流向下游的请求头
  *
@@ -25,7 +26,7 @@ public class SetTracerHeadersGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        return WebFluxTracerContext.get().flatMap(tc -> tc.execute(() -> {
+        return traceMono(tc -> {
             ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
             // 注入tracer信息到headers中
             Tracer tracer = GlobalTracer.get();
@@ -34,7 +35,7 @@ public class SetTracerHeadersGlobalFilter implements GlobalFilter, Ordered {
                 tracer.inject(activeSpan.context(), ServerHttpRequestBuilderInject.FORMAT, requestBuilder);
             }
             return chain.filter(exchange.mutate().request(requestBuilder.build()).build());
-        }));
+        });
     }
 
     @Override

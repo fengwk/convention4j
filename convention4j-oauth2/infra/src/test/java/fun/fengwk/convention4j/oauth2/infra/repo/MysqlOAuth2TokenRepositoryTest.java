@@ -32,6 +32,7 @@ public class MysqlOAuth2TokenRepositoryTest {
         oauth2Token.setAccessToken("accessToken");
         oauth2Token.setRefreshToken("refreshToken");
         oauth2Token.setSsoId("ssoId");
+        oauth2Token.setSsoDomain("");
         // nanoOfSecond必须使用0，否则写入h2再查询会丢失精度导致equals失败
         LocalDateTime time = LocalDateTime.of(2024, 1, 23, 12, 0, 0, 0);
         oauth2Token.setLastRefreshTime(time);
@@ -64,10 +65,12 @@ public class MysqlOAuth2TokenRepositoryTest {
         assertEquals(1, oAuth2Tokens.size());
         assertEquals(oauth2Token, oAuth2Tokens.get(0));
 
+        assertNotNull(mysqlOAuth2TokenRepository.getBySsoIdAndSsoDomain(oauth2Token.getSsoId(), oauth2Token.getSsoDomain()));
+
         assertTrue(mysqlOAuth2TokenRepository.removeByAccessToken(oauth2Token.getAccessToken()));
         assertNull(mysqlOAuth2TokenRepository.getByAccessToken(oauth2Token.getAccessToken()));
         assertNull(mysqlOAuth2TokenRepository.getByRefreshToken(oauth2Token.getRefreshToken()));
-        assertNull(mysqlOAuth2TokenRepository.getBySsoId(oauth2Token.getSsoId()));
+        assertTrue(mysqlOAuth2TokenRepository.listBySsoId(oauth2Token.getSsoId()).isEmpty());
         oAuth2Tokens = mysqlOAuth2TokenRepository.listBySubjectId(oauth2Token.getSubjectId());
         assertEquals(0, oAuth2Tokens.size());
     }
