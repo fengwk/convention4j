@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.context;
 
+import fun.fengwk.convention4j.common.function.VoidFunc0;
 import fun.fengwk.convention4j.springboot.starter.webflux.tracer.WebFluxScopeManager;
 import fun.fengwk.convention4j.springboot.starter.webflux.tracer.WebFluxSpan;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
@@ -82,6 +83,18 @@ public class WebFluxTracerContext {
      */
     public static <T> Flux<T> traceFlux(Function<WebFluxTracerContext, Flux<T>> fluxSupplier) {
         return get().flatMapMany(tc -> tc.execute(() -> fluxSupplier.apply(tc)));
+    }
+
+    /**
+     * 在tracer上下文中执行
+     *
+     * @param executor 执行器
+     */
+    public void execute(VoidFunc0 executor) {
+        execute(() -> {
+            executor.apply();
+            return null;
+        });
     }
 
     /**
