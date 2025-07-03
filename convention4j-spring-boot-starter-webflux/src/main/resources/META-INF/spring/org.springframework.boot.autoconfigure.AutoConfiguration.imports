@@ -1,3 +1,4 @@
 fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContextAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.webflux.webclient.WebClientAutoConfiguration
 fun.fengwk.convention4j.springboot.starter.webflux.error.WebFluxErrorWebExceptionHandlerAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.webflux.tracer.WebFluxTracerAutoConfiguration

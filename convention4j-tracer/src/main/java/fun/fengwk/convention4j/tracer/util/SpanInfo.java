@@ -34,6 +34,8 @@ public final class SpanInfo {
      */
     private final SpanPropagation propagation;
 
+    
+
     public static Builder builder() {
         return new Builder();
     }

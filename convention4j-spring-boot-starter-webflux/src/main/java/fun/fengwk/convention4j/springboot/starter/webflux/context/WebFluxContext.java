@@ -3,15 +3,16 @@ package fun.fengwk.convention4j.springboot.starter.webflux.context;
 import lombok.Getter;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
+import reactor.util.context.ContextView;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * 作用域在一次请求中
+ *
  * @author fengwk
  */
 public class WebFluxContext {
@@ -34,11 +35,11 @@ public class WebFluxContext {
         return context.put(CONTEXT_KEY, webFluxContext);
     }
 
-    public static Mono<Optional<WebFluxContext>> get() {
-        return Mono.deferContextual(ctx -> {
-            WebFluxContext webFluxContext = (WebFluxContext) ctx.getOrEmpty(CONTEXT_KEY).orElse(null);
-            return Mono.just(Optional.ofNullable(webFluxContext));
-        });
+    public static WebFluxContext get(ContextView contextView) {
+        if (contextView != null && contextView.hasKey(CONTEXT_KEY)) {
+            return contextView.get(CONTEXT_KEY);
+        }
+        return null;
     }
 
 }

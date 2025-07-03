@@ -77,9 +77,9 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             throw new IllegalStateException("404.html not found");
         }
 
-        return new TracerContextGatewayFilter() {
+        return new GatewayFilter() {
             @Override
-            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain) {
+            public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
                 Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
                 if (route == null || route.getUri() == null) {
                     HttpHeaders reqHeaders = exchange.getRequest().getHeaders();

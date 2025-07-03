@@ -41,7 +41,7 @@ public class TracerUtils {
 
     private TracerUtils() {}
 
-    public static void initializeGlobalTracer(SpanFinisher finisher) {
+    public static void initialize(SpanFinisher finisher) {
         TracerTransformer tracerTransformer = new TracerTransformer();
         List<ConventionScopeManager> scopeManagers = LazyServiceLoader
             .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
@@ -141,10 +141,17 @@ public class TracerUtils {
         }
     }
 
-    public static Span startSpan(SpanInfo spanInfo) {
+    public static SpanContext activeSpanContext() {
         Tracer tracer = GlobalTracer.get();
         Span activeSpan = tracer.activeSpan();
-        SpanContext parentSpanContext = NullSafe.map(activeSpan, Span::context);
+        return NullSafe.map(activeSpan, Span::context);
+    }
+
+    public static Span startSpan(SpanInfo spanInfo, SpanContext parent) {
+        if (spanInfo == null) {
+            log.warn("Start span failed, spanInfo is null");
+            return null;
+        }
         if (StringUtils.isBlank(spanInfo.getOperationName())) {
             log.warn("Start span failed, operation name is blank, spanInfo: {}", spanInfo);
             return null;
@@ -155,7 +162,7 @@ public class TracerUtils {
             alias = spanInfo.getAlias();
         }
 
-        if (parentSpanContext == null) {
+        if (parent == null) {
             switch (spanInfo.getPropagation()) {
                 case REQUIRED:
                     break;
@@ -166,13 +173,13 @@ public class TracerUtils {
             }
         }
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanInfo.getOperationName())
+        Tracer.SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(spanInfo.getOperationName())
             .withTag(TracerUtils.TAG_SPAN_ALIAS, alias);
         if (StringUtils.isNotBlank(spanInfo.getKind())) {
             spanBuilder.withTag(Tags.SPAN_KIND, spanInfo.getKind());
         }
-        if (parentSpanContext != null) {
-            spanBuilder.asChildOf(parentSpanContext);
+        if (parent != null) {
+            spanBuilder.asChildOf(parent);
         }
         return spanBuilder.start();
     }

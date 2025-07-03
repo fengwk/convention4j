@@ -18,7 +18,7 @@ public class SpringBootSpanInitializer implements SpanInitializer {
 
     private static volatile Environment ENVIRONMENT;
 
-    static void setEnvironment(Environment environment) {
+    public static void setEnvironment(Environment environment) {
         SpringBootSpanInitializer.ENVIRONMENT = environment;
     }
 

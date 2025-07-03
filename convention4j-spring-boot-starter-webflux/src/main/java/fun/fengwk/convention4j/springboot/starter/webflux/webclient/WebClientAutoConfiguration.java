@@ -3,14 +3,12 @@ package fun.fengwk.convention4j.springboot.starter.webflux.webclient;
 import fun.fengwk.convention4j.common.json.jackson.ObjectMapperHolder;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.springboot.starter.transport.TransportHeaders;
-import fun.fengwk.convention4j.springboot.starter.webflux.context.TraceInfo;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContext;
-import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
 import fun.fengwk.convention4j.springboot.starter.webflux.tracer.ClientRequestBuilderInject;
+import fun.fengwk.convention4j.tracer.reactor.ReactorTracerUtils;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import io.netty.channel.ChannelOption;
 import io.opentracing.Span;
-import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +28,15 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.util.MimeType;
 import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-
-import static fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext.traceMono;
 
 /**
  * @author fengwk
@@ -49,7 +48,7 @@ public class WebClientAutoConfiguration {
 
     @Bean
     public TransportHeadersWebClientRequestModifier tracerXHeaderWebClientRequestModifier(
-        TransportHeaders transportHeaders) {
+            TransportHeaders transportHeaders) {
         return new TransportHeadersWebClientRequestModifier(transportHeaders);
     }
 
@@ -60,6 +59,7 @@ public class WebClientAutoConfiguration {
 
     /**
      * 配置自定义的序列化对象
+     *
      * @see fun.fengwk.convention4j.springboot.starter.json.JacksonAutoConfiguration
      */
     @Bean
@@ -79,70 +79,70 @@ public class WebClientAutoConfiguration {
 
         // 配置HttpClient
         HttpClient httpClient = HttpClient.create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, webClientProperties.getConnectTimeout())
-            .resolver(spec -> {
-                if (cacheTtl != null) {
-                    spec.cacheMaxTimeToLive(Duration.ofSeconds(cacheTtl));
-                    spec.cacheMinTimeToLive(Duration.ofSeconds(cacheTtl));
-                }
-                if (negCacheTtl != null) {
-                    spec.cacheNegativeTimeToLive(Duration.ofSeconds(negCacheTtl));
-                }
-            })
-            .responseTimeout(webClientProperties.getResponseTimeout());
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, webClientProperties.getConnectTimeout())
+                .resolver(spec -> {
+                    if (cacheTtl != null) {
+                        spec.cacheMaxTimeToLive(Duration.ofSeconds(cacheTtl));
+                        spec.cacheMinTimeToLive(Duration.ofSeconds(cacheTtl));
+                    }
+                    if (negCacheTtl != null) {
+                        spec.cacheNegativeTimeToLive(Duration.ofSeconds(negCacheTtl));
+                    }
+                })
+                .responseTimeout(webClientProperties.getResponseTimeout());
         // 构建WebClient
         return WebClient.builder()
-            .codecs(this::configure)
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
-            .filter((request, next) ->
-                traceMono(tc -> {
-                    // 开启WebClient的trace
-                    SpanInfo spanInfo = SpanInfo.builder()
-                        .operationName(request.url().toString())
-                        .kind(Tags.SPAN_KIND_CLIENT)
-                        .build();
-                    TraceInfo activateTi = tc.activate(spanInfo);
-                    // tracer信息注入
-                    Tracer tracer = GlobalTracer.get();
-                    Span activeSpan = tracer.activeSpan();
-                    ClientRequest.Builder newRequestBuilder = ClientRequest.from(request);
-                    if (activeSpan != null) {
-                        tracer.inject(activeSpan.context(), ClientRequestBuilderInject.FORMAT, newRequestBuilder);
-                        activeSpan.setTag(Tags.HTTP_METHOD, request.method().name());
-                    }
-                    WebFluxContext webFluxContext = tc.getWebFluxContext();
-                    if (webFluxContext != null) {
-                        // 执行所有请求修改器
-                        List<WebClientRequestModifier> requestModifiers = requestModifiersProvider
-                            .getIfAvailable(Collections::emptyList);
-                        for (WebClientRequestModifier requestModifier : requestModifiers) {
-                            requestModifier.modify(webFluxContext, newRequestBuilder);
-                        }
-                    }
-                    // 继续执行
-                    return next.exchange(newRequestBuilder.build()).map(resp -> {
-                        // 关闭WebClient的trace
-                        tc.finish(activateTi);
-                        Span finishActiveSpan = GlobalTracer.get().activeSpan();
-                        if (finishActiveSpan != null) {
+                .codecs(this::configure)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .filter(tracerFilter())
+                .filter(requestModifierFilter(requestModifiersProvider));
+    }
+
+    private ExchangeFilterFunction tracerFilter() {
+        return (request, next) -> {
+            Mono<ClientResponse> mono = ReactorTracerUtils.activeSpan()
+                    .flatMap(span -> {
+                        ClientRequest.Builder newRequestBuilder = ClientRequest.from(request);
+                        GlobalTracer.get().inject(span.context(), ClientRequestBuilderInject.FORMAT, newRequestBuilder);
+                        span.setTag(Tags.HTTP_METHOD, request.method().name());
+                        return next.exchange(newRequestBuilder.build());
+                    })
+                    .doOnNext(resp -> {
+                        Span span = GlobalTracer.get().activeSpan();
+                        if (span != null) {
                             HttpStatusCode httpStatusCode = resp.statusCode();
-                            finishActiveSpan.setTag(Tags.HTTP_STATUS, httpStatusCode.value());
+                            span.setTag(Tags.HTTP_STATUS, httpStatusCode.value());
                             if (httpStatusCode.is2xxSuccessful()) {
-                                finishActiveSpan.setTag(Tags.ERROR, false);
+                                span.setTag(Tags.ERROR, false);
                             } else {
-                                finishActiveSpan.setTag(Tags.ERROR, true);
+                                span.setTag(Tags.ERROR, true);
                             }
                         }
-                        return resp;
-                    }).doOnError(err -> {
-                        log.error("WebClient request error", err);
-                        Span finishActiveSpan = GlobalTracer.get().activeSpan();
-                        if (finishActiveSpan != null) {
-                            finishActiveSpan.setTag(Tags.ERROR, true);
-                        }
-                        tc.finish(activateTi);
                     });
-                }));
+
+            SpanInfo spanInfo = SpanInfo.builder()
+                    .operationName(request.url().toString())
+                    .kind(Tags.SPAN_KIND_CLIENT)
+                    .build();
+            return ReactorTracerUtils.newSpan(mono, spanInfo);
+        };
+    }
+
+    private ExchangeFilterFunction requestModifierFilter(
+            ObjectProvider<List<WebClientRequestModifier>> requestModifiersProvider) {
+        return (request, next) -> Mono.deferContextual(ctxView -> {
+            WebFluxContext webFluxContext = WebFluxContext.get(ctxView);
+            ClientRequest.Builder newRequestBuilder = ClientRequest.from(request);
+            if (webFluxContext != null) {
+                // 执行所有请求修改器
+                List<WebClientRequestModifier> requestModifiers = requestModifiersProvider
+                        .getIfAvailable(Collections::emptyList);
+                for (WebClientRequestModifier requestModifier : requestModifiers) {
+                    requestModifier.modify(webFluxContext, newRequestBuilder);
+                }
+            }
+            return next.exchange(newRequestBuilder.build());
+        });
     }
 
     private void configure(CodecConfigurer configurer) {

@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Bean;
 public class WebFluxContextAutoConfiguration {
 
     @Bean
-    public WebFluxHandlerContextFilter webFluxHandlerContextFilter() {
-        return new WebFluxHandlerContextFilter();
+    public WebFluxContextFilter webFluxContextFilter() {
+        return new WebFluxContextFilter();
     }
 
 }

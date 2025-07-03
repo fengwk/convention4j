@@ -17,7 +17,7 @@ public class SpanAspectUtils {
 
     public static <R, T extends Throwable> R execute(
         Func0T1<R, T> executor, SpanInfo spanInfo) throws T {
-        Span span = TracerUtils.startSpan(spanInfo);
+        Span span = TracerUtils.startSpan(spanInfo, TracerUtils.activeSpanContext());
         if (span == null) {
             return executor.apply();
         }

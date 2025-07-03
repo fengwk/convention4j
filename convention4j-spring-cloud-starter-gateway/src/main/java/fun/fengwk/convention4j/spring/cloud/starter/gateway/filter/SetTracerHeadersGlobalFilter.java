@@ -13,7 +13,6 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext.traceMono;
 
 /**
  * 注入Tracer流向下游的请求头
@@ -26,16 +25,14 @@ public class SetTracerHeadersGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        return traceMono(tc -> {
-            ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
-            // 注入tracer信息到headers中
-            Tracer tracer = GlobalTracer.get();
-            Span activeSpan = tracer.activeSpan();
-            if (activeSpan != null) {
-                tracer.inject(activeSpan.context(), ServerHttpRequestBuilderInject.FORMAT, requestBuilder);
-            }
-            return chain.filter(exchange.mutate().request(requestBuilder.build()).build());
-        });
+        ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
+        // 注入tracer信息到headers中
+        Tracer tracer = GlobalTracer.get();
+        Span activeSpan = tracer.activeSpan();
+        if (activeSpan != null) {
+            tracer.inject(activeSpan.context(), ServerHttpRequestBuilderInject.FORMAT, requestBuilder);
+        }
+        return chain.filter(exchange.mutate().request(requestBuilder.build()).build());
     }
 
     @Override

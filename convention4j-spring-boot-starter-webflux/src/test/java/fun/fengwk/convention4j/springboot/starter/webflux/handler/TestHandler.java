@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.handler;
 
-import fun.fengwk.convention4j.springboot.starter.webflux.context.TraceInfo;
-import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxTracerContext;
+import fun.fengwk.convention4j.tracer.reactor.ReactorTracerUtils;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,26 +27,24 @@ public class TestHandler {
 
     public Mono<ServerResponse> hello1(ServerRequest request) {
         log.info("execute hello1, request: {}", request);
-        return WebFluxTracerContext.get().flatMap(tc -> tc.execute(() -> {
-            SpanInfo spanInfo = SpanInfo.builder().operationName("hello1-inner").build();
-            TraceInfo ti = tc.activate(spanInfo);
-            log.info("execute hello1 inner");
-            tc.finish(ti);
-            return ServerResponse.status(200).contentType(MediaType.TEXT_PLAIN).bodyValue("hello1");
-        }));
+        SpanInfo spanInfo = SpanInfo.builder().operationName("hello1-inner").build();
+        Mono<ServerResponse> mono = Mono.fromRunnable(() -> log.info("execute hello1 inner"))
+                .then(ServerResponse.status(200).contentType(MediaType.TEXT_PLAIN).bodyValue("hello1"));
+        ReactorTracerUtils.newSpan(mono, spanInfo);
+        return mono;
     }
 
     public Mono<ServerResponse> hello2(ServerRequest request) {
         URI uri = UriComponentsBuilder.fromUriString("https://www.baidu.com")
-            .build().toUri();
+                .build().toUri();
         Mono<String> resMono = webClientBuilder.build().get()
-            .uri(uri)
-            .retrieve()
-            .bodyToMono(String.class);
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(String.class);
         return resMono.flatMap(res -> {
             return ServerResponse.status(200)
-                .contentType(MediaType.TEXT_PLAIN)
-                .bodyValue(res);
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .bodyValue(res);
         });
     }
 

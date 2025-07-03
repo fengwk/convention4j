@@ -5,7 +5,6 @@ import com.google.auto.service.AutoService;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -21,7 +20,7 @@ import java.util.Map;
 @Slf4j
 public class TtlScopeManager implements ConventionScopeManager {
 
-    private static final int MAX_STACK_SIZE = 1000;
+    private static final int MAX_STACK_SIZE = 10000;
     private static final TransmittableThreadLocal<LinkedList<ScopeImpl>> TTL_SCOPE_STACK = new TransmittableThreadLocal<>() {
         @Override
         protected LinkedList<ScopeImpl> initialValue() {
@@ -55,7 +54,7 @@ public class TtlScopeManager implements ConventionScopeManager {
         }
     };
 
-    private static Scope doActive(Span span) {
+    private Scope doActive(Span span) {
         LinkedList<ScopeImpl> scopeStack = TTL_SCOPE_STACK.get();
         Map<String, String> storeMdc = TracerUtils.setMDC(span.context());
         ScopeImpl scope = new ScopeImpl(scopeStack, span, storeMdc);
@@ -92,7 +91,7 @@ public class TtlScopeManager implements ConventionScopeManager {
 
     @EqualsAndHashCode
     @ToString
-    public static class ScopeImpl implements Scope {
+    static class ScopeImpl implements Scope {
 
         private final LinkedList<ScopeImpl> scopeStack;
         @Getter
@@ -116,10 +115,10 @@ public class TtlScopeManager implements ConventionScopeManager {
 
     }
 
-    @Data
-    static class TraceInfo {
-        private final String traceId;
-        private final String spanId;
-    }
+//    @Data
+//    static class TraceInfo {
+//        private final String traceId;
+//        private final String spanId;
+//    }
 
 }

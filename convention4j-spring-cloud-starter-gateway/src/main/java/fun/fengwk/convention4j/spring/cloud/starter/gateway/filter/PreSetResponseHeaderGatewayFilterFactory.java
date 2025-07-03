@@ -18,9 +18,9 @@ public class PreSetResponseHeaderGatewayFilterFactory extends AbstractNameValueG
 
     @Override
     public GatewayFilter apply(NameValueConfig config) {
-        return new TracerContextGatewayFilter() {
+        return new GatewayFilter() {
             @Override
-            public Mono<Void> doFilter(ServerWebExchange exchange, GatewayFilterChain chain) {
+            public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
                 String value = ServerWebExchangeUtils.expand(exchange, config.getValue());
                 exchange.getResponse().getHeaders().set(config.getName(), value);
                 return chain.filter(exchange);
