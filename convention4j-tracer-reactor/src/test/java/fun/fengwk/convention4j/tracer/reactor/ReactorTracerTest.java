@@ -40,10 +40,43 @@ public class ReactorTracerTest {
 //            .doOnTerminate(() -> System.out.println("terminal"))
 //            .subscribe();
 
-        Mono.empty()
-            .doOnTerminate(() -> System.out.println("Original doOnTerminate"))
-            .switchIfEmpty(Mono.empty()) // 模拟原始代码中的switchIfEmpty(flux)
-            .doOnTerminate(() -> System.out.println("Final doOnTerminate"))
+//        Mono.empty()
+//            .doOnTerminate(() -> System.out.println("Original doOnTerminate"))
+//            .switchIfEmpty(Mono.empty()) // 模拟原始代码中的switchIfEmpty(flux)
+//            .doOnTerminate(() -> System.out.println("Final doOnTerminate"))
+//            .subscribe();
+
+
+//        Mono.empty()
+//            .flatMap(i -> {
+//                System.out.println("flatMap: " + i);
+//                throw new IllegalStateException("faltMap: " + i);
+//            }).doOnError(ex -> {
+//                System.out.println("onErrorResume: " + ex);
+////                return Mono.just(3);
+//            })
+//            .switchIfEmpty(Mono.defer(() -> {
+//                System.out.println("switchIfEmpty");
+//                throw new IllegalStateException("switchIfEmpty" );
+//            }))
+//
+//            .subscribe();
+
+
+//        Mono.fromRunnable(() -> {
+//            throw new IllegalStateException("111");
+//        })
+//                .doOnError(ex -> System.out.println("errrrrr" + ex))
+//                    .subscribe();
+
+//        Mono.empty()
+//            .thenReturn(1)
+//            .doOnNext(System.out::println)
+//            .subscribe();
+
+        Mono.just(1)
+            .mapNotNull(i -> null)
+
             .subscribe();
     }
 
