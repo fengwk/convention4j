@@ -22,6 +22,7 @@ import org.springframework.web.reactive.function.server.RequestPredicates;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.reactive.resource.NoResourceFoundException;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -63,7 +64,11 @@ public class WebFluxErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
             .orElse(null);
 
         Result<Void> result;
-        if (ex instanceof Throwable t) {
+        if (ex instanceof NoResourceFoundException notFoundEx) {
+            log.error("Handle error request, {}, method: {}, path: {}, remoteAddress: {}",
+                notFoundEx.getMessage(), request.method().name(), request.path(), request.remoteAddress().orElse(null));
+            result = defaultDoHandleThrowable(notFoundEx);
+        } else if (ex instanceof Throwable t) {
             log.error("Handle error request, method: {}, path: {}, remoteAddress: {}",
                 request.method().name(), request.path(), request.remoteAddress().orElse(null), t);
             result = defaultDoHandleThrowable(t);
