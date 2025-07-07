@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.springboot.starter.tracer;
 
 import fun.fengwk.convention4j.common.lang.StringUtils;
-import fun.fengwk.convention4j.tracer.util.SpanAspectUtils;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
+import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -49,7 +49,7 @@ public class ConventionSpanAspect {
             .kind(conventionSpan.kind())
             .propagation(conventionSpan.propagation())
             .build();
-        return SpanAspectUtils.execute(joinPoint::proceed, spanInfo);
+        return TracerUtils.executeAndReturn(joinPoint::proceed, spanInfo);
     }
 
     private Method findMethod(ProceedingJoinPoint joinPoint) {

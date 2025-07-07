@@ -8,6 +8,7 @@ import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,6 +32,8 @@ public class ReactorTracerUtils {
     private static final String SPAN_STACK = ReactorTracerUtils.class.getName() + ".SPAN_STACK";
 
     private static ThreadLocal<ContextView> CONTEXT_VIEW_TL = new ThreadLocal<>();
+
+    private static final int MAX_STACK_SIZE = 10000;
 
     private ReactorTracerUtils() {
     }
@@ -104,7 +107,8 @@ public class ReactorTracerUtils {
      * @return Mono
      */
     public static <T> Mono<T> newSpan(Mono<T> mono, SpanInfo spanInfo) {
-        Span span = activeSpan(getCurrentContextView());
+        // 使用GlobalTracer解决从普通代码切换到Flux代码的场景
+        Span span = GlobalTracer.get().activeSpan();
         return newSpan(mono, spanInfo, span == null ? null : span.context());
     }
 
@@ -119,22 +123,21 @@ public class ReactorTracerUtils {
      */
     public static <T> Mono<T> newSpan(Mono<T> mono, SpanInfo spanInfo, SpanContext parent) {
         return Mono.deferContextual(startSpan(spanInfo, parent))
-            .flatMap(spanOpt -> {
-                if (spanOpt.isEmpty()) {
-                    return mono;
-                } else {
-                    Span span = spanOpt.get();
-                    return Mono.deferContextual(ctxView ->
-                        mono
-                            .doOnError(ex -> {
-                                span.setTag(Tags.ERROR, true);
-                                span.log(ex.getMessage());
-                            })
-                            .doOnCancel(() -> finishSpan(span, ctxView))
-                            .doOnTerminate(() -> finishSpan(span, ctxView)));
-                }
-            })
-            .contextWrite(ReactorTracerUtils::enableTrace);
+                .flatMap(spanOpt -> {
+                    if (spanOpt.isEmpty()) {
+                        return mono;
+                    } else {
+                        Span span = spanOpt.get();
+                        return Mono.deferContextual(ctxView -> mono
+                                .doOnError(ex -> {
+                                    span.setTag(Tags.ERROR, true);
+                                    span.log(ex.getMessage());
+                                })
+                                .doOnCancel(() -> finishSpan(span, ctxView))
+                                .doOnTerminate(() -> finishSpan(span, ctxView)));
+                    }
+                })
+                .contextWrite(ReactorTracerUtils::enableTrace);
     }
 
     /**
@@ -146,7 +149,8 @@ public class ReactorTracerUtils {
      * @return Flux
      */
     public static <T> Flux<T> newSpan(Flux<T> flux, SpanInfo spanInfo) {
-        Span span = activeSpan(getCurrentContextView());
+        // 使用GlobalTracer解决从普通代码切换到Flux代码的场景
+        Span span = GlobalTracer.get().activeSpan();
         return newSpan(flux, spanInfo, span == null ? null : span.context());
     }
 
@@ -161,22 +165,21 @@ public class ReactorTracerUtils {
      */
     public static <T> Flux<T> newSpan(Flux<T> flux, SpanInfo spanInfo, SpanContext parent) {
         return Flux.deferContextual(startSpan(spanInfo, parent))
-            .flatMap(spanOpt -> {
-                if (spanOpt.isEmpty()) {
-                    return flux;
-                } else {
-                    Span span = spanOpt.get();
-                    return Flux.deferContextual(ctxView ->
-                        flux
-                            .doOnError(ex -> {
-                                span.setTag(Tags.ERROR, true);
-                                span.log(ex.getMessage());
-                            })
-                            .doOnCancel(() -> finishSpan(span, ctxView))
-                            .doOnTerminate(() -> finishSpan(span, ctxView)));
-                }
-            })
-            .contextWrite(ReactorTracerUtils::enableTrace);
+                .flatMap(spanOpt -> {
+                    if (spanOpt.isEmpty()) {
+                        return flux;
+                    } else {
+                        Span span = spanOpt.get();
+                        return Flux.deferContextual(ctxView -> flux
+                                .doOnError(ex -> {
+                                    span.setTag(Tags.ERROR, true);
+                                    span.log(ex.getMessage());
+                                })
+                                .doOnCancel(() -> finishSpan(span, ctxView))
+                                .doOnTerminate(() -> finishSpan(span, ctxView)));
+                    }
+                })
+                .contextWrite(ReactorTracerUtils::enableTrace);
     }
 
     /**
@@ -217,6 +220,7 @@ public class ReactorTracerUtils {
             Span span = TracerUtils.startSpan(spanInfo, p);
             if (span != null) {
                 spanStack.addFirst(span);
+                keepSpanStackMaxSize(spanStack);
             }
             return Mono.just(Optional.ofNullable(span));
         };
@@ -239,6 +243,15 @@ public class ReactorTracerUtils {
             return contextView.get(SPAN_STACK);
         }
         return null;
+    }
+
+    static void keepSpanStackMaxSize(ConcurrentLinkedDeque<Span> spanStack) {
+
+        // 防止编程错误导致的内存泄露
+        if (spanStack.size() > MAX_STACK_SIZE) {
+            log.error("Span stack size exceeds max stack size: {}", MAX_STACK_SIZE);
+            spanStack.removeLast();
+        }
     }
 
 }

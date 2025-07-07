@@ -3,11 +3,13 @@ package fun.fengwk.convention4j.tracer.reactor;
 import com.google.auto.service.AutoService;
 import fun.fengwk.convention4j.common.util.OrderedObject;
 import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
+import fun.fengwk.convention4j.tracer.scope.TtlScopeManager;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import reactor.util.context.ContextView;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -19,22 +21,35 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 @AutoService(ConventionScopeManager.class)
 public class ReactorScopeManager implements ConventionScopeManager {
 
+    private TtlScopeManager ttlScopeManager = new TtlScopeManager();
+
     @Override
     public Scope activate(Span span) {
-        ConcurrentLinkedDeque<Span> spanStack = ReactorTracerUtils.getSpanStack(ReactorTracerUtils.getCurrentContextView());
+        ContextView ctxView = ReactorTracerUtils.getCurrentContextView();
+        if (ctxView == null) {
+            // 非flux环境下使用ttlScopeManager
+            return ttlScopeManager.activate(span);
+        }
+        ConcurrentLinkedDeque<Span> spanStack = ReactorTracerUtils.getSpanStack(ctxView);
         if (spanStack == null) {
             log.error("flux trace not enable, span: {}", span);
             throw new IllegalStateException("flux trace not enable");
         }
         if (!spanStack.contains(span)) {
             spanStack.addFirst(span);
+            ReactorTracerUtils.keepSpanStackMaxSize(spanStack);
         }
         return new ReactorScope(spanStack, span);
     }
 
     @Override
     public Span activeSpan() {
-        return ReactorTracerUtils.activeSpan(ReactorTracerUtils.getCurrentContextView());
+        ContextView ctxView = ReactorTracerUtils.getCurrentContextView();
+        if (ctxView == null) {
+            // 非flux环境下使用ttlScopeManager
+            return ttlScopeManager.activeSpan();
+        }
+        return ReactorTracerUtils.activeSpan(ctxView);
     }
 
     @Override
@@ -64,7 +79,9 @@ public class ReactorScopeManager implements ConventionScopeManager {
 
         @Override
         public void close() {
-            spanStack.remove(span);
+            if (!spanStack.remove(span)) {
+                log.warn("Reactor scope failed to remove span, no matching span was found, span: {}", span);
+            }
         }
 
     }

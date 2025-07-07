@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author fengwk
@@ -30,34 +31,36 @@ public class TtlScopeManager implements ConventionScopeManager {
         @Override
         protected void beforeExecute() {
             // 使用自定义agent替代
-//            super.beforeExecute();
-//            LinkedList<ScopeImpl> scopeStack = get();
-//            synchronized (scopeStack) {
-//                if (!scopeStack.isEmpty()) {
-//                    ScopeImpl scope = scopeStack.getFirst();
-//                    TracerUtils.setMDC(scope.getSpan().context());
-//                }
-//            }
+            // super.beforeExecute();
+            // LinkedList<ScopeImpl> scopeStack = get();
+            // synchronized (scopeStack) {
+            // if (!scopeStack.isEmpty()) {
+            // ScopeImpl scope = scopeStack.getFirst();
+            // TracerUtils.setMDC(scope.getSpan().context());
+            // }
+            // }
         }
 
         @Override
         protected void afterExecute() {
             // 使用自定义agent替代
-//            super.afterExecute();
-//            LinkedList<ScopeImpl> scopeStack = get();
-//            synchronized (scopeStack) {
-//                if (!scopeStack.isEmpty()) {
-//                    ScopeImpl scope = scopeStack.getFirst();
-//                    TracerUtils.clearMDC(scope.getSpan().context());
-//                }
-//            }
+            // super.afterExecute();
+            // LinkedList<ScopeImpl> scopeStack = get();
+            // synchronized (scopeStack) {
+            // if (!scopeStack.isEmpty()) {
+            // ScopeImpl scope = scopeStack.getFirst();
+            // TracerUtils.clearMDC(scope.getSpan().context());
+            // }
+            // }
         }
     };
 
-    private Scope doActive(Span span) {
+    @Override
+    public Scope activate(Span span) {
+        long threadId = Thread.currentThread().getId();
         LinkedList<ScopeImpl> scopeStack = TTL_SCOPE_STACK.get();
         Map<String, String> storeMdc = TracerUtils.setMDC(span.context());
-        ScopeImpl scope = new ScopeImpl(scopeStack, span, storeMdc);
+        ScopeImpl scope = new ScopeImpl(scopeStack, span, storeMdc, threadId);
         synchronized (scopeStack) {
             // addFirst可以使最近添加的节点以最少的遍历数被移出LinkedList
             scopeStack.addFirst(scope);
@@ -72,11 +75,6 @@ public class TtlScopeManager implements ConventionScopeManager {
     }
 
     @Override
-    public Scope activate(Span span) {
-        return doActive(span);
-    }
-
-    @Override
     public Span activeSpan() {
         LinkedList<ScopeImpl> scopeStack = TTL_SCOPE_STACK.get();
         synchronized (scopeStack) {
@@ -86,7 +84,7 @@ public class TtlScopeManager implements ConventionScopeManager {
 
     @Override
     public void close() {
-        TTL_SCOPE_STACK.remove();
+        // nothing to do
     }
 
     @EqualsAndHashCode
@@ -97,15 +95,23 @@ public class TtlScopeManager implements ConventionScopeManager {
         @Getter
         private final Span span;
         private final Map<String, String> storeMdc;
+        private final long activateThreadId;
 
-        public ScopeImpl(LinkedList<ScopeImpl> scopeStack, Span span, Map<String, String> storeMdc) {
+        public ScopeImpl(LinkedList<ScopeImpl> scopeStack, Span span, Map<String, String> storeMdc,
+                long activateThreadId) {
             this.scopeStack = scopeStack;
             this.span = span;
             this.storeMdc = storeMdc;
+            this.activateThreadId = activateThreadId;
         }
 
         @Override
         public void close() {
+            long threadId = Thread.currentThread().getId();
+            if (!Objects.equals(threadId, activateThreadId)) {
+                log.warn("The thread that closes scope is inconsistent with the activated thread,"
+                        + " currentThreadId: {}, activateThreadId: {}", threadId, activateThreadId);
+            }
             synchronized (scopeStack) {
                 if (scopeStack.remove(this)) {
                     TracerUtils.clearMDC(storeMdc);
@@ -114,11 +120,5 @@ public class TtlScopeManager implements ConventionScopeManager {
         }
 
     }
-
-//    @Data
-//    static class TraceInfo {
-//        private final String traceId;
-//        private final String spanId;
-//    }
 
 }

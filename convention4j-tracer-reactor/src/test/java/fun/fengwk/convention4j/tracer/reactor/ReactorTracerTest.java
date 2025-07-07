@@ -3,6 +3,7 @@ package fun.fengwk.convention4j.tracer.reactor;
 import fun.fengwk.convention4j.tracer.finisher.Slf4jSpanFinisher;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import fun.fengwk.convention4j.tracer.util.SpanPropagation;
+import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.util.GlobalTracer;
@@ -35,49 +36,47 @@ public class ReactorTracerTest {
 
     @Test
     public void testEmptyMono() {
-//        Mono.empty()
-//            .doOnCancel(() -> System.out.println("cancel"))
-//            .doOnTerminate(() -> System.out.println("terminal"))
-//            .subscribe();
+        // Mono.empty()
+        // .doOnCancel(() -> System.out.println("cancel"))
+        // .doOnTerminate(() -> System.out.println("terminal"))
+        // .subscribe();
 
-//        Mono.empty()
-//            .doOnTerminate(() -> System.out.println("Original doOnTerminate"))
-//            .switchIfEmpty(Mono.empty()) // 模拟原始代码中的switchIfEmpty(flux)
-//            .doOnTerminate(() -> System.out.println("Final doOnTerminate"))
-//            .subscribe();
+        // Mono.empty()
+        // .doOnTerminate(() -> System.out.println("Original doOnTerminate"))
+        // .switchIfEmpty(Mono.empty()) // 模拟原始代码中的switchIfEmpty(flux)
+        // .doOnTerminate(() -> System.out.println("Final doOnTerminate"))
+        // .subscribe();
 
+        // Mono.empty()
+        // .flatMap(i -> {
+        // System.out.println("flatMap: " + i);
+        // throw new IllegalStateException("faltMap: " + i);
+        // }).doOnError(ex -> {
+        // System.out.println("onErrorResume: " + ex);
+        //// return Mono.just(3);
+        // })
+        // .switchIfEmpty(Mono.defer(() -> {
+        // System.out.println("switchIfEmpty");
+        // throw new IllegalStateException("switchIfEmpty" );
+        // }))
+        //
+        // .subscribe();
 
-//        Mono.empty()
-//            .flatMap(i -> {
-//                System.out.println("flatMap: " + i);
-//                throw new IllegalStateException("faltMap: " + i);
-//            }).doOnError(ex -> {
-//                System.out.println("onErrorResume: " + ex);
-////                return Mono.just(3);
-//            })
-//            .switchIfEmpty(Mono.defer(() -> {
-//                System.out.println("switchIfEmpty");
-//                throw new IllegalStateException("switchIfEmpty" );
-//            }))
-//
-//            .subscribe();
+        // Mono.fromRunnable(() -> {
+        // throw new IllegalStateException("111");
+        // })
+        // .doOnError(ex -> System.out.println("errrrrr" + ex))
+        // .subscribe();
 
-
-//        Mono.fromRunnable(() -> {
-//            throw new IllegalStateException("111");
-//        })
-//                .doOnError(ex -> System.out.println("errrrrr" + ex))
-//                    .subscribe();
-
-//        Mono.empty()
-//            .thenReturn(1)
-//            .doOnNext(System.out::println)
-//            .subscribe();
+        // Mono.empty()
+        // .thenReturn(1)
+        // .doOnNext(System.out::println)
+        // .subscribe();
 
         Mono.just(1)
-            .mapNotNull(i -> null)
+                .mapNotNull(i -> null)
 
-            .subscribe();
+                .subscribe();
     }
 
     @Test
@@ -107,7 +106,7 @@ public class ReactorTracerTest {
                     });
 
                     SpanInfo subSpanInfo = SpanInfo.builder().operationName("subTestMonoTest")
-                        .propagation(SpanPropagation.SUPPORTS).build();
+                            .propagation(SpanPropagation.SUPPORTS).build();
                     subMono = ReactorTracerUtils.newSpan(subMono, subSpanInfo);
 
                     return subMono.then(Mono.just(s));
@@ -157,7 +156,7 @@ public class ReactorTracerTest {
                     });
 
                     SpanInfo subSpanInfo = SpanInfo.builder().operationName("subTestMonoTest")
-                        .propagation(SpanPropagation.SUPPORTS).build();
+                            .propagation(SpanPropagation.SUPPORTS).build();
                     subMono = ReactorTracerUtils.newSpan(subMono, subSpanInfo);
 
                     Flux<Integer> subFlux = Flux.just(1, 2, 3).doOnNext(subI -> {
@@ -171,7 +170,7 @@ public class ReactorTracerTest {
                     });
 
                     SpanInfo subFluxSpanInfo = SpanInfo.builder().operationName("subTestFluxTest")
-                        .propagation(SpanPropagation.SUPPORTS).build();
+                            .propagation(SpanPropagation.SUPPORTS).build();
                     subFlux = ReactorTracerUtils.newSpan(subFlux, subFluxSpanInfo);
                     subFlux.subscribe();
 
@@ -192,6 +191,67 @@ public class ReactorTracerTest {
         flux = ReactorTracerUtils.newSpan(flux, spanInfo);
 
         flux.subscribe();
+    }
+
+    @Test
+    public void testNoFlux() {
+        SpanInfo spanInfo = SpanInfo.builder()
+                .operationName("test").propagation(SpanPropagation.REQUIRED).build();
+        TracerUtils.execute(() -> {
+            Span span = GlobalTracer.get().activeSpan();
+            Assertions.assertNotNull(span);
+            SpanContext context = span.context();
+            Assertions.assertNotNull(context);
+            System.out.println("traceId: " + context.toTraceId());
+            System.out.println("spanId: " + context.toSpanId());
+            subSpanTest();
+        }, spanInfo);
+    }
+
+    @Test
+    public void testNoFluxToFlux() {
+        SpanInfo spanInfo = SpanInfo.builder()
+                .operationName("test").propagation(SpanPropagation.REQUIRED).build();
+        TracerUtils.execute(() -> {
+            Span span = GlobalTracer.get().activeSpan();
+            Assertions.assertNotNull(span);
+            SpanContext context = span.context();
+            Assertions.assertNotNull(context);
+            System.out.println("traceId: " + context.toTraceId());
+            System.out.println("spanId: " + context.toSpanId());
+
+            Mono<Integer> mono = Mono.just(1)
+                    .doOnNext(i -> {
+                        Span subSpan = GlobalTracer.get().activeSpan();
+                        Assertions.assertNotNull(subSpan);
+                        SpanContext subContext = subSpan.context();
+                        Assertions.assertNotNull(subContext);
+                        System.out.println("fluxSubTraceId: " + subContext.toTraceId());
+                        System.out.println("fluxSubSpanId: " + subContext.toSpanId());
+                        subSpanTest();
+                    });
+
+            SpanInfo subSpanInfo = SpanInfo.builder()
+                    .operationName("subFluxTest").propagation(SpanPropagation.REQUIRED).build();
+
+            mono = ReactorTracerUtils.newSpan(mono, subSpanInfo);
+            mono.subscribe();
+
+        }, spanInfo);
+    }
+
+    private void subSpanTest() {
+        SpanInfo subSpanInfo = SpanInfo.builder()
+                .operationName("subSpanTest").propagation(SpanPropagation.REQUIRED).build();
+
+        TracerUtils.execute(() -> {
+            Span subSpan = GlobalTracer.get().activeSpan();
+            Assertions.assertNotNull(subSpan);
+            SpanContext subContext = subSpan.context();
+            Assertions.assertNotNull(subContext);
+            System.out.println("subTraceId: " + subContext.toTraceId());
+            System.out.println("subSpanId: " + subContext.toSpanId());
+        }, subSpanInfo);
     }
 
 }

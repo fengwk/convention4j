@@ -1,6 +1,8 @@
 package fun.fengwk.convention4j.tracer.util;
 
 import fun.fengwk.convention4j.common.clock.SystemClock;
+import fun.fengwk.convention4j.common.function.Func0T1;
+import fun.fengwk.convention4j.common.function.VoidFunc0T1;
 import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.reflect.TypeToken;
@@ -14,10 +16,7 @@ import fun.fengwk.convention4j.tracer.TracerImpl;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.propagation.TracerTransformer;
 import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
-import io.opentracing.References;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
+import io.opentracing.*;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -32,19 +31,20 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TracerUtils {
 
-    private static final List<SpanInitializer> SPAN_INITIALIZERS
-        = LazyServiceLoader.loadServiceIgnoreLoadFailed(SpanInitializer.class);
+    private static final List<SpanInitializer> SPAN_INITIALIZERS = LazyServiceLoader
+            .loadServiceIgnoreLoadFailed(SpanInitializer.class);
 
     public static final String TRACE_ID = "traceId";
     public static final String SPAN_ID = "spanId";
     public static final String TAG_SPAN_ALIAS = "span.alias";
 
-    private TracerUtils() {}
+    private TracerUtils() {
+    }
 
     public static void initialize(SpanFinisher finisher) {
         TracerTransformer tracerTransformer = new TracerTransformer();
         List<ConventionScopeManager> scopeManagers = LazyServiceLoader
-            .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
+                .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
         scopeManagers = OrderedObject.sort(scopeManagers);
         ConventionScopeManager priorityScopeManager = ListUtils.getFirst(scopeManagers);
         TracerImpl tracer = new TracerImpl(new SystemClock(), priorityScopeManager, tracerTransformer, finisher);
@@ -81,7 +81,8 @@ public class TracerUtils {
 
     public static Map<String, String> deserializeHttpPropagationBaggage(String serializedBaggage) {
         String baggageJson = UriUtils.decodeUriComponent(serializedBaggage);
-        return JsonUtils.fromJson(baggageJson, new TypeToken<>() {});
+        return JsonUtils.fromJson(baggageJson, new TypeToken<>() {
+        });
     }
 
     public static Reference getChildOfReference(List<Reference> references) {
@@ -89,9 +90,9 @@ public class TracerUtils {
             return null;
         }
         return references.stream()
-            .filter(ref -> Objects.equals(ref.getReferenceType(), References.CHILD_OF))
-            .findFirst()
-            .orElse(null);
+                .filter(ref -> Objects.equals(ref.getReferenceType(), References.CHILD_OF))
+                .findFirst()
+                .orElse(null);
     }
 
     public static List<Reference> getFollowsFromReferences(List<Reference> references) {
@@ -99,8 +100,8 @@ public class TracerUtils {
             return Collections.emptyList();
         }
         return references.stream()
-            .filter(ref -> Objects.equals(ref.getReferenceType(), References.FOLLOWS_FROM))
-            .collect(Collectors.toList());
+                .filter(ref -> Objects.equals(ref.getReferenceType(), References.FOLLOWS_FROM))
+                .collect(Collectors.toList());
     }
 
     public static String generateTraceId() {
@@ -174,7 +175,7 @@ public class TracerUtils {
         }
 
         Tracer.SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(spanInfo.getOperationName())
-            .withTag(TracerUtils.TAG_SPAN_ALIAS, alias);
+                .withTag(TracerUtils.TAG_SPAN_ALIAS, alias);
         if (StringUtils.isNotBlank(spanInfo.getKind())) {
             spanBuilder.withTag(Tags.SPAN_KIND, spanInfo.getKind());
         }
@@ -182,6 +183,33 @@ public class TracerUtils {
             spanBuilder.asChildOf(parent);
         }
         return spanBuilder.start();
+    }
+
+    public static <R, T extends Throwable> R executeAndReturn(
+            Func0T1<R, T> executor, SpanInfo spanInfo) throws T {
+        Span span = TracerUtils.startSpan(spanInfo, TracerUtils.activeSpanContext());
+        if (span == null) {
+            return executor.apply();
+        }
+        try (Scope ignored = GlobalTracer.get().activateSpan(span)) {
+            R result = executor.apply();
+            span.setTag(Tags.ERROR, false);
+            return result;
+        } catch (Throwable err) {
+            span.setTag(Tags.ERROR, true);
+            span.log(err.getMessage());
+            throw err;
+        } finally {
+            span.finish();
+        }
+    }
+
+    public static <T extends Throwable> void execute(
+            VoidFunc0T1<T> executor, SpanInfo spanInfo) throws T {
+        executeAndReturn(() -> {
+            executor.apply();
+            return null;
+        }, spanInfo);
     }
 
 }
