@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.55</version>
+    <version>1.1.56</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -55,7 +55,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.55</convention4j.version>
+        <convention4j.version>1.1.56</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.4.3</spring-boot-dependencies.version>
@@ -82,7 +82,7 @@
         <bcprov-jdk18on.version>1.77</bcprov-jdk18on.version>
         <opentracing.version>0.33.0</opentracing.version>
         <groovy.version>4.0.22</groovy.version>
-        <tika.version>2.9.2</tika.version>
+        <tika.version>3.1.0</tika.version>
         <rocketmq-client.version>5.0.7</rocketmq-client.version>
         <jtokkit.version>1.0.0</jtokkit.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
