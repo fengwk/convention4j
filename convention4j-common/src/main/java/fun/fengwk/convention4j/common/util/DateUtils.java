@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * 
@@ -11,7 +12,18 @@ import java.util.Date;
  */
 public class DateUtils {
 
+    private static final ZoneId ZONE_ID_UTC = ZoneId.of("UTC");
+
     private DateUtils() {}
+
+    /**
+     * UTC ZoneId
+     *
+     * @return UTC ZoneId
+     */
+    public static ZoneId zoneIdUTC() {
+        return ZONE_ID_UTC;
+    }
 
     /**
      * 将{@link LocalDateTime}转为{@link Instant}。
@@ -96,6 +108,26 @@ public class DateUtils {
             return null;
         }
         return instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    /**
+     * 讲sourceTime从时区sourceZoneId转换为targetZoneId
+     *
+     * @param sourceTime 来源时间
+     * @param sourceZoneId 来源时区
+     * @param targetZoneId 目标时区
+     * @return 目标时间
+     */
+    public static LocalDateTime convertTimeZone(LocalDateTime sourceTime, ZoneId sourceZoneId, ZoneId targetZoneId) {
+        if (sourceTime == null) {
+            return null;
+        }
+        if (Objects.equals(sourceZoneId, targetZoneId)) {
+            return sourceTime;
+        }
+        return sourceTime.atZone(sourceZoneId)
+            .withZoneSameInstant(targetZoneId)
+            .toLocalDateTime();
     }
 
 }

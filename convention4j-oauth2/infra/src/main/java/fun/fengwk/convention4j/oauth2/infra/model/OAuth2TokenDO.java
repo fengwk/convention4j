@@ -65,14 +65,14 @@ public class OAuth2TokenDO extends ConventionDO<Long> {
 
     @ExcludeField
     @Override
-    public LocalDateTime getCreateTime() {
-        return super.getCreateTime();
+    public LocalDateTime getGmtCreate() {
+        return super.getGmtCreate();
     }
 
     @ExcludeField
     @Override
-    public LocalDateTime getUpdateTime() {
-        return super.getUpdateTime();
+    public LocalDateTime getGmtModified() {
+        return super.getGmtModified();
     }
 
 }
