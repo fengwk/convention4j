@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @Data
 public abstract class ConventionDO<ID> extends BaseDO<ID> {
 
+    private static final long DEFAULT_VERSION = 0L;
+
     /**
      * 创建时间。
      */
@@ -31,4 +33,14 @@ public abstract class ConventionDO<ID> extends BaseDO<ID> {
     @UpdateIncrement
     private Long version;
 
+    /**
+     * 填充初始化字段
+     */
+    public void populateDefaultFields() {
+        setVersion(DEFAULT_VERSION);
+        LocalDateTime now = LocalDateTime.now();
+        setCreateTime(now);
+        setUpdateTime(now);
+    }
+    
 }

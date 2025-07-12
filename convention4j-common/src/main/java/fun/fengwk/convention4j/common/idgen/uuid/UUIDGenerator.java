@@ -1,9 +1,10 @@
 package fun.fengwk.convention4j.common.idgen.uuid;
 
 import fun.fengwk.convention4j.common.idgen.AbstractIdGenerator;
+import fun.fengwk.convention4j.common.idgen.IdGenUtils;
 import fun.fengwk.convention4j.common.lifecycle.LifeCycleException;
 
-import java.util.UUID;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 该生成器将生成32位的UUID。
@@ -12,18 +13,14 @@ import java.util.UUID;
  */
 public class UUIDGenerator extends AbstractIdGenerator<String> {
 
-    private static final char TRIM = '-';
+    @Override
+    protected ReentrantReadWriteLock getLifeCycleRwLock() {
+        return super.getLifeCycleRwLock();
+    }
 
     @Override
     protected String doNext() {
-        String uuid = UUID.randomUUID().toString();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < uuid.length(); i++) {
-            if (uuid.charAt(i) != TRIM) {
-                sb.append(uuid.charAt(i));
-            }
-        }
-        return sb.toString();
+        return IdGenUtils.generateUUID();
     }
 
     @Override
