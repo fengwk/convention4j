@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>fun.fengwk.convention4j</groupId>
+        <artifactId>convention4j-parent</artifactId>
+        <version>1.1.57</version>
+    </parent>
+
+    <artifactId>convention4j-spring-boot-starter-datasource-multi</artifactId>
+
+    <name>${project.artifactId}</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>fun.fengwk.convention4j</groupId>
+            <artifactId>convention4j-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

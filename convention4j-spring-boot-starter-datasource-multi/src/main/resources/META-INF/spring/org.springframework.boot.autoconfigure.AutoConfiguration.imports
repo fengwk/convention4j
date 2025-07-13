@@ -1,0 +1,2 @@
+fun.fengwk.convention4j.springboot.starter.datasource.multi.MultiDataSourceAutoConfiguration
+fun.fengwk.convention4j.springboot.starter.datasource.multi.MultiDataSourceMybatisAutoConfiguration

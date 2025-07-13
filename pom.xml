@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.56</version>
+    <version>1.1.57</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -40,6 +40,7 @@
         <module>convention4j-tracer-reactor</module>
         <module>convention4j-spring-boot-starter-test</module>
         <module>convention4j-spring-boot-starter</module>
+        <module>convention4j-spring-boot-starter-datasource-multi</module>
         <module>convention4j-spring-boot-starter-web</module>
         <module>convention4j-spring-boot-starter-webflux</module>
         <module>convention4j-oauth2</module>
@@ -55,7 +56,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.56</convention4j.version>
+        <convention4j.version>1.1.57</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.4.3</spring-boot-dependencies.version>
@@ -133,6 +134,11 @@
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
+                <artifactId>convention4j-spring-boot-starter-datasource-multi</artifactId>
+                <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-spring-boot-starter-web</artifactId>
                 <version>${convention4j.version}</version>
             </dependency>
@@ -172,14 +178,14 @@
                 <version>${convention4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>fun.fengwk.convention4j</groupId>
                 <artifactId>convention4j-example</artifactId>
                 <version>${convention4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
             </dependency>
             <dependency>
                 <groupId>fun.fengwk.auto-mapper</groupId>

@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+  fun.fengwk.convention4j.springboot.starter.datasource.multi.MultiDataSourceExcludeImportFilter

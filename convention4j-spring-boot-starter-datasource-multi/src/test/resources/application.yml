@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: test
+
+  datasource:
+    multi:
+      ds1:
+        primary: true
+        # 使用h2驱动
+        driver-class-name: org.h2.Driver
+        # 使用这个jdbc连接将会以MySQL模式连接到h2内存数据库
+        url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
+        # 指定的默认的用户名SA，防止h2出现认证异常
+        # 详见，org.h2.engine.Database.setMasterUser
+        username: SA
+        properties:
+          minimumIdle: 5
+          maximumPoolSize: 30
+          idleTimeout: 600000
+          # 连接获取超时30s
+          connectionTimeout: 30000
+          # 连接泄露检测5分钟
+          leakDetectionThreshold: 300000
+      ds2:
+        # 使用h2驱动
+        driver-class-name: org.h2.Driver
+        # 使用这个jdbc连接将会以MySQL模式连接到h2内存数据库
+        url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
+        # 指定的默认的用户名SA，防止h2出现认证异常
+        # 详见，org.h2.engine.Database.setMasterUser
+        username: SA
+        properties:
+          minimumIdle: 5
+          maximumPoolSize: 30
+          idleTimeout: 600000
+          # 连接获取超时30s
+          connectionTimeout: 30000
+          # 连接泄露检测5分钟
+          leakDetectionThreshold: 300000
