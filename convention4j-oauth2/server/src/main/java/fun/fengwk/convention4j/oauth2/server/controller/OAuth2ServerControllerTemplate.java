@@ -106,13 +106,14 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         String code,
         String redirectUri,
         String clientId,
-        String clientSecret,
         String scope,
         String subjectId,
         String refreshToken,
+        String authorization,
         CERTIFICATE certificate,
         HttpServletRequest request,
         HttpServletResponse response) {
+        String clientSecret = TokenType.BEARER.parseToken(authorization);
         DefaultTokenContext<CERTIFICATE> context = new DefaultTokenContext<>();
         context.setGrantType(grantType);
         context.setCode(code);
@@ -146,7 +147,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
     public Result<SUBJECT> subject(
         String authorization,
         String scope) {
-        String accessToken = TokenType.BEARER.parseAccessToken(authorization);
+        String accessToken = TokenType.BEARER.parseToken(authorization);
         SUBJECT subject = oauth2Service.subject(accessToken, scope);
         log.debug("Subject success, accessToken: {}, scope: {}, subject: {}", accessToken, scope, subject);
         return Results.ok(subject);
@@ -158,7 +159,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
      * @param authorization 授权信息，{@link TokenType#buildAuthorization(String)}
      */
     public Result<Void> revokeToken(String authorization) {
-        String accessToken = TokenType.BEARER.parseAccessToken(authorization);
+        String accessToken = TokenType.BEARER.parseToken(authorization);
         oauth2Service.revokeToken(accessToken);
         log.debug("Revoke token success, accessToken: {}", accessToken);
         return Results.ok();

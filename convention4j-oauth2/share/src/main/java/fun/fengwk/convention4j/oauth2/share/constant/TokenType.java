@@ -26,7 +26,7 @@ public enum TokenType {
         return null;
     }
 
-    public String parseAccessToken(String authorization) {
+    public String parseToken(String authorization) {
         if (authorization == null) {
             return null;
         }
