@@ -33,14 +33,14 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
     protected final OAuth2TokenRepository oauth2TokenRepository;
 
     protected BaseOAuth2Service(OAuth2ClientManager clientManager,
-                                OAuth2SubjectManager<SUBJECT, CERTIFICATE> oauth2SubjectManager,
-                                OAuth2TokenRepository oauth2TokenRepository) {
+            OAuth2SubjectManager<SUBJECT, CERTIFICATE> oauth2SubjectManager,
+            OAuth2TokenRepository oauth2TokenRepository) {
         this.clientManager = Objects.requireNonNull(
-            clientManager, "clientManager cannot be null");
+                clientManager, "clientManager cannot be null");
         this.oauth2SubjectManager = Objects.requireNonNull(
-            oauth2SubjectManager, "subjectManager cannot be null");
+                oauth2SubjectManager, "subjectManager cannot be null");
         this.oauth2TokenRepository = Objects.requireNonNull(
-            oauth2TokenRepository, "oauth2TokenRepository cannot be null");
+                oauth2TokenRepository, "oauth2TokenRepository cannot be null");
     }
 
     protected String authenticate(OAuth2Client client, CERTIFICATE certificate, String scope, Object context) {
@@ -49,20 +49,14 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
             List<OAuth2Token> ssoTokens = oauth2TokenRepository.listBySsoId(ssoContext.getSsoId());
             for (OAuth2Token ssoToken : ssoTokens) {
                 if (ssoToken != null
-                    && sameScope(ssoToken.getScope(), scope)
-                    && !ssoToken.authorizeExpired(client.getAuthorizeExpireSeconds())) {
+                        && sameScope(ssoToken.getScope(), scope)
+                        && !ssoToken.authorizeExpired(client.getAuthorizeExpireSeconds())) {
                     String subjectId = ssoToken.getSubjectId();
-                    Result<SUBJECT> result = oauth2SubjectManager.getSubject(
-                        client, subjectId, OAuth2ScopeUtils.splitScope(scope));
-                    if (!result.isSuccess()) {
-                        log.error("Get subject failed, result: {}, clientId: {}, subjectId: {}, scope: {}",
-                            result, client.getClientId(), subjectId, scope);
+                    if (!validateSubjectId(client, subjectId, scope)) {
                         break;
-                    } else if (result.getData() != null) {
-                        // 如果成功获取到了subject说明sso成功，设置认证标识位，返回subjectId
-                        ssoContext.setSsoAuthenticate(true);
-                        return subjectId;
                     }
+                    ssoContext.setSsoAuthenticate(true);
+                    return subjectId;
                 }
             }
         }
@@ -71,12 +65,12 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
         Result<String> result = oauth2SubjectManager.authenticate(client, certificate);
         if (!result.isSuccess()) {
             log.error("Authenticate failed, result: {}, clientId: {}, certificate: {}",
-                result, client.getClientId(), certificate);
+                    result, client.getClientId(), certificate);
             throw result.getErrorCode().asThrowable();
         }
         if (result.getData() == null) {
             log.info("Certificate error, result: {}, clientId: {}, certificate: {}",
-                result, client.getClientId(), certificate);
+                    result, client.getClientId(), certificate);
             throw OAuth2ErrorCodes.AUTHENTICATE_FAILED.asThrowable();
         }
         return result.getData();
@@ -89,7 +83,22 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
         }
     }
 
-    protected OAuth2Token reuseOrGenerateOAuth2Token(OAuth2Client client, Object context, String subjectId, String scope) {
+    protected boolean validateSubjectId(OAuth2Client client, String subjectId, String scope) {
+        Result<SUBJECT> result = oauth2SubjectManager.getSubject(
+                client, subjectId, OAuth2ScopeUtils.splitScope(scope));
+        if (!result.isSuccess()) {
+            log.error("Get subject failed, result: {}, clientId: {}, subjectId: {}, scope: {}",
+                    result, client.getClientId(), subjectId, scope);
+            return false;
+        }
+        if (result.getData() == null) {
+            return false;
+        }
+        return true;
+    }
+
+    protected OAuth2Token reuseOrGenerateOAuth2Token(OAuth2Client client, Object context, String subjectId,
+            String scope) {
         OAuth2Token oauth2Token;
 
         String ssoDomain = null;
@@ -133,7 +142,7 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
     }
 
     private OAuth2Token getOrGenerateSsoToken(OAuth2Client client, String subjectId, String scope,
-                                                String ssoId, String ssoDomain) {
+            String ssoId, String ssoDomain) {
         // 先尝试获取sso域名下的单点登陆令牌
         OAuth2Token ssoToken = oauth2TokenRepository.getBySsoIdAndSsoDomain(ssoId, ssoDomain);
 
@@ -174,9 +183,9 @@ public abstract class BaseOAuth2Service<SUBJECT, CERTIFICATE> {
     }
 
     private OAuth2Token generateAndStoreToken(String subjectId, String scope, OAuth2Client client,
-                                              String ssoId, String ssoDomain) {
+            String ssoId, String ssoDomain) {
         OAuth2Token oauth2Token = OAuth2Token.generate(
-            oauth2TokenRepository.generateId(), client.getClientId(), subjectId, scope, ssoId, ssoDomain);
+                oauth2TokenRepository.generateId(), client.getClientId(), subjectId, scope, ssoId, ssoDomain);
         if (!oauth2TokenRepository.add(oauth2Token, client.getAuthorizeExpireSeconds())) {
             log.warn("Generate oauth2 token failed, oauth2Token: {}", oauth2Token);
             throw OAuth2ErrorCodes.GENERATE_OAUTH2_TOKEN_FAILED.asThrowable();

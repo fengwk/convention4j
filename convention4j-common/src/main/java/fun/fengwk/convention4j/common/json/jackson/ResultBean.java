@@ -10,7 +10,6 @@ import java.util.Map;
 @Data
 public class ResultBean<T> {
 
-    private boolean success;
     private int status;
     private String code;
     private String message;

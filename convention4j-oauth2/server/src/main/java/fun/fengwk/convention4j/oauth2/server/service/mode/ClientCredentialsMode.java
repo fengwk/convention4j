@@ -7,6 +7,7 @@ import fun.fengwk.convention4j.oauth2.server.model.OAuth2Token;
 import fun.fengwk.convention4j.oauth2.server.model.context.ClientCredentialsTokenContext;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
+import fun.fengwk.convention4j.oauth2.share.constant.OAuth2ErrorCodes;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
 
 /**
@@ -29,7 +30,12 @@ public class ClientCredentialsMode<SUBJECT, CERTIFICATE>
     @Override
     protected OAuth2Token generateOAuth2Token(ClientCredentialsTokenContext context, OAuth2Client client) {
         checkScope(client, context.getScope());
-        return reuseOrGenerateOAuth2Token(client, context, context.getSubjectId(), context.getScope());
+        String subjectId = context.getSubjectId();
+        String scope = context.getScope();
+        if (!validateSubjectId(client, subjectId, scope)) {
+            throw OAuth2ErrorCodes.INVALID_SUBJECT_ID.asThrowable();
+        }
+        return reuseOrGenerateOAuth2Token(client, context, subjectId, scope);
     }
 
 }

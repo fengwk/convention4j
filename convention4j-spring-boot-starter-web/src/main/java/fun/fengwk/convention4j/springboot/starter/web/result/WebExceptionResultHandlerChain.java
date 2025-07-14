@@ -35,6 +35,7 @@ import org.springframework.web.util.WebUtils;
 
 import java.util.*;
 
+import static fun.fengwk.convention4j.api.code.CommonErrorCodes.BAD_REQUEST;
 import static fun.fengwk.convention4j.api.code.CommonErrorCodes.INTERNAL_SERVER_ERROR;
 
 /**
@@ -194,7 +195,9 @@ public class WebExceptionResultHandlerChain extends ResponseEntityExceptionHandl
             retErrorCode = CommonErrorCodes.ofStatus(argEx.getStatusCode().value());
             retErrorCode = ResultExceptionHandlerUtils.toErrorCode(retErrorCode, ex);
             errors = convertToErrors(argEx);
-        } if (ex instanceof ConventionErrorCode conventionErrorCode) {
+        } else if (ex instanceof IllegalArgumentException) {
+            retErrorCode = ResultExceptionHandlerUtils.toErrorCode(BAD_REQUEST, ex);
+        } else if (ex instanceof ConventionErrorCode conventionErrorCode) {
             retErrorCode = conventionErrorCode;
         } else if (ex instanceof ErrorResponse er) {
             retErrorCode = CommonErrorCodes.ofStatus(er.getStatusCode().value());

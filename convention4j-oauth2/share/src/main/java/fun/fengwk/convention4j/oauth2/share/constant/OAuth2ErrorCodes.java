@@ -13,6 +13,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum OAuth2ErrorCodes implements DomainConventionErrorCodeEnumAdapter {
 
+    INVALID_SUBJECT_ID(HttpStatus.BAD_REQUEST),
     INVALID_REDIRECT_URI(HttpStatus.BAD_REQUEST),
     UNSUPPORTED_GRANT_TYPE(HttpStatus.BAD_REQUEST),
     UNSUPPORTED_RESPONSE_TYPE(HttpStatus.BAD_REQUEST),
