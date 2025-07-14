@@ -125,7 +125,11 @@ public class WebExceptionResultHandlerChain extends ResponseEntityExceptionHandl
             request.setAttribute(WebUtils.ERROR_EXCEPTION_ATTRIBUTE, ex, WebRequest.SCOPE_REQUEST);
         }
 
-        return createResponseEntity(body, headers, statusCode, request);
+        if (ResultInternalInvokerUtils.isIgnoreErrorHttpStatus(request::getHeader)) {
+            return createResponseEntity(body, headers, HttpStatus.OK, request);
+        } else {
+            return createResponseEntity(body, headers, statusCode, request);
+        }
     }
 
     private Result<Void> adaptResultBody(ProblemDetail problemDetail) {
