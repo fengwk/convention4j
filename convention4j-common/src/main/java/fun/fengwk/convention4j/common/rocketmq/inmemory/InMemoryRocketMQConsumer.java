@@ -1,6 +1,7 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import fun.fengwk.convention4j.common.lang.StringUtils;
+
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
@@ -13,16 +14,16 @@ import java.util.Set;
 /**
  * @author fengwk
  */
-public class TestRocketMQConsumer implements Runnable, AutoCloseable {
+public class InMemoryRocketMQConsumer implements Runnable, AutoCloseable {
 
     private final Thread thread = new Thread(this);
-    private final TestRocketMQBroker broker;
+    private final InMemoryRocketMQBroker broker;
     private final String topic;
     private final String consumerGroup;
     private final MessageListener listener;
     private final FilterExpression filterExpression;
 
-    public TestRocketMQConsumer(TestRocketMQBroker broker, String topic, String consumerGroup,
+    public InMemoryRocketMQConsumer(InMemoryRocketMQBroker broker, String topic, String consumerGroup,
                                 MessageListener listener, FilterExpression filterExpression) {
         this.broker = Objects.requireNonNull(broker);
         this.topic = Objects.requireNonNull(topic);
@@ -66,9 +67,9 @@ public class TestRocketMQConsumer implements Runnable, AutoCloseable {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                TestRocketMQMessage testRocketMQMessage = broker.receiveMessage(topic, consumerGroup);
+                InMemoryRocketMQMessage testRocketMQMessage = broker.receiveMessage(topic, consumerGroup);
                 if (filterMessage(testRocketMQMessage.getMessage())) {
-                    listener.consume(new TestRocketMQMessageView(testRocketMQMessage));
+                    listener.consume(new InMemoryRocketMQMessageView(testRocketMQMessage));
                 }
             } catch (InterruptedException ignore) {
                 Thread.currentThread().interrupt();

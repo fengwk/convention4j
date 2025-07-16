@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import org.apache.rocketmq.client.apis.message.MessageId;
 import org.apache.rocketmq.client.apis.message.MessageView;
@@ -11,11 +11,11 @@ import java.util.Optional;
 /**
  * @author fengwk
  */
-public class TestRocketMQMessageView implements MessageView {
+public class InMemoryRocketMQMessageView implements MessageView {
 
-    private final TestRocketMQMessage message;
+    private final InMemoryRocketMQMessage message;
 
-    public TestRocketMQMessageView(TestRocketMQMessage message) {
+    public InMemoryRocketMQMessageView(InMemoryRocketMQMessage message) {
         this.message = message;
     }
 

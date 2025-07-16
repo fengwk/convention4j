@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import fun.fengwk.convention4j.common.rocketmq.*;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +13,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author fengwk
  */
 @Slf4j
-public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager {
+public class InMemoryRocketMQConsumerManager extends AbstractRocketMQConsumerManager {
 
-    private final TestRocketMQBroker broker;
-    private final List<TestRocketMQConsumer> consumers = new CopyOnWriteArrayList<>();
+    private final InMemoryRocketMQBroker broker;
+    private final List<InMemoryRocketMQConsumer> consumers = new CopyOnWriteArrayList<>();
 
-    public TestRocketMQConsumerManager(RocketMQConsumerRegistry registry, TestRocketMQBroker broker) {
+    public InMemoryRocketMQConsumerManager(RocketMQConsumerRegistry registry, InMemoryRocketMQBroker broker) {
         super(registry);
         this.broker = Objects.requireNonNull(broker);
     }
@@ -40,7 +40,7 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
         if (broker.registerQueueIfNecessary(topic, consumerGroup)) {
             RocketMQMessageListenerAdapter messageListener = new RocketMQMessageListenerAdapter(
                 listenerDefinition.getBean(), listenerDefinition.getMethod());
-            TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup, messageListener, filterExpression);
+            InMemoryRocketMQConsumer consumer = new InMemoryRocketMQConsumer(broker, topic, consumerGroup, messageListener, filterExpression);
             consumer.start();
             consumers.add(consumer);
         }
@@ -64,8 +64,8 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
             // 也使用单个消费的方式简单实现
             BatchMessageListenerAdapter batchListenerAdapter = new BatchMessageListenerAdapter(
                 batchListenerDefinition.getBean(), batchListenerDefinition.getMethod());
-            TestRocketMQConsumer consumer = new TestRocketMQConsumer(broker, topic, consumerGroup,
-                new BatchMessageListenerAdapterBridge(batchListenerAdapter), filterExpression);
+            InMemoryRocketMQConsumer consumer = new InMemoryRocketMQConsumer(broker, topic, consumerGroup,
+                new InMemoryBatchMessageListenerAdapter(batchListenerAdapter), filterExpression);
             consumer.start();
             consumers.add(consumer);
         }
@@ -73,7 +73,7 @@ public class TestRocketMQConsumerManager extends AbstractRocketMQConsumerManager
 
     @Override
     public void close() {
-        for (TestRocketMQConsumer consumer : consumers) {
+        for (InMemoryRocketMQConsumer consumer : consumers) {
             consumer.close();
         }
     }

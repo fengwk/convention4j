@@ -41,30 +41,4 @@ public abstract class AbstractRocketMQConsumerManager implements AutoCloseable {
      */
     public abstract void refreshBatchConsumer(ConsumerGroupTopic consumerGroupTopic) throws ClientException;
 
-    private RocketMQMessageListenerConfig buildRocketMQMessageListenerConfig(
-        RocketMQMessageListener ann) {
-        RocketMQMessageListenerConfig config = new RocketMQMessageListenerConfig();
-        config.setConsumerGroup(ann.consumerGroup());
-        config.setTopic(ann.topic());
-        config.setFilterExpressionType(ann.filterExpressionType());
-        config.setFilterExpression(ann.filterExpression());
-        config.setMaxCacheMessageCount(ann.maxCacheMessageCount());
-        config.setMaxCacheMessageSizeInBytes(ann.maxCacheMessageSizeInBytes());
-        config.setConsumptionThreadCount(ann.consumptionThreadCount());
-        return config;
-    }
-
-    private RocketMQBatchMessageListenerConfig buildRocketMQBatchMessageListenerConfig(
-        RocketMQBatchMessageListener ann) {
-        RocketMQBatchMessageListenerConfig config = new RocketMQBatchMessageListenerConfig();
-        config.setConsumerGroup(ann.consumerGroup());
-        config.setTopic(ann.topic());
-        config.setFilterExpressionType(ann.filterExpressionType());
-        config.setFilterExpression(ann.filterExpression());
-        config.setMaxMessageNum(ann.maxMessageNum());
-        config.setInvisibleDurationMs(ann.invisibleDurationMs());
-        config.setConsumptionThreadCount(ann.consumptionThreadCount());
-        return config;
-    }
-
 }

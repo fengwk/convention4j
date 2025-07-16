@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import org.apache.rocketmq.client.apis.message.MessageId;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
@@ -6,9 +6,9 @@ import org.apache.rocketmq.client.apis.producer.SendReceipt;
 /**
  * @author fengwk
  */
-public class TestRocketMQSendReceipt implements SendReceipt {
+public class InMemoryRocketMQSendReceipt implements SendReceipt {
 
-    private final MessageId messageId = new TestRocketMQMessageId();
+    private final MessageId messageId = new InMemoryRocketMQMessageId();
 
     @Override
     public MessageId getMessageId() {

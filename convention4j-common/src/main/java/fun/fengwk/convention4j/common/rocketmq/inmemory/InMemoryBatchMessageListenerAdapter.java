@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import fun.fengwk.convention4j.common.rocketmq.BatchMessageListenerAdapter;
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
@@ -12,11 +12,11 @@ import java.util.Objects;
 /**
  * @author fengwk
  */
-public class BatchMessageListenerAdapterBridge implements MessageListener {
+public class InMemoryBatchMessageListenerAdapter implements MessageListener {
 
     private final BatchMessageListenerAdapter batchMessageListenerAdapter;
 
-    public BatchMessageListenerAdapterBridge(BatchMessageListenerAdapter batchMessageListenerAdapter) {
+    public InMemoryBatchMessageListenerAdapter(BatchMessageListenerAdapter batchMessageListenerAdapter) {
         this.batchMessageListenerAdapter = Objects.requireNonNull(batchMessageListenerAdapter);
     }
 

@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.rocketmq;
+package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientException;
@@ -13,11 +13,11 @@ import java.util.concurrent.CompletableFuture;
  * @author fengwk
  */
 @Slf4j
-public class TestRocketMQProducer implements Producer {
+public class InMemoryRocketMQProducer implements Producer {
 
-    private final TestRocketMQBroker broker;
+    private final InMemoryRocketMQBroker broker;
 
-    public TestRocketMQProducer(TestRocketMQBroker broker) {
+    public InMemoryRocketMQProducer(InMemoryRocketMQBroker broker) {
         this.broker = broker;
     }
 
@@ -26,6 +26,7 @@ public class TestRocketMQProducer implements Producer {
         try {
             return broker.sendMessage(message);
         } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             throw new ClientException(ex);
         }
     }
@@ -54,7 +55,7 @@ public class TestRocketMQProducer implements Producer {
 
     @Override
     public Transaction beginTransaction() {
-        return new TestRocketMQTransaction();
+        return new InMemoryRocketMQTransaction();
     }
 
     @Override

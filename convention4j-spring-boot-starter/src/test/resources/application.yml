@@ -48,5 +48,6 @@ convention:
     i18n: 
       locale: ${convention.i18n.locale}
 
-#  rocketmq:
+  rocketmq:
+    impl: inMemory
 #    endpoints: '${VPS_ROCKETMQ_BROKER_HOST}:${VPS_ROCKETMQ_BROKER_PORT}'
