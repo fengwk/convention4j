@@ -1,8 +1,8 @@
 package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.path.PathParser;
 import fun.fengwk.convention4j.common.tika.ThreadLocalTika;
-import fun.fengwk.convention4j.springboot.starter.webflux.context.RequestPathUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -50,8 +50,11 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
      * 默认chunk块大小，该参数有助有优化TCP网络交互，size太小会使传输速度显著下降
      */
     private static final int DEFAULT_CHUNK_SIZE = 1024 * 16;
-    public static final String GZIP = "gzip";
-    public static final String CHUNKED = "chunked";
+    private static final String GZIP = "gzip";
+    private static final String CHUNKED = "chunked";
+    private static final PathParser PATH_PARSER = new PathParser();
+    private static final String DEFAULT_404_PAGE = "classpath:/static/404-default.html";
+    private static final String USER_404_PAGE = "classpath:/static/404.html";
 
     private final ResourceLoader resourceLoader;
 
@@ -72,10 +75,7 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
 
     @Override
     public GatewayFilter apply(Config config) {
-        Resource resource404 = resourceLoader.getResource("classpath:/static/404.html");
-        if (!resource404.isReadable()) {
-            throw new IllegalStateException("404.html not found");
-        }
+        Resource resource404 = get404PageResource();
 
         return new GatewayFilter() {
             @Override
@@ -91,14 +91,15 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
                 String uri = route.getUri().toString();
                 uri = fixUri(uri);
                 Resource baseResource = resourceLoader.getResource(uri);
-                String relativePath = RequestPathUtils.extractPath(
-                    exchange.getRequest().getPath().pathWithinApplication(), "/**");
-                if (StringUtils.isBlank(relativePath) && StringUtils.isNotBlank(config.getIndex())) {
-                    relativePath = config.getIndex();
-                }
 
-                // 获取可读的resource
-                Resource resource = createReadableRelativeResource(baseResource, relativePath);
+                // 首先从路径中读取，路径中不存在使用index尝试读取
+                String path = exchange.getRequest().getPath().pathWithinApplication().value();
+                Resource resource = createReadableRelativeResource(
+                        baseResource, asRelativePath(PATH_PARSER.normalize(path)));
+                if (resource == null && StringUtils.isNotBlank(config.getIndex())) {
+                    resource = createReadableRelativeResource(
+                            baseResource, getRelativePath(path, config.getIndex()));
+                }
 
                 // 获取请求响应信息
                 HttpHeaders reqHeaders = exchange.getRequest().getHeaders();
@@ -142,14 +143,25 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             @Override
             public String toString() {
                 return filterToStringCreator(ResourceGatewayFilterFactory.this)
-                    .append("index", config.getIndex())
-                    .append("chunkSize", config.getChunkSize())
-                    .toString();
+                        .append("index", config.getIndex())
+                        .append("chunkSize", config.getChunkSize())
+                        .toString();
             }
         };
     }
 
-    private static String fixUri(String uri) {
+    private Resource get404PageResource() {
+        Resource resource404 = resourceLoader.getResource(USER_404_PAGE);
+        if (!resource404.isReadable()) {
+            resource404 = resourceLoader.getResource(DEFAULT_404_PAGE);
+            if (!resource404.isReadable()) {
+                throw new IllegalStateException("404.html not found");
+            }
+        }
+        return resource404;
+    }
+
+    private String fixUri(String uri) {
         // 修复file:///home/fengwk/Pictures时不作为一个目录处理的情况
         if (uri.startsWith("file:") && !uri.endsWith("/")) {
             uri += "/";
@@ -229,20 +241,20 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             ByteArrayOutputStream bytesOutput = new ByteArrayOutputStream();
             GZIPOutputStream gzipOutput = gzipWrap(bytesOutput);
             dataBufferFlux = dataBufferFlux
-                // 使用concatMap确保顺序性
-                .concatMap(dataBuffer -> {
-                    // synchronized确保可见性
-                    synchronized (gzipOutput) {
-                        while (dataBuffer.readableByteCount() > 0) {
-                            write(gzipOutput, dataBuffer.read());
+                    // 使用concatMap确保顺序性
+                    .concatMap(dataBuffer -> {
+                        // synchronized确保可见性
+                        synchronized (gzipOutput) {
+                            while (dataBuffer.readableByteCount() > 0) {
+                                write(gzipOutput, dataBuffer.read());
+                            }
+                            byte[] buf = bytesOutput.toByteArray();
+                            bytesOutput.reset();
+                            DataBuffer gzipDataBuf = dataBuffer.factory().wrap(buf);
+                            DataBufferUtils.release(dataBuffer);
+                            return Mono.just(gzipDataBuf);
                         }
-                        byte[] buf = bytesOutput.toByteArray();
-                        bytesOutput.reset();
-                        DataBuffer gzipDataBuf = dataBuffer.factory().wrap(buf);
-                        DataBufferUtils.release(dataBuffer);
-                        return Mono.just(gzipDataBuf);
-                    }
-                });
+                    });
             dataBufferFlux = Flux.concat(dataBufferFlux, Mono.defer(() -> {
                 // synchronized确保可见性
                 synchronized (gzipOutput) {
@@ -255,18 +267,18 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             }));
             // 写入所有Flux<DataBuffer>
             return response.writeWith(dataBufferFlux)
-                // 定义DataBuffer释放方法
-                .doOnDiscard(DataBuffer.class, DataBufferUtils::release)
-                .doFinally(s -> {
-                    synchronized (gzipOutput) {
-                        close(gzipOutput);
-                    }
-                });
+                    // 定义DataBuffer释放方法
+                    .doOnDiscard(DataBuffer.class, DataBufferUtils::release)
+                    .doFinally(s -> {
+                        synchronized (gzipOutput) {
+                            close(gzipOutput);
+                        }
+                    });
         } else {
             // 写入所有Flux<DataBuffer>
             return response.writeWith(dataBufferFlux)
-                // 定义DataBuffer释放方法
-                .doOnDiscard(DataBuffer.class, DataBufferUtils::release);
+                    // 定义DataBuffer释放方法
+                    .doOnDiscard(DataBuffer.class, DataBufferUtils::release);
         }
     }
 
@@ -322,6 +334,21 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             log.debug("Failed to get content type for resource: {}", resource, ex);
         }
         return MediaType.parseMediaType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    }
+
+    private String getRelativePath(String path, String index) {
+        fun.fengwk.convention4j.common.path.Path pIndex = PATH_PARSER.normalize(index);
+        if (pIndex.isAbsolute()) {
+            return asRelativePath(pIndex);
+        } else {
+            fun.fengwk.convention4j.common.path.Path base = PATH_PARSER.normalize(path);
+            String fullPath = base.getPath() + PATH_PARSER.getSeparator() + pIndex.getPath();
+            return asRelativePath(PATH_PARSER.normalize(fullPath));
+        }
+    }
+
+    private String asRelativePath(fun.fengwk.convention4j.common.path.Path p) {
+        return String.join(PATH_PARSER.getSeparator(), p.getSegments());
     }
 
     @Data
