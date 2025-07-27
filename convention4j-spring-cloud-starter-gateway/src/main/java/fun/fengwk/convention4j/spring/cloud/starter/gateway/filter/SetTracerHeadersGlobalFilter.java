@@ -39,7 +39,8 @@ public class SetTracerHeadersGlobalFilter implements GlobalFilter, Ordered {
     public int getOrder() {
         // 确保当前Filter是最后执行的，GatewayFilter和GlobalFilter排序是一起排的
         // https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway/global-filters.html
-        return Ordered.LOWEST_PRECEDENCE;
+        // @see org.springframework.cloud.gateway.filter.NettyRoutingFilter#getOrder
+        return Ordered.LOWEST_PRECEDENCE - 1;
     }
 
 }
