@@ -1,13 +1,11 @@
 package fun.fengwk.convention4j.common.path;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author fengwk

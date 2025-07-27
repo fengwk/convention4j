@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.common.rocketmq.inmemory;
 
 import fun.fengwk.convention4j.common.lang.StringUtils;
-
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;

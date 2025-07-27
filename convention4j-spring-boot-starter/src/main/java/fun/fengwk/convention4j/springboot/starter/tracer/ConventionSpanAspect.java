@@ -49,6 +49,11 @@ public class ConventionSpanAspect {
             .kind(conventionSpan.kind())
             .propagation(conventionSpan.propagation())
             .build();
+
+        return doHandle(joinPoint, annotatedMethod, spanInfo);
+    }
+
+    protected Object doHandle(ProceedingJoinPoint joinPoint, Method annotatedMethod, SpanInfo spanInfo) throws Throwable {
         return TracerUtils.executeAndReturn(joinPoint::proceed, spanInfo);
     }
 

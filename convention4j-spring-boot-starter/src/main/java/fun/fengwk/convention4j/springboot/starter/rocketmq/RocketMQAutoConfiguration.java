@@ -8,7 +8,6 @@ import fun.fengwk.convention4j.common.rocketmq.inmemory.InMemoryRocketMQBroker;
 import fun.fengwk.convention4j.common.rocketmq.inmemory.InMemoryRocketMQConsumerManager;
 import fun.fengwk.convention4j.common.rocketmq.inmemory.InMemoryRocketMQProducer;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;

@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.tracer.reactor;
 
+import fun.fengwk.convention4j.common.function.Func0T1;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.reactor.aspect.ReactorAspect;
@@ -99,6 +100,24 @@ public class ReactorTracerUtils {
     }
 
     /**
+     * 支持Reactor的版本
+     *
+     * @see TracerUtils#executeAndReturn(Func0T1, SpanInfo)
+     */
+    public static <R, T extends Throwable> R executeAndReturn(
+        Func0T1<R, T> executor, SpanInfo spanInfo, Class<R> returnType) throws T {
+        if (returnType == Mono.class) {
+            Mono<?> mono = (Mono<?>) executor.apply();
+            return (R) ReactorTracerUtils.newSpan(mono, spanInfo);
+        } else if (returnType == Flux.class) {
+            Flux<?> flux = (Flux<?>) executor.apply();
+            return (R) ReactorTracerUtils.newSpan(flux, spanInfo);
+        } else {
+            return TracerUtils.executeAndReturn(executor, spanInfo);
+        }
+    }
+
+    /**
      * 新开一个span
      *
      * @param mono     Mono
@@ -123,21 +142,21 @@ public class ReactorTracerUtils {
      */
     public static <T> Mono<T> newSpan(Mono<T> mono, SpanInfo spanInfo, SpanContext parent) {
         return Mono.deferContextual(startSpan(spanInfo, parent))
-                .flatMap(spanOpt -> {
-                    if (spanOpt.isEmpty()) {
-                        return mono;
-                    } else {
-                        Span span = spanOpt.get();
-                        return Mono.deferContextual(ctxView -> mono
-                                .doOnError(ex -> {
-                                    span.setTag(Tags.ERROR, true);
-                                    span.log(ex.getMessage());
-                                })
-                                .doOnCancel(() -> finishSpan(span, ctxView))
-                                .doOnTerminate(() -> finishSpan(span, ctxView)));
-                    }
-                })
-                .contextWrite(ReactorTracerUtils::enableTrace);
+            .flatMap(spanOpt -> {
+                if (spanOpt.isEmpty()) {
+                    return mono;
+                } else {
+                    Span span = spanOpt.get();
+                    return Mono.deferContextual(ctxView -> mono
+                        .doOnError(ex -> {
+                            span.setTag(Tags.ERROR, true);
+                            span.log(ex.getMessage());
+                        })
+                        .doOnCancel(() -> finishSpan(span, ctxView))
+                        .doOnTerminate(() -> finishSpan(span, ctxView)));
+                }
+            })
+            .contextWrite(ReactorTracerUtils::enableTrace);
     }
 
     /**
@@ -165,21 +184,21 @@ public class ReactorTracerUtils {
      */
     public static <T> Flux<T> newSpan(Flux<T> flux, SpanInfo spanInfo, SpanContext parent) {
         return Flux.deferContextual(startSpan(spanInfo, parent))
-                .flatMap(spanOpt -> {
-                    if (spanOpt.isEmpty()) {
-                        return flux;
-                    } else {
-                        Span span = spanOpt.get();
-                        return Flux.deferContextual(ctxView -> flux
-                                .doOnError(ex -> {
-                                    span.setTag(Tags.ERROR, true);
-                                    span.log(ex.getMessage());
-                                })
-                                .doOnCancel(() -> finishSpan(span, ctxView))
-                                .doOnTerminate(() -> finishSpan(span, ctxView)));
-                    }
-                })
-                .contextWrite(ReactorTracerUtils::enableTrace);
+            .flatMap(spanOpt -> {
+                if (spanOpt.isEmpty()) {
+                    return flux;
+                } else {
+                    Span span = spanOpt.get();
+                    return Flux.deferContextual(ctxView -> flux
+                        .doOnError(ex -> {
+                            span.setTag(Tags.ERROR, true);
+                            span.log(ex.getMessage());
+                        })
+                        .doOnCancel(() -> finishSpan(span, ctxView))
+                        .doOnTerminate(() -> finishSpan(span, ctxView)));
+                }
+            })
+            .contextWrite(ReactorTracerUtils::enableTrace);
     }
 
     /**

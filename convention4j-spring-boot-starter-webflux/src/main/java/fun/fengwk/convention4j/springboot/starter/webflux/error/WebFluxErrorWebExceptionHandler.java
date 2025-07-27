@@ -63,19 +63,21 @@ public class WebFluxErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
             .attribute("org.springframework.boot.web.reactive.error.DefaultErrorAttributes.ERROR")
             .orElse(null);
 
+        String remoteAddress = request.remoteAddress().map(String::valueOf).orElse(null);
         Result<Void> result;
-        if (ex instanceof NoResourceFoundException notFoundEx) {
-            log.error("Handle error request, {}, method: {}, path: {}, remoteAddress: {}",
-                notFoundEx.getMessage(), request.method().name(), request.path(), request.remoteAddress().orElse(null));
-            result = defaultDoHandleThrowable(notFoundEx);
-        } else if (ex instanceof Throwable t) {
-            log.error("Handle error request, method: {}, path: {}, remoteAddress: {}",
-                request.method().name(), request.path(), request.remoteAddress().orElse(null), t);
+        if (ex instanceof Throwable t) {
             result = defaultDoHandleThrowable(t);
+            if (fun.fengwk.convention4j.api.code.HttpStatus.is5xx(result.getStatus())) {
+                log.error("Handle error request, method: {}, path: {}, remoteAddress: {}, result: {}",
+                    request.method().name(), request.path(), remoteAddress, result, t);
+            } else {
+                log.warn("Handle error request: {}, method: {}, path: {}, remoteAddress: {}, result: {}",
+                    t.getMessage(), request.method().name(), request.path(), remoteAddress, result);
+            }
         } else {
-            log.error("Handle error request, method: {}, path: {}, remoteAddress: {}",
-                request.method().name(), request.path(), request.remoteAddress().orElse(null));
             result = Results.error(INTERNAL_SERVER_ERROR);
+            log.error("Handle error request, method: {}, path: {}, remoteAddress: {}, result: {}",
+                request.method().name(), request.path(), remoteAddress, result);
         }
 
         return ReactiveResultUtils.adapt(request, result);
@@ -95,7 +97,8 @@ public class WebFluxErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
             retErrorCode = CommonErrorCodes.ofStatus(argEx.getStatusCode().value());
             retErrorCode = ResultExceptionHandlerUtils.toErrorCode(retErrorCode, ex);
             errors = convertToErrors(argEx);
-        } if (ex instanceof ConventionErrorCode conventionErrorCode) {
+        }
+        if (ex instanceof ConventionErrorCode conventionErrorCode) {
             retErrorCode = conventionErrorCode;
         } else if (ex instanceof ErrorResponse er) {
             retErrorCode = CommonErrorCodes.ofStatus(er.getStatusCode().value());
