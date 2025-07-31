@@ -6,13 +6,17 @@ Convention For Java Spring Boot Starter Test模块为SpringBoot项目提供测�
 
 ```yaml
 spring:
+  sql:
+    init:
+      # SqlInitializationProperties
+      schema-locations:
+        - classpath:schema-h2.sql
+      data-locations:
+        - classpath:data-h2.sql
+
   datasource:
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
     username: SA
-    schema:
-      - schema.sql
-    data:
-      - data.sql
 #    url: jdbc:mysql://mysql.fengwk.fun:3306/simple_user_system?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&connectTimeout=3000&socketTimeout=3000&useSSL=false
 #    driver-class-name: com.mysql.jdbc.Driver
 #    username: fengwk

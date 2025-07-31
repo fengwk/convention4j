@@ -39,9 +39,6 @@ spring:
 
     # openfeign配置
     openfeign:
-      okhttp:
-        # OkHttpFeignConfiguration
-        enabled: true
       # FeignHttpClientProperties
       httpclient:
         # 关闭ssl验证

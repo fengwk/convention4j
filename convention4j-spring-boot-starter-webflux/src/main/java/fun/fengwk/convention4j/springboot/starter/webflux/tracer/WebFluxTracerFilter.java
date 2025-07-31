@@ -34,19 +34,24 @@ public class WebFluxTracerFilter implements WebFilter {
         ServerHttpRequest request = exchange.getRequest();
 
         Mono<Void> chainFilterMono = ReactorTracerUtils.activeSpan()
-            .flatMap(span -> {
-                span.setTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER);
-                span.setTag(Tags.HTTP_METHOD, request.getMethod().name());
-                span.setTag(Tags.HTTP_URL, request.getURI().toString());
+            .flatMap(spanOpt -> {
+                Span span = spanOpt.orElse(null);
+                if (span != null) {
+                    span.setTag(Tags.SPAN_KIND, Tags.SPAN_KIND_SERVER);
+                    span.setTag(Tags.HTTP_METHOD, request.getMethod().name());
+                    span.setTag(Tags.HTTP_URL, request.getURI().toString());
+                }
 
                 return chain.filter(exchange)
                     .doOnError(err -> {
-                        if (err instanceof ResponseStatusException statusEx) {
-                            span.setTag(Tags.HTTP_STATUS, statusEx.getStatusCode().value());
+                        if (span != null) {
+                            if (err instanceof ResponseStatusException statusEx) {
+                                span.setTag(Tags.HTTP_STATUS, statusEx.getStatusCode().value());
+                            }
+                            setResponseToSpan(span, exchange);
+                            span.setTag(Tags.ERROR, true);
+                            span.log(err.getMessage());
                         }
-                        setResponseToSpan(span, exchange);
-                        span.setTag(Tags.ERROR, true);
-                        span.log(err.getMessage());
                     });
             });
 

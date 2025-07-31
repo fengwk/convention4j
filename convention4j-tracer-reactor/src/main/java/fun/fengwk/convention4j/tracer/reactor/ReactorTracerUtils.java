@@ -74,14 +74,10 @@ public class ReactorTracerUtils {
      *
      * @return 当前活跃的Span Mono
      */
-    public static Mono<Span> activeSpan() {
+    public static Mono<Optional<Span>> activeSpan() {
         return Mono.deferContextual(ctxView -> {
             Span span = activeSpan(ctxView);
-            if (span == null) {
-                log.error("no active span");
-                return Mono.error(new IllegalStateException("no active span"));
-            }
-            return Mono.just(span);
+            return Mono.just(Optional.ofNullable(span));
         });
     }
 

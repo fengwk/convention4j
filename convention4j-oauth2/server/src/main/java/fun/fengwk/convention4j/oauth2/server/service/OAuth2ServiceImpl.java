@@ -106,6 +106,9 @@ public class OAuth2ServiceImpl<SUBJECT, CERTIFICATE> implements OAuth2Service<SU
     public void revokeToken(String accessToken) {
         Assert.hasText(accessToken, "Invalid access token");
         OAuth2Token oauth2Token = oauth2TokenRepository.getByAccessToken(accessToken);
+        if (oauth2Token == null) {
+            return;
+        }
         List<OAuth2Token> ssoTokens = oauth2TokenRepository.listBySsoId(oauth2Token.getSsoId());
         for (OAuth2Token ssoToken : ssoTokens) {
             oauth2TokenRepository.removeById(ssoToken.getId());

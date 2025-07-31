@@ -101,10 +101,13 @@ public class WebClientAutoConfiguration {
     private ExchangeFilterFunction tracerFilter() {
         return (request, next) -> {
             Mono<ClientResponse> mono = ReactorTracerUtils.activeSpan()
-                    .flatMap(span -> {
+                    .flatMap(spanOpt -> {
+                        Span span = spanOpt.orElse(null);
                         ClientRequest.Builder newRequestBuilder = ClientRequest.from(request);
-                        GlobalTracer.get().inject(span.context(), ClientRequestBuilderInject.FORMAT, newRequestBuilder);
-                        span.setTag(Tags.HTTP_METHOD, request.method().name());
+                        if (span != null) {
+                            GlobalTracer.get().inject(span.context(), ClientRequestBuilderInject.FORMAT, newRequestBuilder);
+                            span.setTag(Tags.HTTP_METHOD, request.method().name());
+                        }
                         return next.exchange(newRequestBuilder.build());
                     })
                     .doOnNext(resp -> {

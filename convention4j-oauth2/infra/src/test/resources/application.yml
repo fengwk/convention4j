@@ -9,15 +9,18 @@ spring:
       # 指定gson作为spring mvc的消息转换器
       preferred-json-mapper: gson
 
+  sql:
+    init:
+      # SqlInitializationProperties
+      schema-locations:
+        - classpath:schema-h2.sql
+
   datasource:
     # 使用这个jdbc连接将会以MySQL模式连接到h2内存数据库
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
     # 指定的默认的用户名SA，防止h2出现认证异常
     # 详见，org.h2.engine.Database.setMasterUser
     username: SA
-    # 指定classpath中的DDL初始化文件
-    schema:
-      - schema.sql
 
 convention:
 
