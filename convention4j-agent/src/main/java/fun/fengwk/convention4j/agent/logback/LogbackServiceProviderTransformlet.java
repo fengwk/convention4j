@@ -1,9 +1,6 @@
 package fun.fengwk.convention4j.agent.logback;
 
-import com.alibaba.ttl.threadpool.agent.internal.javassist.CannotCompileException;
-import com.alibaba.ttl.threadpool.agent.internal.javassist.CtClass;
-import com.alibaba.ttl.threadpool.agent.internal.javassist.CtMethod;
-import com.alibaba.ttl.threadpool.agent.internal.javassist.NotFoundException;
+import com.alibaba.ttl.threadpool.agent.internal.javassist.*;
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.ClassInfo;
 import com.alibaba.ttl.threadpool.agent.internal.transformlet.JavassistTransformlet;
 
@@ -21,20 +18,29 @@ public class LogbackServiceProviderTransformlet implements JavassistTransformlet
             return;
         }
 
-        CtClass providerClass = classInfo.getCtClass();
-        CtMethod initializeMethod = providerClass.getDeclaredMethod("initialize");
-        // @see ch.qos.logback.classic.spi.LogbackServiceProvider.initialize
-        // @see fun.fengwk.convention4j.common.logback.TtlLogbackMDCAdapter
-        initializeMethod.setBody("{\n" +
-            "defaultLoggerContext = new ch.qos.logback.classic.LoggerContext();\n" +
-            "        defaultLoggerContext.setName(ch.qos.logback.core.CoreConstants.DEFAULT_CONTEXT_NAME);\n" +
-            "        initializeLoggerContext();\n" +
-            "        defaultLoggerContext.start();\n" +
-            "        markerFactory = new org.slf4j.helpers.BasicMarkerFactory();\n" +
-            "        mdcAdapter = new fun.fengwk.convention4j.common.logback.TtlLogbackMDCAdapter();\n" +
-            "        // set the MDCAdapter for the defaultLoggerContext immediately\n" +
-            "        defaultLoggerContext.setMDCAdapter(mdcAdapter);\n" +
-            "}");
+        // logback-classic 1.5.18
+
+        CtClass ctClass = classInfo.getCtClass();
+
+        // 1. 查找或创建无参构造函数
+        CtConstructor defaultConstructor = null;
+        for (CtConstructor c : ctClass.getDeclaredConstructors()) {
+            if (c.getParameterTypes().length == 0) {
+                defaultConstructor = c;
+                break;
+            }
+        }
+
+        // 使用 CtNewConstructor.defaultConstructor() 创建默认无参构造
+        if (defaultConstructor == null) {
+            defaultConstructor = CtNewConstructor.defaultConstructor(ctClass);
+            ctClass.addConstructor(defaultConstructor);
+        }
+
+        // 2. 在super()调用后插入字段初始化代码
+        defaultConstructor.insertAfter(
+            "this.mdcAdapter = new fun.fengwk.convention4j.common.logback.TtlLogbackMDCAdapter();"
+        );
 
         classInfo.setModified();
     }

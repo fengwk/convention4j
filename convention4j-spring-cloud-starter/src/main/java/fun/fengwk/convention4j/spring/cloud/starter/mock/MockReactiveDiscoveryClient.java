@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.discovery;
+package fun.fengwk.convention4j.spring.cloud.starter.mock;
 
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.ReactiveDiscoveryClient;
@@ -9,17 +9,17 @@ import reactor.core.publisher.Flux;
  * @author fengwk
  * @see org.springframework.cloud.loadbalancer.annotation.LoadBalancerClientConfiguration.ReactiveSupportConfiguration#healthCheckDiscoveryClientServiceInstanceListSupplier(ConfigurableApplicationContext)
  */
-public class TestReactiveDiscoveryClient implements ReactiveDiscoveryClient {
+public class MockReactiveDiscoveryClient implements ReactiveDiscoveryClient {
 
-    private final TestDiscoveryClient delegate;
+    private final MockDiscoveryClient delegate;
 
-    public TestReactiveDiscoveryClient(TestDiscoveryProperties testDiscoveryProperties) {
-        this.delegate = new TestDiscoveryClient(testDiscoveryProperties);
+    public MockReactiveDiscoveryClient(SpringCloudMockEnvironmentProperties springCloudMockEnvironmentProperties) {
+        this.delegate = new MockDiscoveryClient(springCloudMockEnvironmentProperties);
     }
 
     @Override
     public String description() {
-        return TestReactiveDiscoveryClient.class.getName();
+        return MockReactiveDiscoveryClient.class.getName();
     }
 
     @Override

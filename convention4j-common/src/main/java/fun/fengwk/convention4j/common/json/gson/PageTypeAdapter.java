@@ -4,7 +4,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
-import com.google.gson.internal.$Gson$Types;
+import com.google.gson.internal.GsonTypes;
 import fun.fengwk.convention4j.api.page.DefaultPage;
 import fun.fengwk.convention4j.api.page.Page;
 
@@ -29,7 +29,7 @@ public class PageTypeAdapter implements GsonTypeAdapter<Page<?>> {
     private Type toCursorPageBeanType(Type pageType) {
         if (pageType instanceof ParameterizedType) {
             ParameterizedType pagePt = (ParameterizedType) pageType;
-            return $Gson$Types.newParameterizedTypeWithOwner(null, DefaultPage.class,
+            return GsonTypes.newParameterizedTypeWithOwner(null, DefaultPage.class,
                     pagePt.getActualTypeArguments());
         } else {
             return DefaultPage.class;

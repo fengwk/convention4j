@@ -1,2 +1,3 @@
+fun.fengwk.convention4j.spring.cloud.starter.feign.SpringFeignContractAutoConfiguration
 fun.fengwk.convention4j.spring.cloud.starter.feign.FeignClientAutoConfiguration
 fun.fengwk.convention4j.spring.cloud.starter.nacos.NacosCustomAutoConfiguration

@@ -1,0 +1,7 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+fun.fengwk.convention4j.spring.cloud.starter.mock.SpringCloudMockEnvironmentFilter
+
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+fun.fengwk.convention4j.spring.cloud.starter.mock.SpringCloudMockEnvironmentFilter
+
+

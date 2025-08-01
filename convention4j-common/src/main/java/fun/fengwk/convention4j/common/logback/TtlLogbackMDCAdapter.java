@@ -6,6 +6,7 @@ import com.alibaba.ttl.TransmittableThreadLocal;
 import java.util.*;
 
 /**
+ * copy from {@link ch.qos.logback.classic.util.LogbackMDCAdapter}
  * @author fengwk
  */
 public class TtlLogbackMDCAdapter extends LogbackMDCAdapter {

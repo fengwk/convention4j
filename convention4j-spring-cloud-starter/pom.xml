@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.66</version>
+        <version>1.1.67</version>
     </parent>
 
     <artifactId>convention4j-spring-cloud-starter</artifactId>
@@ -38,6 +38,12 @@
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-java11</artifactId>
+        </dependency>
+        <!-- 仅需要其中的SpringContract修复部分: https://github.com/OpenFeign/feign/issues/1383 -->
+        <!-- 后续若 spring-cloud-starter-openfeign 支持可移除该依赖 -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-spring</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>

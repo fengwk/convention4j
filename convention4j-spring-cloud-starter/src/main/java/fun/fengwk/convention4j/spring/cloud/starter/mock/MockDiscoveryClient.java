@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.discovery;
+package fun.fengwk.convention4j.spring.cloud.starter.mock;
 
 import fun.fengwk.convention4j.common.util.CollectionUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
@@ -15,22 +15,22 @@ import java.util.stream.Collectors;
  * @author fengwk
  * @see org.springframework.cloud.loadbalancer.annotation.LoadBalancerClientConfiguration.BlockingSupportConfiguration#discoveryClientServiceInstanceListSupplier(ConfigurableApplicationContext)
  */
-public class TestDiscoveryClient implements DiscoveryClient {
+public class MockDiscoveryClient implements DiscoveryClient {
 
-    private final TestDiscoveryProperties testDiscoveryProperties;
+    private final SpringCloudMockEnvironmentProperties springCloudMockEnvironmentProperties;
 
-    public TestDiscoveryClient(TestDiscoveryProperties testDiscoveryProperties) {
-        this.testDiscoveryProperties = Objects.requireNonNull(testDiscoveryProperties);
+    public MockDiscoveryClient(SpringCloudMockEnvironmentProperties springCloudMockEnvironmentProperties) {
+        this.springCloudMockEnvironmentProperties = Objects.requireNonNull(springCloudMockEnvironmentProperties);
     }
 
     @Override
     public String description() {
-        return TestDiscoveryClient.class.getName();
+        return MockDiscoveryClient.class.getName();
     }
 
     @Override
     public List<ServiceInstance> getInstances(String serviceId) {
-        Map<String, List<URI>> services = testDiscoveryProperties.getServices();
+        Map<String, List<URI>> services = springCloudMockEnvironmentProperties.getServices();
         List<URI> instanceUriList = NullSafe.of(services).get(serviceId);
         if (CollectionUtils.isEmpty(instanceUriList)) {
             return Collections.emptyList();
@@ -47,7 +47,7 @@ public class TestDiscoveryClient implements DiscoveryClient {
 
     @Override
     public List<String> getServices() {
-        Map<String, List<URI>> services = testDiscoveryProperties.getServices();
+        Map<String, List<URI>> services = springCloudMockEnvironmentProperties.getServices();
         return new ArrayList<>(NullSafe.of(services).keySet());
     }
 

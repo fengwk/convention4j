@@ -6,7 +6,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.google.gson.internal.$Gson$Types;
+import com.google.gson.internal.GsonTypes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -30,7 +30,7 @@ public class ImmutableMapJsonDeserializer implements JsonDeserializer<ImmutableM
     private Type toMapType(Type immutableMapType) {
         if (immutableMapType instanceof ParameterizedType) {
             ParameterizedType immutableMapPt = (ParameterizedType) immutableMapType;
-            return $Gson$Types.newParameterizedTypeWithOwner(null, SortedMap.class,
+            return GsonTypes.newParameterizedTypeWithOwner(null, SortedMap.class,
                     immutableMapPt.getActualTypeArguments());
         } else {
             return SortedMap.class;

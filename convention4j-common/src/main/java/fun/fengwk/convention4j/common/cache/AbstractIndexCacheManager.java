@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.common.cache;
 
-import com.google.gson.internal.$Gson$Types;
+import com.google.gson.internal.GsonTypes;
 import fun.fengwk.convention4j.common.cache.facade.CacheFacade;
 import fun.fengwk.convention4j.common.cache.key.IndexCacheKey;
 import fun.fengwk.convention4j.common.cache.key.IndexCacheKeyPrefix;
@@ -64,7 +64,7 @@ public abstract class AbstractIndexCacheManager<O, I> extends CacheManager<O> {
      * @return 返回指定缓存的数据列表。
      */
     public List<O> readObjList(String cacheName, Function<Object[], List<I>> readIndexListFunc, Object[] params) {
-        ParameterizedType indexListType = $Gson$Types.newParameterizedTypeWithOwner(
+        ParameterizedType indexListType = GsonTypes.newParameterizedTypeWithOwner(
             null, List.class, indexClass);
         List<I> indexList = read(cacheName, readIndexListFunc, params, indexListType);
         return listObj(indexList);

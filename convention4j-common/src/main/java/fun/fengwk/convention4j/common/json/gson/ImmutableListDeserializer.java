@@ -5,7 +5,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import com.google.gson.internal.$Gson$Types;
+import com.google.gson.internal.GsonTypes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -29,7 +29,7 @@ public class ImmutableListDeserializer implements JsonDeserializer<ImmutableList
     private Type toListType(Type immutableListType) {
         if (immutableListType instanceof ParameterizedType) {
             ParameterizedType immutableListPt = (ParameterizedType) immutableListType;
-            return $Gson$Types.newParameterizedTypeWithOwner(null, List.class,
+            return GsonTypes.newParameterizedTypeWithOwner(null, List.class,
                     immutableListPt.getActualTypeArguments());
         } else {
             return List.class;

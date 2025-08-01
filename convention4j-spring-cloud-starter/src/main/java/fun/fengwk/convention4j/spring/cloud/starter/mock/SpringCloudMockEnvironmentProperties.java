@@ -1,4 +1,4 @@
-package fun.fengwk.convention4j.springboot.test.starter.discovery;
+package fun.fengwk.convention4j.spring.cloud.starter.mock;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -11,8 +11,8 @@ import java.util.Map;
  * @author fengwk
  */
 @Data
-@ConfigurationProperties(prefix = "convention.test.discovery")
-public class TestDiscoveryProperties {
+@ConfigurationProperties(prefix = "convention.mock.discovery")
+public class SpringCloudMockEnvironmentProperties {
 
     /**
      * key: serviceId

@@ -11,7 +11,7 @@ spring:
     # 使用h2驱动
     driver-class-name: org.h2.Driver
     # 使用这个jdbc连接将会以MySQL模式连接到h2内存数据库
-    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
     # 指定的默认的用户名SA，防止h2出现认证异常
     # 详见，org.h2.engine.Database.setMasterUser
     username: SA

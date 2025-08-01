@@ -22,7 +22,6 @@ import org.springframework.web.reactive.function.server.RequestPredicates;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.springframework.web.reactive.resource.NoResourceFoundException;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
