@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.67</version>
+        <version>1.1.68</version>
     </parent>
 
     <artifactId>convention4j-spring-cloud-starter-gateway</artifactId>
@@ -35,11 +35,15 @@
                     <groupId>io.github.openfeign</groupId>
                     <artifactId>feign-java11</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.github.openfeign</groupId>
+                    <artifactId>feign-spring</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>

@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * @author fengwk
  */
-public class RedisServerTestConfig {
+public class EmbeddedRedisServerConfiguration {
 
     static final String REDIS_SERVER_BEAN_NAME = "redisServer";
 

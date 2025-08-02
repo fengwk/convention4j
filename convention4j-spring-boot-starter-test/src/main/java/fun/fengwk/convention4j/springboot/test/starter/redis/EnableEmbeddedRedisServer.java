@@ -9,9 +9,9 @@ import java.lang.annotation.*;
  *
  * @author fengwk
  */
-@Import({RedisServerTestConfig.class, RedisEagerInitBeanFactoryPostProcessor.class})
+@Import({EmbeddedRedisServerConfiguration.class, EmbeddedRedisServerEagerInitializer.class})
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EnableTestRedisServer {
+public @interface EnableEmbeddedRedisServer {
 }

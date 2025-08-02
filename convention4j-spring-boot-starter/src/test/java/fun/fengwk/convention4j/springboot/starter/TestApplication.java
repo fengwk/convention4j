@@ -1,14 +1,14 @@
 package fun.fengwk.convention4j.springboot.starter;
 
 import fun.fengwk.convention4j.springboot.starter.mybatis.BaseMapperScan;
-import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
+import fun.fengwk.convention4j.springboot.test.starter.redis.EnableEmbeddedRedisServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * @author fengwk
  */
-@EnableTestRedisServer
+@EnableEmbeddedRedisServer
 @BaseMapperScan
 @SpringBootApplication
 public class TestApplication {

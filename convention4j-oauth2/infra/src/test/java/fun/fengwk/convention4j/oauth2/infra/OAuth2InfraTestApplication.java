@@ -4,7 +4,7 @@ import fun.fengwk.convention4j.oauth2.infra.repo.MysqlOAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.infra.repo.RedisOAuth2TokenRepository;
 import fun.fengwk.convention4j.oauth2.server.OAuth2ServerAutoConfiguration;
 import fun.fengwk.convention4j.springboot.starter.mybatis.BaseMapperScan;
-import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
+import fun.fengwk.convention4j.springboot.test.starter.redis.EnableEmbeddedRedisServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Import;
  */
 @Import({ RedisOAuth2TokenRepository.class, MysqlOAuth2TokenRepository.class })
 @BaseMapperScan
-@EnableTestRedisServer
+@EnableEmbeddedRedisServer
 @SpringBootApplication(exclude = OAuth2ServerAutoConfiguration.class)
 public class OAuth2InfraTestApplication {
 

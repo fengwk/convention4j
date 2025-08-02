@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * @author fengwk
  */
-@EnableTestRedisServer
+@EnableEmbeddedRedisServer
 @SpringBootApplication
 public class RedisTestApplication {
 

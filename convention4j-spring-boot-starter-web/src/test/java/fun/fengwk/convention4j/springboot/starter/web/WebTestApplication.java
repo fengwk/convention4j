@@ -2,7 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.web;
 
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
-import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
+import fun.fengwk.convention4j.springboot.test.starter.redis.EnableEmbeddedRedisServer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 //org.springdoc.webmvc.core.configuration.MultipleOpenApiSupportConfiguration.class
 //})
 @Slf4j
-@EnableTestRedisServer
+@EnableEmbeddedRedisServer
 @Validated
 @RestController
 @SpringBootApplication

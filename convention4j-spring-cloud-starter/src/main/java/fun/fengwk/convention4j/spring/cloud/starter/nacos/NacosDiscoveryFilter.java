@@ -1,6 +1,5 @@
-package fun.fengwk.convention4j.spring.cloud.starter.mock;
+package fun.fengwk.convention4j.spring.cloud.starter.nacos;
 
-import fun.fengwk.convention4j.spring.cloud.starter.nacos.NacosCustomAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
@@ -12,11 +11,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * 过滤测试SpringCloud环境要过滤的对象
+ * 修正 Nacos 关闭后 {@code spring.cloud.nacos.discovery.enabled=false} 未正确停止的自动装配类
  *
  * @author fengwk
  */
-public class SpringCloudMockEnvironmentFilter
+public class NacosDiscoveryFilter
     implements EnvironmentPostProcessor, AutoConfigurationImportFilter {
 
     private static final Set<String> EXCLUDE_AUTO_CONFIGURATION_CLASSES;

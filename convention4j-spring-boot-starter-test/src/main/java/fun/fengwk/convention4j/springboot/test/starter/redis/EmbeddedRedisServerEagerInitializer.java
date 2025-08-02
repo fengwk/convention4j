@@ -11,11 +11,11 @@ import org.springframework.core.Ordered;
  *
  * @author fengwk
  */
-public class RedisEagerInitBeanFactoryPostProcessor implements BeanFactoryPostProcessor, Ordered {
+public class EmbeddedRedisServerEagerInitializer implements BeanFactoryPostProcessor, Ordered {
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        beanFactory.getBean(RedisServerTestConfig.REDIS_SERVER_BEAN_NAME);
+        beanFactory.getBean(EmbeddedRedisServerConfiguration.REDIS_SERVER_BEAN_NAME);
     }
 
     @Override
