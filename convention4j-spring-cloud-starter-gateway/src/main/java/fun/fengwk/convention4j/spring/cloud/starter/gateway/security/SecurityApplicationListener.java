@@ -5,7 +5,9 @@ import org.springframework.boot.context.event.ApplicationContextInitializedEvent
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.util.ResourceUtils;
 
+import java.io.FileNotFoundException;
 import java.security.Security;
 
 /**
@@ -30,18 +32,32 @@ public class SecurityApplicationListener implements ApplicationListener<Applicat
         boolean sslEnabled = environment.getProperty("server.ssl.enabled", Boolean.class, false);
         if (sslEnabled) {
             String keyStore = getSslValue(environment, "keyStore", "key-store");
-            String keyStorePassword = getSslValue(environment, "keyStorePassword", "key-store-password");
-            String keyStoreType = getSslValue(environment, "keyStoreType", "key-store-type");
-            String keyStoreProvider = getSslValue(environment, "keyStoreProvider", "key-store-provider");
-            HotReloadX509ExtendedKeyManager.setKeyStore(keyStore);
-            HotReloadX509ExtendedKeyManager.setKeyStorePassword(keyStorePassword);
-            HotReloadX509ExtendedKeyManager.setKeyStoreType(keyStoreType);
-            HotReloadX509ExtendedKeyManager.setKeyStoreProvider(keyStoreProvider);
-            Security.insertProviderAt(new HotReloadProvider(), 1);
+            if (keyStoreIsFile(keyStore)) {
+                String keyStorePassword = getSslValue(environment, "keyStorePassword", "key-store-password");
+                String keyStoreType = getSslValue(environment, "keyStoreType", "key-store-type");
+                String keyStoreProvider = getSslValue(environment, "keyStoreProvider", "key-store-provider");
+                HotReloadX509ExtendedKeyManager.setKeyStore(keyStore);
+                HotReloadX509ExtendedKeyManager.setKeyStorePassword(keyStorePassword);
+                HotReloadX509ExtendedKeyManager.setKeyStoreType(keyStoreType);
+                HotReloadX509ExtendedKeyManager.setKeyStoreProvider(keyStoreProvider);
+                Security.insertProviderAt(new HotReloadProvider(), 1);
+            }
         }
     }
 
-    private String getSslValue(ConfigurableEnvironment environment, String...keys) {
+    private boolean keyStoreIsFile(String keyStore) {
+        if (keyStore == null) {
+            return false;
+        }
+        try {
+            ResourceUtils.getFile(keyStore);
+            return true;
+        } catch (FileNotFoundException ignore) {
+            return false;
+        }
+    }
+
+    private String getSslValue(ConfigurableEnvironment environment, String... keys) {
         for (String key : keys) {
             String value = environment.getProperty("server.ssl." + key);
             if (StringUtils.isNotBlank(value)) {
