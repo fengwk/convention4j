@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.68</version>
+    <version>1.1.69</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -56,7 +56,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.68</convention4j.version>
+        <convention4j.version>1.1.69</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.5.0</spring-boot-dependencies.version>
@@ -74,7 +74,6 @@
         <ognl.version>3.4.7</ognl.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <auto-service.version>1.1.1</auto-service.version>
-        <commons-collections4.version>4.5.0</commons-collections4.version>
         <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
         <bcprov-jdk18on.version>1.81</bcprov-jdk18on.version>
         <opentracing.version>0.33.0</opentracing.version>
@@ -294,11 +293,6 @@
                 <groupId>com.google.auto.service</groupId>
                 <artifactId>auto-service</artifactId>
                 <version>${auto-service.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-collections4</artifactId>
-                <version>${commons-collections4.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba</groupId>

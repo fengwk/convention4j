@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.68</version>
+        <version>1.1.69</version>
     </parent>
 
     <artifactId>convention4j-spring-boot-starter-xxljob</artifactId>

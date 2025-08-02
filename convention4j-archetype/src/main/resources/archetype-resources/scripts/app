@@ -81,15 +81,15 @@ start() {
     JAVA_OPTS="$JAVA_OPTS -javaagent:$agent_jar"
   fi
   if [ "$spring_profiles_active" == 'dev' ]; then
-    echo "$java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs"
+    echo "$java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.file.path=$app_runtime_home/logs"
     $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar \
       --spring.profiles.active=$spring_profiles_active \
-      --logging.path=$app_runtime_home/logs
+      --logging.file.path=$app_runtime_home/logs
   else
-    echo "nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &"
+    echo "nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar --spring.profiles.active=$spring_profiles_active --logging.file.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &"
     nohup $java_cmd $JAVA_OPTS -jar $app_home/web/target/*.jar \
       --spring.profiles.active=$spring_profiles_active \
-      --logging.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
+      --logging.file.path=$app_runtime_home/logs >>$app_runtime_home/logs/console.log 2>&1 &
   fi
   app_pid=$!
   echo $app_pid > $app_runtime_home/app.pid

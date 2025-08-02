@@ -7,7 +7,7 @@ initialization performed by Boot
 
 <included>
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="unknown"/>
-    <springProperty scope="context" name="LOG_PATH" source="logging.path" defaultValue="./logs"/>
+    <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="./logs"/>
     <springProperty scope="context" name="MAX_HISTORY" source="logging.file.max-history" defaultValue="14"/>
     <springProperty scope="context" name="MAX_SIZE" source="logging.file.max-size" defaultValue="128MB"/>
     <springProperty scope="context" name="TOTAL_SIZE_CAP" source="logging.file.total-size-cap" defaultValue="8GB"/>
