@@ -83,6 +83,8 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
             @Override
             protected OAuth2Token generateOAuth2Token(AuthenticationCodeTokenContext context, OAuth2Client client) {
                 AuthenticationCode authenticationCode = checkAndGetAuthenticationCode(context.getCode());
+                checkRedirectUri(context.getRedirectUri(), authenticationCode);
+                checkClientId(context.getClientId(), authenticationCode);
                 return reuseOrGenerateOAuth2Token(client, authenticationCode,
                     authenticationCode.getSubjectId(), authenticationCode.getScope());
             }
@@ -157,7 +159,15 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
             || !Objects.equals(curUri.getFragment(), storeUri.getFragment())) {
             log.warn("RedirectUri not match, currentRedirectUri: {}, storeRedirectUri: {}",
                 redirectUri, authenticationCode.getRedirectUri());
-            throw OAuth2ErrorCodes.INVALID_REDIRECT_URI.asThrowable();
+            throw OAuth2ErrorCodes.MISMATCH_REDIRECT_URI.asThrowable();
+        }
+    }
+
+    private void checkClientId(String clientId, AuthenticationCode authenticationCode) {
+        if (!Objects.equals(clientId, authenticationCode.getClientId())) {
+            log.warn("ClientId not match, currentClientId: {}, storeClientId: {}",
+                clientId, authenticationCode.getClientId());
+            throw OAuth2ErrorCodes.MISMATCH_CLIENT_ID.asThrowable();
         }
     }
 
