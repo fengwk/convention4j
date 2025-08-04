@@ -188,4 +188,13 @@ public class ClassUtils {
         return allDeclaredMethods;
     }
 
+    public static boolean testClassAvailable(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
 }
