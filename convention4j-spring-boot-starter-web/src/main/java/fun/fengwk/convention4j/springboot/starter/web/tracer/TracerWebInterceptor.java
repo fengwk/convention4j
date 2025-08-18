@@ -9,11 +9,14 @@ import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.context.request.async.WebAsyncManager;
+import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
@@ -26,6 +29,18 @@ public class TracerWebInterceptor implements AsyncHandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+        if (asyncManager.hasConcurrentResult()) {
+            // 异步的第二次调用，需要重新关联当前线程的作用域
+            // @see DeferredResult
+            Context context = getAttribute(request, CONTEXT_ATTRIBUTE, Context.class);
+            if (context != null && context.getScope() == null) {
+                Tracer tracer = GlobalTracer.get();
+                context.setScope(tracer.activateSpan(context.getSpan()));
+            }
+            return true;
+        }
+
         Tracer tracer = GlobalTracer.get();
         // 获取父级上下文
         SpanContext parentContext = tracer.extract(Formats.HTTP_SERVLET_REQUEST_EXTRACT, request);
@@ -52,37 +67,49 @@ public class TracerWebInterceptor implements AsyncHandlerInterceptor {
 
     @Override
     public void afterConcurrentHandlingStarted(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        finishSpan(request, response, null);
+        // 异步处理尚未完成，但当前线程要结束了，关闭作用域清理上下文
+        Context context = getAttribute(request, CONTEXT_ATTRIBUTE, Context.class);
+        if (context == null) {
+            return;
+        }
+
+        Scope scope = context.getScope();
+        if (scope != null) {
+            scope.close();
+        }
+        context.setScope(null);
     }
 
     private void finishSpan(HttpServletRequest request, HttpServletResponse response, Exception ex) {
-        Context context = getAttributeAndClear(request, CONTEXT_ATTRIBUTE, Context.class);
+        Context context = getAttribute(request, CONTEXT_ATTRIBUTE, Context.class);
+        request.removeAttribute(CONTEXT_ATTRIBUTE);
         if (context == null) {
             return;
         }
         Span span = context.getSpan();
-        try (Scope ignored = context.getScope()) {
-            int status = response.getStatus();
-            if (ex != null || status < 200 || status >= 300) {
-                span.setTag(Tags.ERROR, true);
-                if (ex != null) {
-                    span.log(ex.getMessage());
-                }
-            } else {
-                span.setTag(Tags.ERROR, false);
-            }
-            span.setTag(Tags.HTTP_STATUS, status);
-        } finally {
-            span.finish();
+        Scope scope = context.getScope();
+        if (scope != null) {
+            scope.close();
         }
+
+        int status = response.getStatus();
+        if (ex != null || status < 200 || status >= 300) {
+            span.setTag(Tags.ERROR, true);
+            if (ex != null) {
+                span.log(ex.getMessage());
+            }
+        } else {
+            span.setTag(Tags.ERROR, false);
+        }
+        span.setTag(Tags.HTTP_STATUS, status);
+        span.finish();
     }
 
-    private <T> T getAttributeAndClear(HttpServletRequest request, String attrName, Class<T> clazz) {
+    private <T> T getAttribute(HttpServletRequest request, String attrName, Class<T> clazz) {
         Object obj = request.getAttribute(attrName);
         if (obj == null) {
             return null;
         }
-        request.removeAttribute(attrName);
         if (!clazz.isAssignableFrom(obj.getClass())) {
             return null;
         }
@@ -125,11 +152,12 @@ public class TracerWebInterceptor implements AsyncHandlerInterceptor {
         return request.getRequestURI();
     }
 
+    @AllArgsConstructor
     @Data
     static class Context {
 
         private final Span span;
-        private final Scope scope;
+        private volatile Scope scope;
 
     }
 
