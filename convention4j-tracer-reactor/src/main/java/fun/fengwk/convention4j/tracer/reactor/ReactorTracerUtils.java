@@ -202,7 +202,7 @@ public class ReactorTracerUtils {
      *
      * @return 上下文映射函数
      */
-    private static Context enableTrace(Context ctx) {
+    static Context enableTrace(Context ctx) {
         ConcurrentLinkedDeque<Span> spanStack = getSpanStack(ctx);
         if (spanStack == null) {
             spanStack = new ConcurrentLinkedDeque<>();
@@ -261,7 +261,6 @@ public class ReactorTracerUtils {
     }
 
     static void keepSpanStackMaxSize(ConcurrentLinkedDeque<Span> spanStack) {
-
         // 防止编程错误导致的内存泄露
         if (spanStack.size() > MAX_STACK_SIZE) {
             log.error("Span stack size exceeds max stack size: {}", MAX_STACK_SIZE);

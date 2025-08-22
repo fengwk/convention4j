@@ -66,7 +66,7 @@ public class MysqlDemoRepository implements DemoRepository {
         DemoDO demoDO = new DemoDO();
         demoDO.setName(demo.getName());
         demoDO.setCreateTime(demo.getCreateTime());
-        demoDO.setUpdateTime(demo.getUpdateTime());
+        demoDO.setModifiedTime(demo.getUpdateTime());
         demoDO.setId(demo.getId());
         return demoDO;
     }
@@ -79,7 +79,7 @@ public class MysqlDemoRepository implements DemoRepository {
         demo.setId(demoDO.getId());
         demo.setName(demoDO.getName());
         demo.setCreateTime(demoDO.getCreateTime());
-        demo.setUpdateTime(demoDO.getUpdateTime());
+        demo.setUpdateTime(demoDO.getModifiedTime());
         return demo;
     }
 

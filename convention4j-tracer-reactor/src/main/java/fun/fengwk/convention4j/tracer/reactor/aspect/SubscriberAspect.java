@@ -1,12 +1,17 @@
 package fun.fengwk.convention4j.tracer.reactor.aspect;
 
 import org.reactivestreams.Subscription;
+import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
 /**
  * @author fengwk
  */
 public interface SubscriberAspect {
+
+    default Context writeContext(Context context) {
+        return context;
+    }
 
     /* Publisher Aspect */
 

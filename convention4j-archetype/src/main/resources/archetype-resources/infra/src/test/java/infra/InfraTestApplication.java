@@ -3,7 +3,7 @@
 #set( $symbol_escape = '\' )
 package ${package}.infra;
 
-import fun.fengwk.convention4j.springboot.test.starter.redis.EnableTestRedisServer;
+import fun.fengwk.convention4j.springboot.test.starter.redis.EnableEmbeddedRedisServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import ${package}.core.CoreAutoConfiguration;
@@ -11,7 +11,7 @@ import ${package}.core.CoreAutoConfiguration;
 /**
  * @author fengwk
  */
-@EnableTestRedisServer
+@EnableEmbeddedRedisServer
 @SpringBootApplication(exclude = CoreAutoConfiguration.class)
 public class InfraTestApplication {
 

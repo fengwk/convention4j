@@ -11,8 +11,11 @@ import reactor.util.context.Context;
 public class CoreSubscriberAspectAdapter<T, S extends CoreSubscriber<T>>
         extends SubscriberAspectAdapter<T, S> implements CoreSubscriber<T> {
 
+    private final Context context;
+
     public CoreSubscriberAspectAdapter(SubscriberAspect aspect, S actual) {
         super(aspect, actual);
+        this.context = aspect.writeContext(actual.currentContext());
     }
 
     @Override
@@ -22,7 +25,7 @@ public class CoreSubscriberAspectAdapter<T, S extends CoreSubscriber<T>>
 
     @Override
     public Context currentContext() {
-        return actual.currentContext();
+        return context;
     }
 
 }

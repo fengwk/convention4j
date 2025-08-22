@@ -14,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
@@ -27,7 +28,32 @@ import static fun.fengwk.convention4j.common.http.HttpHeaders.LOCATION;
 @Slf4j
 public class HttpClientUtils {
 
+    /**
+     * @see jdk.internal.net.http.common.Utils#getDisallowedHeaders()
+     */
+    private static final Set<String> HTTP_CLIENT_DISALLOW_HEADERS = Set.of(
+        "connection", "content-length", "expect", "host", "upgrade");
+
     private HttpClientUtils() {}
+
+    /**
+     * 获取httpClient禁用的请求头
+     *
+     * @return httpClient禁用的请求头
+     */
+    public static Set<String> getHttpClientDisallowHeaders() {
+        return HTTP_CLIENT_DISALLOW_HEADERS;
+    }
+
+    /**
+     * 检查制定请求头是否被httpClient禁用
+     *
+     * @param headerName 请求头
+     * @return 是否禁用
+     */
+    public static boolean isDisallowHeader(String headerName) {
+        return HTTP_CLIENT_DISALLOW_HEADERS.contains(headerName.toLowerCase());
+    }
 
     /**
      * 支持gzip版本的{@link HttpResponse.BodyHandlers#fromSubscriber(Flow.Subscriber)}

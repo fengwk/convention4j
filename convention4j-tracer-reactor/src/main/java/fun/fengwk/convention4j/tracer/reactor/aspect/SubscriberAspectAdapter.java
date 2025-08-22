@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author fengwk
  */
 @Slf4j
-public class SubscriberAspectAdapter<T, S extends Subscriber<T>> implements Subscriber<T> {
+public abstract class SubscriberAspectAdapter<T, S extends Subscriber<T>> implements Subscriber<T> {
 
     protected final SubscriberAspect aspect;
     protected final S actual;
@@ -21,9 +21,7 @@ public class SubscriberAspectAdapter<T, S extends Subscriber<T>> implements Subs
         this.actual = Objects.requireNonNull(actual, "actual must not be null");
     }
 
-    protected Context internalCurrentContext() {
-        return Context.empty();
-    }
+    protected abstract Context internalCurrentContext();
 
     @Override
     public void onSubscribe(Subscription s) {
