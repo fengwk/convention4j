@@ -25,9 +25,7 @@ public class ReactorAspect {
      */
     public static <T> void registerAspect(String aspectName, SubscriberAspect aspect) {
         Hooks.onEachOperator(aspectName, publisher -> {
-            if (publisher instanceof Flux) {
-                return new AspectFlux<>((Flux<?>) publisher, aspect);
-            } else if (publisher instanceof Mono) {
+            if (publisher instanceof Mono) {
                 return new AspectMono<>((Mono<?>) publisher, aspect);
             } else if (publisher instanceof ParallelFlux) {
                 return new AspectParallelFlux<>((ParallelFlux<?>) publisher, aspect);
@@ -35,6 +33,8 @@ public class ReactorAspect {
                 return new AspectConnectableFlux<>((ConnectableFlux<?>) publisher, aspect);
             } else if (publisher instanceof GroupedFlux) {
                 return new AspectGroupedFlux<>((GroupedFlux<?, ?>) publisher, aspect);
+            } else if (publisher instanceof Flux) { // ConnectableFlux和GroupedFlux是Flux的子类，因此要先处理
+                return new AspectFlux<>((Flux<?>) publisher, aspect);
             } else {
                 log.debug("publisher not support aspect, publisher: {}", publisher.getClass().getSimpleName());
                 return publisher;
