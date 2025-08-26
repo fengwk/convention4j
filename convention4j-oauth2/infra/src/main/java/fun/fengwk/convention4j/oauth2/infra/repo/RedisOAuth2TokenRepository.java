@@ -188,6 +188,7 @@ public class RedisOAuth2TokenRepository implements OAuth2TokenRepository {
         List<String> tokenValues = redisTemplate.opsForValue().multiGet(tokenKeys);
         return NullSafe.of(tokenValues).stream()
             .map(v -> JsonUtils.fromJson(v, OAuth2Token.class))
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
