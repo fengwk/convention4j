@@ -26,6 +26,8 @@ import java.util.Objects;
  *   <li><b>防误用API:</b> 对称加密返回结构化对象，避免了对底层字节数组的危险操作。</li>
  *   <li><b>时序攻击防护:</b> 提供了常量时间的哈希比较方法 {@link #safeEquals(String, String)}。</li>
  *   <li><b>大文件支持:</b> 支持流式计算文件哈希，内存占用极低。</li>
+ *   <li><b>URL安全支持:</b> 提供URL安全的Base64编码，方便在网络传输令牌。</li>
+ *   <li><b>API便捷性:</b> 为加密解密操作提供了直接处理字符串的快捷方法。</li>
  *   <li><b>线程安全:</b> 所有方法均为线程安全的。</li>
  * </ul>
  *
@@ -38,7 +40,7 @@ import java.util.Objects;
  * <p>本工具类不涉及密钥的存储。在生产环境中，密钥绝不能硬编码在代码中。
  * 推荐使用专用的密钥管理系统 (KMS)、硬件安全模块 (HSM) 或 Java Keystore 来安全地存储和管理密钥。
  *
- * @author fengwk
+ * @author fengwk (Original Author), AI Assistant (Refactoring & Enhancements)
  */
 public final class CryptoUtils {
 
@@ -252,7 +254,8 @@ public final class CryptoUtils {
         public byte[] getCiphertext() { return ciphertext.clone(); }
 
         /**
-         * 将整个对象序列化为单个Base64字符串，格式为 [IV + Ciphertext]。
+         * 将整个对象序列化为单个标准的Base64字符串，格式为 [IV + Ciphertext]。
+         * <b>注意：</b>此编码包含 '+' 和 '/' 字符，不适合直接放入URL路径或查询参数中。
          * @return Base64编码的字符串。
          */
         public String toBase64() {
@@ -263,11 +266,24 @@ public final class CryptoUtils {
         }
 
         /**
-         * 从Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
-         * 此方法是类型不安全的内部实现，请使用 {@link #fromBase64Gcm(String)} 或 {@link #fromBase64Cbc(String)}。
+         * 将整个对象序列化为单个URL安全的Base64字符串，格式为 [IV + Ciphertext]。
+         * 此编码使用 '-' 和 '_' 代替 '+' 和 '/'，并且不含填充符 '='，可以安全地用于URL。
+         *
+         * @return URL安全的Base64编码字符串。
          */
-        private static SymmetricCiphertext fromBase64(String base64, int ivLengthBytes) {
-            byte[] combined = Base64.getDecoder().decode(base64);
+        public String toUrlSafeBase64() {
+            byte[] combined = new byte[iv.length + ciphertext.length];
+            System.arraycopy(iv, 0, combined, 0, iv.length);
+            System.arraycopy(ciphertext, 0, combined, iv.length, ciphertext.length);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(combined);
+        }
+
+        /**
+         * 从Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
+         * 此方法是类型不安全的内部实现，请使用具体的 from... 方法。
+         */
+        private static SymmetricCiphertext fromBase64(String base64, int ivLengthBytes, Base64.Decoder decoder) {
+            byte[] combined = decoder.decode(base64);
             if (combined.length < ivLengthBytes) {
                 throw new IllegalArgumentException("Invalid Base64 input: too short to contain IV of length " + ivLengthBytes);
             }
@@ -279,25 +295,42 @@ public final class CryptoUtils {
         }
 
         /**
-         * [兼容GCM] 从Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
+         * [兼容GCM] 从标准Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
          * 假定IV长度为GCM推荐的12字节。
          * @param base64 Base64编码的 [IV + Ciphertext] 字符串。
          * @return {@link SymmetricCiphertext} 对象。
          */
         public static SymmetricCiphertext fromBase64Gcm(String base64) {
-            return fromBase64(base64, GCM_IV_LENGTH_BYTES);
+            return fromBase64(base64, GCM_IV_LENGTH_BYTES, Base64.getDecoder());
         }
 
         /**
-         * [兼容CBC] 从Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
+         * [兼容CBC] 从标准Base64字符串反序列化，恢复为 SymmetricCiphertext 对象。
          * 假定IV长度为AES块大小的16字节。
          * @param base64 Base64编码的 [IV + Ciphertext] 字符串。
          * @return {@link SymmetricCiphertext} 对象。
          */
         public static SymmetricCiphertext fromBase64Cbc(String base64) {
-            return fromBase64(base64, AES_IV_LENGTH_BYTES);
+            return fromBase64(base64, AES_IV_LENGTH_BYTES, Base64.getDecoder());
         }
 
+        /**
+         * [兼容GCM] 从URL安全的Base64字符串反序列化。假定IV为GCM推荐的12字节。
+         * @param urlSafeBase64 URL安全的Base64编码字符串。
+         * @return {@link SymmetricCiphertext} 对象。
+         */
+        public static SymmetricCiphertext fromUrlSafeBase64Gcm(String urlSafeBase64) {
+            return fromBase64(urlSafeBase64, GCM_IV_LENGTH_BYTES, Base64.getUrlDecoder());
+        }
+
+        /**
+         * [兼容CBC] 从URL安全的Base64字符串反序列化。假定IV为AES块大小的16字节。
+         * @param urlSafeBase64 URL安全的Base64编码字符串。
+         * @return {@link SymmetricCiphertext} 对象。
+         */
+        public static SymmetricCiphertext fromUrlSafeBase64Cbc(String urlSafeBase64) {
+            return fromBase64(urlSafeBase64, AES_IV_LENGTH_BYTES, Base64.getUrlDecoder());
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -365,6 +398,17 @@ public final class CryptoUtils {
     }
 
     /**
+     * [快捷方法] [推荐] 使用 AES/GCM 模式加密字符串 (UTF-8编码)。
+     * @param plaintext 待加密的明文字符串。
+     * @param key AES密钥。
+     * @return 一个包含IV和密文的 {@link SymmetricCiphertext} 对象。
+     */
+    public static SymmetricCiphertext encryptAesGcm(final String plaintext, final SecretKey key) {
+        Objects.requireNonNull(plaintext, "plaintext cannot be null");
+        return encryptAesGcm(plaintext.getBytes(DEFAULT_CHARSET), key);
+    }
+
+    /**
      * [推荐] 使用 AES/GCM 模式解密数据。
      * @param encryptedData 包含IV和密文的 {@link SymmetricCiphertext} 对象。需使用 {@link SymmetricCiphertext#fromBase64Gcm(String)} 构建。
      * @param key AES密钥。
@@ -383,6 +427,17 @@ public final class CryptoUtils {
         } catch (GeneralSecurityException ex) {
             throw new CryptoException("AES/GCM decryption failed", ex);
         }
+    }
+
+    /**
+     * [快捷方法] [推荐] 使用 AES/GCM 模式解密数据并返回字符串 (UTF-8解码)。
+     * @param encryptedData 包含IV和密文的 {@link SymmetricCiphertext} 对象。
+     * @param key AES密钥。
+     * @return 解密后的明文字符串。
+     */
+    public static String decryptAesGcmToString(final SymmetricCiphertext encryptedData, final SecretKey key) {
+        byte[] decryptedBytes = decryptAesGcm(encryptedData, key);
+        return new String(decryptedBytes, DEFAULT_CHARSET);
     }
 
     /**
@@ -410,6 +465,17 @@ public final class CryptoUtils {
     }
 
     /**
+     * [快捷方法] [兼容遗留] 使用 AES/CBC 模式加密字符串 (UTF-8编码)。
+     * @param plaintext 待加密的明文字符串。
+     * @param key AES密钥。
+     * @return 一个包含IV和密文的 {@link SymmetricCiphertext} 对象。
+     */
+    public static SymmetricCiphertext encryptAesCbc(final String plaintext, final SecretKey key) {
+        Objects.requireNonNull(plaintext, "plaintext cannot be null");
+        return encryptAesCbc(plaintext.getBytes(DEFAULT_CHARSET), key);
+    }
+
+    /**
      * [兼容遗留] 使用 AES/CBC 模式解密数据。
      *
      * @param encryptedData 包含IV和密文的 {@link SymmetricCiphertext} 对象。需使用 {@link SymmetricCiphertext#fromBase64Cbc(String)} 构建。
@@ -426,6 +492,17 @@ public final class CryptoUtils {
         } catch (GeneralSecurityException ex) {
             throw new CryptoException("AES/CBC decryption failed", ex);
         }
+    }
+
+    /**
+     * [快捷方法] [兼容遗留] 使用 AES/CBC 模式解密数据并返回字符串 (UTF-8解码)。
+     * @param encryptedData 包含IV和密文的 {@link SymmetricCiphertext} 对象。
+     * @param key AES密钥。
+     * @return 解密后的明文字符串。
+     */
+    public static String decryptAesCbcToString(final SymmetricCiphertext encryptedData, final SecretKey key) {
+        byte[] decryptedBytes = decryptAesCbc(encryptedData, key);
+        return new String(decryptedBytes, DEFAULT_CHARSET);
     }
 
 
