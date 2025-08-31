@@ -22,7 +22,7 @@ public class TransportHeadersWebClientRequestModifier implements WebClientReques
     @Override
     public void modify(WebFluxContext webFluxContext, ClientRequest.Builder builder) {
         for (String headerName : transportHeaders.viewHeaders()) {
-            String headerValue = webFluxContext.getRequest().getHeaders().getFirst(headerName);
+            String headerValue = webFluxContext.getExchange().getRequest().getHeaders().getFirst(headerName);
             if (StringUtils.isNotBlank(headerValue)) {
                 builder.headers(headers -> headers.set(headerName, headerValue));
             }

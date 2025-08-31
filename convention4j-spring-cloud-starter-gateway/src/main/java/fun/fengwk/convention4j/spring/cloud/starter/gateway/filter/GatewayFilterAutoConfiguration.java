@@ -29,9 +29,9 @@ public class GatewayFilterAutoConfiguration {
     }
 
     @Bean
-    public XForwardedHeaderGlobalFilter xForwardedHeaderGlobalFilter(XForwardedHeaderProperties xForwardHeaderProperties,
-                                                                     Environment environment) {
-        return new XForwardedHeaderGlobalFilter(xForwardHeaderProperties, environment);
+    public XForwardedHeaderWebFilter xForwardedHeaderGlobalFilter(XForwardedHeaderProperties xForwardHeaderProperties,
+                                                                  Environment environment) {
+        return new XForwardedHeaderWebFilter(xForwardHeaderProperties, environment);
     }
 
 }

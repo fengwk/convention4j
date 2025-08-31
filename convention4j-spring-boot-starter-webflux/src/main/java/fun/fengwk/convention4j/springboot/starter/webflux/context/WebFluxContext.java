@@ -1,8 +1,7 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.context;
 
 import lombok.Getter;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
@@ -20,15 +19,12 @@ public class WebFluxContext {
     private static final String CONTEXT_KEY = WebFluxContext.class.getName();
 
     @Getter
-    private final ServerHttpRequest request;
-    @Getter
-    private final ServerHttpResponse response;
+    private final ServerWebExchange exchange;
     @Getter
     private final ConcurrentMap<String, Object> attributes = new ConcurrentHashMap<>();
 
-    public WebFluxContext(ServerHttpRequest request, ServerHttpResponse response) {
-        this.request = Objects.requireNonNull(request, "Request must not be null");
-        this.response = Objects.requireNonNull(response, "Response must not be null");
+    public WebFluxContext(ServerWebExchange exchange) {
+        this.exchange = Objects.requireNonNull(exchange, "exchange must not be null");
     }
 
     public static Context set(Context context, WebFluxContext webFluxContext) {

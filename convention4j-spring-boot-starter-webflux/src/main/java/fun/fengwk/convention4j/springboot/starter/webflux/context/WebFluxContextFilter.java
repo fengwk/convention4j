@@ -17,7 +17,7 @@ import java.util.function.Function;
  * @author fengwk
  */
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class WebFluxContextFilter implements WebFilter {
 
     @Override
@@ -28,7 +28,7 @@ public class WebFluxContextFilter implements WebFilter {
 
     private Function<Context, Context> writeWebFluxContext(ServerWebExchange exchange) {
         return ctx -> {
-            WebFluxContext webFluxContext = new WebFluxContext(exchange.getRequest(), exchange.getResponse());
+            WebFluxContext webFluxContext = new WebFluxContext(exchange);
             return WebFluxContext.set(ctx, webFluxContext);
         };
     }

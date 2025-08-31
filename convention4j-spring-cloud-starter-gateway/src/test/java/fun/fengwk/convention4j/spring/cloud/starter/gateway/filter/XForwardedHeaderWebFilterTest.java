@@ -17,6 +17,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class XForwardedHeaderGlobalFilterTest {
+public class XForwardedHeaderWebFilterTest {
 
     private static final String CLIENT_IP = "123.123.123.123";
     private static final String APP_NAME = "my-test-gateway";
@@ -44,8 +45,8 @@ public class XForwardedHeaderGlobalFilterTest {
     @Mock
     private Environment environment;
     @Mock
-    private GatewayFilterChain filterChain;
-    private XForwardedHeaderGlobalFilter filter;
+    private WebFilterChain filterChain;
+    private XForwardedHeaderWebFilter filter;
 
     @BeforeEach
     void setUp() {
@@ -72,20 +73,13 @@ public class XForwardedHeaderGlobalFilterTest {
 
     private HttpHeaders filterAndGetHeaders(ServerWebExchange exchange) {
         // 创建并执行过滤器
-        filter = new XForwardedHeaderGlobalFilter(properties, environment);
+        filter = new XForwardedHeaderWebFilter(properties, environment);
         filter.filter(exchange, filterChain).block();
         // 验证 filterChain.filter 被调用，并捕获传入的 exchange
         var exchangeCaptor = org.mockito.ArgumentCaptor.forClass(ServerWebExchange.class);
         verify(filterChain).filter(exchangeCaptor.capture());
         // 返回修改后的请求头
         return exchangeCaptor.getValue().getRequest().getHeaders();
-    }
-
-    @Test
-    @DisplayName("检查过滤器顺序是否为最高优先级")
-    void shouldReturnHighestPrecedenceOrder() {
-        filter = new XForwardedHeaderGlobalFilter(properties, environment);
-        assertThat(filter.getOrder()).isEqualTo(Ordered.HIGHEST_PRECEDENCE);
     }
 
     @Test
@@ -96,7 +90,7 @@ public class XForwardedHeaderGlobalFilterTest {
         ServerWebExchange exchange = createExchange(createBaseRequest());
         ServerHttpRequest originalRequest = exchange.getRequest();
         // WHEN: 执行过滤器
-        filter = new XForwardedHeaderGlobalFilter(properties, environment);
+        filter = new XForwardedHeaderWebFilter(properties, environment);
         StepVerifier.create(filter.filter(exchange, filterChain)).verifyComplete();
         // THEN: 请求未被修改，直接传递给 filterChain
         var exchangeCaptor = org.mockito.ArgumentCaptor.forClass(ServerWebExchange.class);

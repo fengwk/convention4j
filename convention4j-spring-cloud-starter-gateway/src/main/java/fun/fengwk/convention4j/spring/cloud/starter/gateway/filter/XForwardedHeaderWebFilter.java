@@ -2,14 +2,15 @@ package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
 import fun.fengwk.convention4j.common.web.XForwardedHeader;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
@@ -19,13 +20,14 @@ import java.util.Optional;
  * @author fengwk
  */
 @Slf4j
-public class XForwardedHeaderGlobalFilter implements GlobalFilter, Ordered {
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class XForwardedHeaderWebFilter implements WebFilter {
 
     private final XForwardedHeaderProperties xForwardHeaderProperties;
     private final String gatewayViaIdentifier;
 
-    public XForwardedHeaderGlobalFilter(XForwardedHeaderProperties xForwardHeaderProperties,
-                                        Environment environment) {
+    public XForwardedHeaderWebFilter(XForwardedHeaderProperties xForwardHeaderProperties,
+                                     Environment environment) {
         Assert.notNull(xForwardHeaderProperties, "xForwardHeaderProperties must not be null");
         this.xForwardHeaderProperties = xForwardHeaderProperties;
         this.gatewayViaIdentifier = environment.getProperty(
@@ -35,7 +37,7 @@ public class XForwardedHeaderGlobalFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         // 如果未启用，则直接跳过
         if (!xForwardHeaderProperties.isEnabled()) {
             return chain.filter(exchange);
@@ -81,7 +83,6 @@ public class XForwardedHeaderGlobalFilter implements GlobalFilter, Ordered {
             }
         }
         requestBuilder.header(XForwardedHeader.X_ORIGINAL_URI.getName(), originalUri);
-
     }
 
     /**
@@ -162,12 +163,6 @@ public class XForwardedHeaderGlobalFilter implements GlobalFilter, Ordered {
         }
         return "https".equalsIgnoreCase(request.getURI().getScheme()) ? "443" : "80";
     }
-
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
-
 
     private String formatIpForForwardedHeader(String ip) {
         // 如果是IPv6地址，需要用引号和方括号包围
