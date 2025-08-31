@@ -79,7 +79,7 @@ public class WebFluxErrorWebExceptionHandler extends AbstractErrorWebExceptionHa
                 request.method().name(), request.path(), remoteAddress, result);
         }
 
-        return ReactiveResultUtils.adapt(request, result);
+        return ReactiveResultUtils.write(request, result);
     }
 
     @Override

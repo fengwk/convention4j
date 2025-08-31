@@ -13,6 +13,8 @@ import java.util.Objects;
  */
 public class CookieUtils {
 
+    private static final String DEFAULT_PATH = "/";
+
     private CookieUtils() {
     }
 
@@ -101,52 +103,71 @@ public class CookieUtils {
     /**
      * 删除指定名称的cookie
      *
-     * @param request  request
      * @param response response
      * @param name     cookie name
      */
-    public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (Objects.equals(cookie.getName(), name)) {
-                    cookie.setMaxAge(0);
-                    response.addCookie(cookie);
-                }
-            }
-        }
+    public static void deleteCookie(HttpServletResponse response, String name) {
+        deleteCookie(response, name, DEFAULT_PATH);
+    }
+
+    /**
+     * 删除指定名称的cookie
+     *
+     * @param response response
+     * @param name     cookie name
+     * @param path     cookie路径
+     */
+    public static void deleteCookie(HttpServletResponse response, String name, String path) {
+        Cookie cookie = new Cookie(name, "");
+        cookie.setPath(path);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 
     /**
      * 设置Cookie，如果存在同名的Cookie则覆盖
      *
-     * @param request   request
      * @param response  response
      * @param setCookie 要设置的cookie
      */
-    public static void setCookie(HttpServletRequest request, HttpServletResponse response, Cookie setCookie) {
-        deleteCookie(request, response, setCookie.getName());
+    public static void setCookie(HttpServletResponse response, Cookie setCookie) {
         response.addCookie(setCookie);
     }
 
     /**
      * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
      *
-     * @param request  request
      * @param response response
      * @param name     cookie name
      * @param value    cookie value
      * @param maxAge   设置过期时间，单位秒，如果设置为null则为当前浏览器会话
      */
-    public static void setCookie(HttpServletRequest request, HttpServletResponse response,
-                                 String name, String value, Integer maxAge) {
+    public static void setCookie(HttpServletResponse response, String name, String value,
+                                 Integer maxAge, boolean secure) {
+        setCookie(response, name, value, maxAge, true, secure, DEFAULT_PATH);
+    }
+
+    /**
+     * 设置Cookie
+     *
+     * @param response response
+     * @param name     cookie name
+     * @param value    cookie value
+     * @param maxAge   设置过期时间，单位秒，如果设置为null则为当前浏览器会话
+     * @param httpOnly 是否httpOnly
+     * @param secure   仅通过https传输
+     * @param path     cookie路径
+     */
+    public static void setCookie(HttpServletResponse response, String name, String value,
+                                 Integer maxAge, boolean httpOnly, boolean secure, String path) {
         Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/"); // 必须设置path，否则默认取的是请求地址的path
         if (maxAge != null) {
             cookie.setMaxAge(maxAge);
         }
-        setCookie(request, response, cookie);
+        cookie.setHttpOnly(httpOnly);
+        cookie.setSecure(secure);
+        cookie.setPath(path); // 必须设置path，否则默认取的是请求地址的path
+        setCookie(response, cookie);
     }
 
 }

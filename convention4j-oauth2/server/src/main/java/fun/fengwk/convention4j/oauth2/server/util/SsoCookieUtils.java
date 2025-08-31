@@ -40,8 +40,8 @@ public class SsoCookieUtils {
         return Collections.emptyMap();
     }
 
-    public static void setSsoId(HttpServletRequest request, HttpServletResponse response,
-                                SsoContext context, Map<String, SsoIdInfo> ssoIdMap, int expireSeconds) {
+    public static void setSsoId(HttpServletResponse response, SsoContext context, Map<String, SsoIdInfo> ssoIdMap,
+                                int expireSeconds, Boolean secure) {
         String ssoId = context.getSsoId();
         if (StringUtils.isNotEmpty(ssoId)) {
             SsoIdInfo ssoIdInfo = new SsoIdInfo();
@@ -49,19 +49,18 @@ public class SsoCookieUtils {
             ssoIdInfo.setEt((int) (System.currentTimeMillis() / 1000L) + expireSeconds);
             ssoIdMap = new HashMap<>(ssoIdMap);
             ssoIdMap.put(context.getClientId(), ssoIdInfo);
-            setSsoIdMap(request, response, ssoIdMap);
+            setSsoIdMap(response, ssoIdMap, secure);
         }
     }
 
-    public static void deleteSsoId(HttpServletRequest request, HttpServletResponse response,
-                                   SsoContext context, Map<String, SsoIdInfo> ssoIdMap) {
+    public static void deleteSsoId(HttpServletResponse response, SsoContext context, Map<String, SsoIdInfo> ssoIdMap,
+                                   Boolean secure) {
         ssoIdMap = new HashMap<>(ssoIdMap);
         ssoIdMap.remove(context.getClientId());
-        setSsoIdMap(request, response, ssoIdMap);
+        setSsoIdMap(response, ssoIdMap, secure);
     }
 
-    private static void setSsoIdMap(HttpServletRequest request, HttpServletResponse response,
-                                    Map<String, SsoIdInfo> ssoIdMap) {
+    private static void setSsoIdMap(HttpServletResponse response, Map<String, SsoIdInfo> ssoIdMap, Boolean secure) {
         String ssoIdMapJson = JsonUtils.toJson(ssoIdMap);
         ssoIdMapJson = UriUtils.encodeUriComponent(ssoIdMapJson);
         int now = (int) (System.currentTimeMillis() / 1000L);
@@ -70,7 +69,7 @@ public class SsoCookieUtils {
             maxEt = Math.max(maxEt, ssoIdInfo.getEt());
         }
         int expireSeconds = maxEt - now;
-        CookieUtils.setCookie(request, response, SSO_ID_COOKIE_NAME, ssoIdMapJson, expireSeconds);
+        CookieUtils.setCookie(response, SSO_ID_COOKIE_NAME, ssoIdMapJson, expireSeconds, secure);
     }
 
 }

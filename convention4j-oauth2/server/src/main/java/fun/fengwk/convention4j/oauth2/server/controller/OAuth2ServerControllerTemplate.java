@@ -3,6 +3,8 @@ package fun.fengwk.convention4j.oauth2.server.controller;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.common.util.NullSafe;
+import fun.fengwk.convention4j.common.web.XForwardHeaderUtils;
+import fun.fengwk.convention4j.common.web.XForwardedHeaderAccessor;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultAuthorizeContext;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultTokenContext;
 import fun.fengwk.convention4j.oauth2.server.service.OAuth2Service;
@@ -49,14 +51,16 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         Map<String, SsoIdInfo> ssoIdMap = SsoCookieUtils.getSsoIdMap(request);
         SsoIdInfo ssoIdInfo = ssoIdMap.get(clientId);
         context.setSsoId(NullSafe.map(ssoIdInfo, SsoIdInfo::getId));
+
+
         try {
             URI uri = oauth2Service.authorize(context);
             log.debug("SSO authorize success, context: {}, uri: {}", context, uri);
-            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
+            SsoCookieUtils.setSsoId(response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId), isSecure(request));
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
             log.debug("SSO authorize failed, context: {}", context, ex);
-            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
+            SsoCookieUtils.deleteSsoId(response, context, ssoIdMap, isSecure(request));
             // 如果sso认证失败则返回空结果
             return Results.ok();
         }
@@ -87,11 +91,11 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         try {
             URI uri = oauth2Service.authorize(context);
             log.debug("Authorize success, context: {}, uri: {}", context, uri);
-            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
+            SsoCookieUtils.setSsoId(response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId), isSecure(request));
             return Results.ok(uri.toASCIIString());
         } catch (Exception ex) {
             log.debug("Authorize failed, context: {}", context);
-            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
+            SsoCookieUtils.deleteSsoId(response, context, ssoIdMap, isSecure(request));
             throw ex;
         }
     }
@@ -128,11 +132,11 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         try {
             OAuth2TokenDTO oauth2TokenDTO = oauth2Service.token(context);
             log.debug("Token success, context: {}, oauth2TokenDTO: {}", context, oauth2TokenDTO);
-            SsoCookieUtils.setSsoId(request, response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId));
+            SsoCookieUtils.setSsoId(response, context, ssoIdMap, oauth2Service.getSsoStoreSeconds(clientId), isSecure(request));
             return Results.created(oauth2TokenDTO);
         } catch (Exception ex) {
             log.debug("Token failed, context: {}", context);
-            SsoCookieUtils.deleteSsoId(request, response, context, ssoIdMap);
+            SsoCookieUtils.deleteSsoId(response, context, ssoIdMap, isSecure(request));
             throw ex;
         }
     }
@@ -163,6 +167,11 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
         oauth2Service.revokeToken(accessToken);
         log.debug("Revoke token success, accessToken: {}", accessToken);
         return Results.ok();
+    }
+
+    protected boolean isSecure(HttpServletRequest request) {
+        XForwardedHeaderAccessor accessor = XForwardHeaderUtils.from(request);
+        return accessor.isSecure() || request.isSecure();
     }
 
 }

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 /**
  * @author fengwk
  */
-@Import(WebExceptionResultHandlerChain.class)
+@Import({WebExceptionResultHandlerChain.class, ResultResponseBodyAdvice.class})
 @AutoConfiguration
 public class WebExceptionResultHandlerAutoConfiguration {
 

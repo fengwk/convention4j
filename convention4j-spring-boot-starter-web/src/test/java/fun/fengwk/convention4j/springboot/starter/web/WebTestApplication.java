@@ -1,8 +1,13 @@
 package fun.fengwk.convention4j.springboot.starter.web;
 
+import fun.fengwk.convention4j.api.code.CommonErrorCodes;
 import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
+import fun.fengwk.convention4j.common.web.CookieUtils;
 import fun.fengwk.convention4j.springboot.test.starter.redis.EnableEmbeddedRedisServer;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +76,33 @@ public class WebTestApplication {
     @RequestMapping("/hello4")
     public Result<String> hello4(@RequestParam("uri") String uri) {
         return Results.ok(uri);
+    }
+
+    @RequestMapping("/hello5")
+    public Result<String> hello5() {
+        return Results.error(CommonErrorCodes.NOT_FOUND);
+    }
+
+    @RequestMapping("/hello6")
+    public Result<String> hello6() {
+        throw CommonErrorCodes.NOT_FOUND.asThrowable();
+    }
+
+    @RequestMapping("/cookie/set")
+    public Result<Void> testCookieSet(HttpServletResponse response) {
+        CookieUtils.setCookie(response, "my-cookie", "test-my-cookie", 600, false);
+        return Results.ok();
+    }
+
+    @RequestMapping("/cookie/get")
+    public Result<Cookie> testCookieGet(HttpServletRequest request) {
+        return Results.ok(CookieUtils.getCookie(request, "my-cookie"));
+    }
+
+    @RequestMapping("/cookie/del")
+    public Result<Void> testCookieDel(HttpServletResponse response) {
+        CookieUtils.deleteCookie(response, "my-cookie");
+        return Results.ok();
     }
 
 }

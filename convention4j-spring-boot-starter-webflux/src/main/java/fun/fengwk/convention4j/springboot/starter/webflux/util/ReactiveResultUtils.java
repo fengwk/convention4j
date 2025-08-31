@@ -21,14 +21,14 @@ public class ReactiveResultUtils {
     private ReactiveResultUtils() {
     }
 
-    public static <T> Mono<ServerResponse> adapt(ServerRequest request, Result<T> result) {
+    public static <T> Mono<ServerResponse> write(ServerRequest request, Result<T> result) {
         ServerResponse.BodyBuilder respBuilder = newBuildByStatus(request, result);
         respBuilder.contentType(MediaType.APPLICATION_JSON);
         Mono<Result<T>> resMono = Mono.just(result);
         return respBuilder.body(resMono, new ParameterizedTypeReference<>() {});
     }
 
-    public static <T> Mono<ServerResponse> adapt(ServerRequest request, Result<T> result,
+    public static <T> Mono<ServerResponse> write(ServerRequest request, Result<T> result,
                                                  Consumer<ServerResponse.BodyBuilder> respConsumer) {
         ServerResponse.BodyBuilder respBuilder = newBuildByStatus(request, result);
         respConsumer.accept(respBuilder);
