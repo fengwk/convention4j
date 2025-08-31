@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.util;
 
+import fun.fengwk.convention4j.common.web.SameSite;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -156,7 +157,7 @@ public class ReactiveCookieUtilsTest {
         // given
         int maxAge = 3600;
         // when
-        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, maxAge);
+        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, maxAge, false);
         // then
         ArgumentCaptor<ResponseCookie> cookieCaptor = ArgumentCaptor.forClass(ResponseCookie.class);
         verify(serverHttpResponse).addCookie(cookieCaptor.capture());
@@ -172,7 +173,7 @@ public class ReactiveCookieUtilsTest {
     @DisplayName("setCookie(ServerHttpResponse): 使用默认值设置会话Cookie (maxAge为null)")
     void testSetCookie_forHttpResponse_withDefaultsAndNullMaxAge() {
         // when
-        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, null);
+        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, null, false);
         // then
         ArgumentCaptor<ResponseCookie> cookieCaptor = ArgumentCaptor.forClass(ResponseCookie.class);
         verify(serverHttpResponse).addCookie(cookieCaptor.capture());
@@ -192,7 +193,8 @@ public class ReactiveCookieUtilsTest {
         // given
         int maxAge = 7200;
         // when
-        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, maxAge, false, CUSTOM_PATH);
+        ReactiveCookieUtils.setCookie(serverHttpResponse, COOKIE_NAME, COOKIE_VALUE, maxAge, false, false,
+            CUSTOM_PATH, null, SameSite.LAX);
         // then
         ArgumentCaptor<ResponseCookie> cookieCaptor = ArgumentCaptor.forClass(ResponseCookie.class);
         verify(serverHttpResponse).addCookie(cookieCaptor.capture());
@@ -266,7 +268,8 @@ public class ReactiveCookieUtilsTest {
         // given
         int maxAge = 7200;
         // when
-        ReactiveCookieUtils.setCookie(bodyBuilder, COOKIE_NAME, COOKIE_VALUE, maxAge, false, false, CUSTOM_PATH, "Lax");
+        ReactiveCookieUtils.setCookie(bodyBuilder, COOKIE_NAME, COOKIE_VALUE, maxAge, false, false,
+            CUSTOM_PATH, null, SameSite.LAX);
         // then
         ArgumentCaptor<ResponseCookie> cookieCaptor = ArgumentCaptor.forClass(ResponseCookie.class);
         verify(bodyBuilder).cookie(cookieCaptor.capture());

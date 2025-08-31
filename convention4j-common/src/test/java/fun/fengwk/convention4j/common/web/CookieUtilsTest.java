@@ -208,7 +208,7 @@ public class CookieUtilsTest {
     @DisplayName("setCookie: 设置完全自定义的Cookie")
     void testSetCookie_fullyCustomized() {
         // when
-        CookieUtils.setCookie(response, COOKIE_NAME, COOKIE_VALUE, 7200, false, false, CUSTOM_PATH);
+        CookieUtils.setCookie(response, COOKIE_NAME, COOKIE_VALUE, 7200, false, false, CUSTOM_PATH, null);
         // then
         ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
         verify(response).addCookie(cookieCaptor.capture());
@@ -225,7 +225,7 @@ public class CookieUtilsTest {
     @DisplayName("setCookie: 设置会话Cookie (maxAge为null)")
     void testSetCookie_forSessionCookie() {
         // when
-        CookieUtils.setCookie(response, COOKIE_NAME, COOKIE_VALUE, null, true, true, "/");
+        CookieUtils.setCookie(response, COOKIE_NAME, COOKIE_VALUE, null, true, true, "/", null);
         // then
         ArgumentCaptor<Cookie> cookieCaptor = ArgumentCaptor.forClass(Cookie.class);
         verify(response).addCookie(cookieCaptor.capture());

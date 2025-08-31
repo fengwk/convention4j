@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.common.web;
 
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -118,8 +119,23 @@ public class CookieUtils {
      * @param path     cookie路径
      */
     public static void deleteCookie(HttpServletResponse response, String name, String path) {
+        deleteCookie(response, name, path, null);
+    }
+
+    /**
+     * 删除指定名称的cookie
+     *
+     * @param response response
+     * @param name     cookie name
+     * @param path     cookie路径
+     * @param domain   cookie域名
+     */
+    public static void deleteCookie(HttpServletResponse response, String name, String path, String domain) {
         Cookie cookie = new Cookie(name, "");
         cookie.setPath(path);
+        if (StringUtils.isNotEmpty(domain)) {
+            cookie.setDomain(domain);
+        }
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }
@@ -144,7 +160,7 @@ public class CookieUtils {
      */
     public static void setCookie(HttpServletResponse response, String name, String value,
                                  Integer maxAge, boolean secure) {
-        setCookie(response, name, value, maxAge, true, secure, DEFAULT_PATH);
+        setCookie(response, name, value, maxAge, true, secure, DEFAULT_PATH, null);
     }
 
     /**
@@ -159,10 +175,13 @@ public class CookieUtils {
      * @param path     cookie路径
      */
     public static void setCookie(HttpServletResponse response, String name, String value,
-                                 Integer maxAge, boolean httpOnly, boolean secure, String path) {
+                                 Integer maxAge, boolean httpOnly, boolean secure, String path, String domain) {
         Cookie cookie = new Cookie(name, value);
         if (maxAge != null) {
             cookie.setMaxAge(maxAge);
+        }
+        if (StringUtils.isNotEmpty(domain)) {
+            cookie.setDomain(domain);
         }
         cookie.setHttpOnly(httpOnly);
         cookie.setSecure(secure);

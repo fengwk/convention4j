@@ -1,7 +1,9 @@
 package fun.fengwk.convention4j.springboot.starter.webflux.util;
 
+import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.util.ListUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
+import fun.fengwk.convention4j.common.web.SameSite;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -82,16 +84,32 @@ public class ReactiveCookieUtils {
     }
 
     /**
-     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
+     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，sameSite为Lax，在大多数情况下适用
      *
      * @param response response
      * @param name     cookie name
      * @param value    cookie value
      * @param maxAge   设置过期时间，单位秒，如果设置为null则为当前浏览器会话
+     * @param secure   仅通过https传输
      */
-    public static void setCookie(ServerHttpResponse response,
-                                 String name, String value, Integer maxAge) {
-        setCookie(response, name, value, maxAge, true, DEFAULT_PATH);
+    public static void setCookie(ServerHttpResponse response, String name, String value,
+                                 Integer maxAge, boolean secure) {
+        setCookie(response, name, value, maxAge, secure, SameSite.LAX);
+    }
+
+    /**
+     * 设置Cookie，将cookie路径设置为/，且httponly，在大多数情况下适用
+     *
+     * @param response response
+     * @param name     cookie name
+     * @param value    cookie value
+     * @param maxAge   设置过期时间，单位秒，如果设置为null则为当前浏览器会话
+     * @param secure   仅通过https传输
+     * @param sameSite 跨站请求防护
+     */
+    public static void setCookie(ServerHttpResponse response, String name, String value,
+                                 Integer maxAge, boolean secure, String sameSite) {
+        setCookie(response, name, value, maxAge, true, secure, DEFAULT_PATH, null, sameSite);
     }
 
     /**
@@ -102,16 +120,25 @@ public class ReactiveCookieUtils {
      * @param value    cookie value
      * @param maxAge   设置过期时间，单位秒，如果设置为null则为当前浏览器会话
      * @param httpOnly 是否设置httpOnly
+     * @param secure   仅通过https传输
      * @param path     cookie路径
+     * @param domain   cookie域名
+     * @param sameSite 跨站请求防护
      */
-    public static void setCookie(ServerHttpResponse response,
-                                 String name, String value, Integer maxAge, boolean httpOnly, String path) {
+    public static void setCookie(ServerHttpResponse response, String name, String value,
+                                 Integer maxAge, boolean httpOnly, boolean secure,
+                                 String path, String domain, String sameSite) {
         ResponseCookie.ResponseCookieBuilder respCookieBuilder = ResponseCookie
             .from(name, value)
             .httpOnly(httpOnly)
+            .secure(secure)
+            .sameSite(sameSite)
             .path(path); // 必须设置path，否则默认取的是请求地址的path
         if (maxAge != null) {
             respCookieBuilder.maxAge(maxAge);
+        }
+        if (StringUtils.isNotEmpty(domain)) {
+            respCookieBuilder.domain(domain);
         }
         setCookie(response, respCookieBuilder.build());
     }
@@ -151,29 +178,29 @@ public class ReactiveCookieUtils {
     }
 
     /**
-     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，在大多数情况下适用
+     * 默认的cookie设置方法，将cookie路径设置为/，且httponly，sameSite为Lax，在大多数情况下适用
      *
      * @param responseBuilder responseBuilder
      * @param name            cookie name
      * @param value           cookie value
      * @param maxAge          设置过期时间，单位秒，如果设置为null则为当前浏览器会话
      */
-    public static void setCookie(ServerResponse.BodyBuilder responseBuilder,
-                                 String name, String value, Integer maxAge, boolean secure) {
-        setCookie(responseBuilder, name, value, maxAge, true, secure, DEFAULT_PATH, "Lax");
+    public static void setCookie(ServerResponse.BodyBuilder responseBuilder, String name, String value,
+                                 Integer maxAge, boolean secure) {
+        setCookie(responseBuilder, name, value, maxAge, secure, SameSite.LAX);
     }
 
     /**
-     * 设置Cookie，如果存在同名的Cookie则覆盖
+     * 默认的cookie设置方法，将cookie路径设置为/
      *
      * @param responseBuilder responseBuilder
      * @param name            cookie name
      * @param value           cookie value
      * @param maxAge          设置过期时间，单位秒，如果设置为null则为当前浏览器会话
      */
-    public static void setCookie(ServerResponse.BodyBuilder responseBuilder,
-                                 String name, String value, Integer maxAge, boolean secure, String sameSite) {
-        setCookie(responseBuilder, name, value, maxAge, true, secure, DEFAULT_PATH, sameSite);
+    public static void setCookie(ServerResponse.BodyBuilder responseBuilder, String name, String value,
+                                 Integer maxAge, boolean secure, String sameSite) {
+        setCookie(responseBuilder, name, value, maxAge, true, secure, DEFAULT_PATH, null, sameSite);
     }
 
     /**
@@ -189,7 +216,8 @@ public class ReactiveCookieUtils {
      * @param sameSite        跨站请求防护
      */
     public static void setCookie(ServerResponse.BodyBuilder responseBuilder, String name, String value,
-                                 Integer maxAge, boolean httpOnly, boolean secure, String path, String sameSite) {
+                                 Integer maxAge, boolean httpOnly, boolean secure, String path,
+                                 String domain, String sameSite) {
         ResponseCookie.ResponseCookieBuilder respCookieBuilder = ResponseCookie
             .from(name, value)
             .httpOnly(httpOnly)
@@ -198,6 +226,9 @@ public class ReactiveCookieUtils {
             .path(path); // 必须设置path，否则默认取的是请求地址的path
         if (maxAge != null) {
             respCookieBuilder.maxAge(maxAge);
+        }
+        if (StringUtils.isNotEmpty(domain)) {
+            respCookieBuilder.domain(domain);
         }
         setCookie(responseBuilder, respCookieBuilder.build());
     }
