@@ -7,11 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author fengwk
  */
 @Data
-@ConfigurationProperties("convention.spring-cloud-gateway.x-forward-header")
-public class XForwardHeaderProperties {
+@ConfigurationProperties("convention.spring-cloud-gateway.x-forwarded-header")
+public class XForwardedHeaderProperties {
 
     /**
-     * 是否启用 XForwardHeaderGlobalFilter。
+     * 是否启用 XForwardedHeaderGlobalFilter。
      */
     private boolean enabled = true;
 
@@ -32,10 +32,16 @@ public class XForwardHeaderProperties {
      * 当网关执行URL路径重写时，此头部非常有用。
      */
     private boolean originalUriEnabled = true;
+
     /**
      * 是否启用 RFC 7230 标准的 Via 头部。
      * 推荐启用，以遵循HTTP标准并支持请求追踪。
      */
     private boolean viaEnabled = true;
+
+    /**
+     * 是否启用真实客户端端口
+     */
+    private boolean realPortEnabled = true;
 
 }

@@ -170,8 +170,7 @@ public abstract class OAuth2ServerControllerTemplate<SUBJECT, CERTIFICATE> {
     }
 
     protected boolean isSecure(HttpServletRequest request) {
-        XForwardedHeaderAccessor accessor = XForwardHeaderUtils.from(request);
-        return accessor.isSecure() || request.isSecure();
+        return XForwardHeaderUtils.from(request).isSecure();
     }
 
 }

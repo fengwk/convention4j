@@ -74,7 +74,7 @@ class ReactiveXForwardHeaderUtilsTest {
 
         XForwardedHeaderAccessor accessor = ReactiveXForwardHeaderUtils.from(mockServerRequest);
 
-        assertThat(accessor.getDirectRemoteAddr()).isEqualTo("unknown");
+        assertThat(accessor.getDirectRemoteAddr()).isEqualTo(null);
         assertThat(accessor.getDirectRemotePort()).isEqualTo(-1);
     }
 

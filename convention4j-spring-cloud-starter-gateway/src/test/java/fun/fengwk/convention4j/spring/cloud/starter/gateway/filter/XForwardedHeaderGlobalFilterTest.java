@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
-import fun.fengwk.convention4j.common.web.XForwardHeader;
+import fun.fengwk.convention4j.common.web.XForwardedHeader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,18 +34,18 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class XForwardHeaderGlobalFilterTest {
+public class XForwardedHeaderGlobalFilterTest {
 
     private static final String CLIENT_IP = "123.123.123.123";
     private static final String APP_NAME = "my-test-gateway";
 
     @Mock
-    private XForwardHeaderProperties properties;
+    private XForwardedHeaderProperties properties;
     @Mock
     private Environment environment;
     @Mock
     private GatewayFilterChain filterChain;
-    private XForwardHeaderGlobalFilter filter;
+    private XForwardedHeaderGlobalFilter filter;
 
     @BeforeEach
     void setUp() {
@@ -72,7 +72,7 @@ public class XForwardHeaderGlobalFilterTest {
 
     private HttpHeaders filterAndGetHeaders(ServerWebExchange exchange) {
         // 创建并执行过滤器
-        filter = new XForwardHeaderGlobalFilter(properties, environment);
+        filter = new XForwardedHeaderGlobalFilter(properties, environment);
         filter.filter(exchange, filterChain).block();
         // 验证 filterChain.filter 被调用，并捕获传入的 exchange
         var exchangeCaptor = org.mockito.ArgumentCaptor.forClass(ServerWebExchange.class);
@@ -84,7 +84,7 @@ public class XForwardHeaderGlobalFilterTest {
     @Test
     @DisplayName("检查过滤器顺序是否为最高优先级")
     void shouldReturnHighestPrecedenceOrder() {
-        filter = new XForwardHeaderGlobalFilter(properties, environment);
+        filter = new XForwardedHeaderGlobalFilter(properties, environment);
         assertThat(filter.getOrder()).isEqualTo(Ordered.HIGHEST_PRECEDENCE);
     }
 
@@ -96,7 +96,7 @@ public class XForwardHeaderGlobalFilterTest {
         ServerWebExchange exchange = createExchange(createBaseRequest());
         ServerHttpRequest originalRequest = exchange.getRequest();
         // WHEN: 执行过滤器
-        filter = new XForwardHeaderGlobalFilter(properties, environment);
+        filter = new XForwardedHeaderGlobalFilter(properties, environment);
         StepVerifier.create(filter.filter(exchange, filterChain)).verifyComplete();
         // THEN: 请求未被修改，直接传递给 filterChain
         var exchangeCaptor = org.mockito.ArgumentCaptor.forClass(ServerWebExchange.class);
@@ -113,14 +113,14 @@ public class XForwardHeaderGlobalFilterTest {
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: 验证所有头部都被正确添加
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_FOR.getName())).isEqualTo(CLIENT_IP);
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_PROTO.getName())).isEqualTo("https");
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_HOST.getName())).isEqualTo("example.com");
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_PORT.getName())).isEqualTo("8443");
-        assertThat(headers.getFirst(XForwardHeader.X_ORIGINAL_URI.getName())).isEqualTo("/test/path?query=1");
-        assertThat(headers.getFirst(XForwardHeader.FORWARDED.getName()))
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_FOR.getName())).isEqualTo(CLIENT_IP);
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_PROTO.getName())).isEqualTo("https");
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_HOST.getName())).isEqualTo("example.com");
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_PORT.getName())).isEqualTo("8443");
+        assertThat(headers.getFirst(XForwardedHeader.X_ORIGINAL_URI.getName())).isEqualTo("/test/path?query=1");
+        assertThat(headers.getFirst(XForwardedHeader.FORWARDED.getName()))
             .isEqualTo("for=123.123.123.123;proto=https;host=example.com");
-        assertThat(headers.getFirst(XForwardHeader.VIA.getName())).isEqualTo(APP_NAME);
+        assertThat(headers.getFirst(XForwardedHeader.VIA.getName())).isEqualTo(APP_NAME);
     }
 
     @Test
@@ -129,17 +129,17 @@ public class XForwardHeaderGlobalFilterTest {
         // GIVEN: 请求中已存在部分头部
         when(environment.getProperty("spring.application.name", "spring-cloud-gateway")).thenReturn(APP_NAME);
         MockServerHttpRequest.BaseBuilder<?> requestBuilder = createBaseRequest()
-            .header(XForwardHeader.X_FORWARDED_FOR.getName(), "203.0.113.195")
-            .header(XForwardHeader.FORWARDED.getName(), "for=203.0.113.195")
-            .header(XForwardHeader.VIA.getName(), "1.1 some-proxy");
+            .header(XForwardedHeader.X_FORWARDED_FOR.getName(), "203.0.113.195")
+            .header(XForwardedHeader.FORWARDED.getName(), "for=203.0.113.195")
+            .header(XForwardedHeader.VIA.getName(), "1.1 some-proxy");
         ServerWebExchange exchange = createExchange(requestBuilder);
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: 验证新值被正确追加
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_FOR.getName())).isEqualTo("203.0.113.195, " + CLIENT_IP);
-        assertThat(headers.getFirst(XForwardHeader.FORWARDED.getName()))
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_FOR.getName())).isEqualTo("203.0.113.195, " + CLIENT_IP);
+        assertThat(headers.getFirst(XForwardedHeader.FORWARDED.getName()))
             .isEqualTo("for=203.0.113.195, for=123.123.123.123;proto=https;host=example.com");
-        assertThat(headers.getFirst(XForwardHeader.VIA.getName())).isEqualTo("1.1 some-proxy, " + APP_NAME);
+        assertThat(headers.getFirst(XForwardedHeader.VIA.getName())).isEqualTo("1.1 some-proxy, " + APP_NAME);
     }
 
     @Test
@@ -151,7 +151,7 @@ public class XForwardHeaderGlobalFilterTest {
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: Via 头部使用默认值
-        assertThat(headers.getFirst(XForwardHeader.VIA.getName())).isEqualTo("spring-cloud-gateway");
+        assertThat(headers.getFirst(XForwardedHeader.VIA.getName())).isEqualTo("spring-cloud-gateway");
     }
 
     @Test
@@ -164,12 +164,12 @@ public class XForwardHeaderGlobalFilterTest {
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: X-Forwarded-* 头部不存在
-        assertThat(headers).doesNotContainKey(XForwardHeader.X_FORWARDED_FOR.getName());
-        assertThat(headers).doesNotContainKey(XForwardHeader.X_FORWARDED_PROTO.getName());
-        assertThat(headers).doesNotContainKey(XForwardHeader.X_FORWARDED_HOST.getName());
-        assertThat(headers).doesNotContainKey(XForwardHeader.X_FORWARDED_PORT.getName());
+        assertThat(headers).doesNotContainKey(XForwardedHeader.X_FORWARDED_FOR.getName());
+        assertThat(headers).doesNotContainKey(XForwardedHeader.X_FORWARDED_PROTO.getName());
+        assertThat(headers).doesNotContainKey(XForwardedHeader.X_FORWARDED_HOST.getName());
+        assertThat(headers).doesNotContainKey(XForwardedHeader.X_FORWARDED_PORT.getName());
         // 确保其他头部仍然被添加
-        assertThat(headers).containsKey(XForwardHeader.VIA.getName());
+        assertThat(headers).containsKey(XForwardedHeader.VIA.getName());
     }
 
     @Test
@@ -186,8 +186,8 @@ public class XForwardHeaderGlobalFilterTest {
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: X-Forwarded-Port 应为 "80"
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_PORT.getName())).isEqualTo("80");
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_PROTO.getName())).isEqualTo("http");
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_PORT.getName())).isEqualTo("80");
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_PROTO.getName())).isEqualTo("http");
     }
 
     @Test
@@ -200,8 +200,8 @@ public class XForwardHeaderGlobalFilterTest {
         // WHEN: 执行过滤器
         HttpHeaders headers = filterAndGetHeaders(exchange);
         // THEN: X-Forwarded-For 的值为 "unknown"
-        assertThat(headers.getFirst(XForwardHeader.X_FORWARDED_FOR.getName())).isEqualTo("unknown");
-        assertThat(headers.getFirst(XForwardHeader.FORWARDED.getName())).startsWith("for=unknown;");
+        assertThat(headers.getFirst(XForwardedHeader.X_FORWARDED_FOR.getName())).isEqualTo("unknown");
+        assertThat(headers.getFirst(XForwardedHeader.FORWARDED.getName())).startsWith("for=unknown;");
     }
 
 }

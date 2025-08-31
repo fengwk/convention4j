@@ -3,7 +3,7 @@ package fun.fengwk.convention4j.common.web;
 /**
  * @author fengwk
  */
-public enum XForwardHeader {
+public enum XForwardedHeader {
 
     /**
      * HTTP/1.1协议标准头部，非"X-"头，但与代理上下文紧密相关。
@@ -17,6 +17,11 @@ public enum XForwardHeader {
      * 注意：此头部可能在代理转发时被修改为后端服务的内部地址，因此需要依赖 X-Forwarded-Host 来获取原始值。
      */
     HOST("Host"),
+
+    /**
+     * 客户端的实际端口
+     */
+    X_REAL_PORT("X-Real-Port"),
 
     /**
      * 识别客户端与代理之间使用的原始协议（http或https）。
@@ -104,7 +109,7 @@ public enum XForwardHeader {
 
     private final String name;
 
-    XForwardHeader(String name) {
+    XForwardedHeader(String name) {
         this.name = name;
     }
 

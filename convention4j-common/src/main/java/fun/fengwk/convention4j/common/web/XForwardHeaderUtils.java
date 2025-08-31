@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.common.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.util.StringUtils;
 
 /**
  * @author fengwk
@@ -15,12 +16,19 @@ public class XForwardHeaderUtils {
         request.getHeaderNames().asIterator().forEachRemaining(name ->
             headers.add(name, request.getHeader(name)));
 
+        String directUri = request.getRequestURI();
+        if (StringUtils.hasText(request.getQueryString())) {
+            directUri += "?" + request.getQueryString();
+        }
+
         return new XForwardedHeaderAccessor(
             headers,
             request.getRemoteAddr(),
             request.getRemotePort(),
             request.getScheme(),
-            request.getHeader(HttpHeaders.HOST)
+            request.getHeader(HttpHeaders.HOST),
+            request.getServerPort(),
+            directUri
         );
     }
 

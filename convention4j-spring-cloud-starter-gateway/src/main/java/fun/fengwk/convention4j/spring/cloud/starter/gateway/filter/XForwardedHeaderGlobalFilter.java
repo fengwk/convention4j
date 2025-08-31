@@ -1,6 +1,6 @@
 package fun.fengwk.convention4j.spring.cloud.starter.gateway.filter;
 
-import fun.fengwk.convention4j.common.web.XForwardHeader;
+import fun.fengwk.convention4j.common.web.XForwardedHeader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -19,13 +19,13 @@ import java.util.Optional;
  * @author fengwk
  */
 @Slf4j
-public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
+public class XForwardedHeaderGlobalFilter implements GlobalFilter, Ordered {
 
-    private final XForwardHeaderProperties xForwardHeaderProperties;
+    private final XForwardedHeaderProperties xForwardHeaderProperties;
     private final String gatewayViaIdentifier;
 
-    public XForwardHeaderGlobalFilter(XForwardHeaderProperties xForwardHeaderProperties,
-                                      Environment environment) {
+    public XForwardedHeaderGlobalFilter(XForwardedHeaderProperties xForwardHeaderProperties,
+                                        Environment environment) {
         Assert.notNull(xForwardHeaderProperties, "xForwardHeaderProperties must not be null");
         this.xForwardHeaderProperties = xForwardHeaderProperties;
         this.gatewayViaIdentifier = environment.getProperty(
@@ -54,18 +54,34 @@ public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
         if (xForwardHeaderProperties.isViaEnabled()) {
             addViaHeader(requestBuilder, originalRequest);
         }
+        if (xForwardHeaderProperties.isRealPortEnabled()) {
+            addRealPortHeader(requestBuilder, originalRequest);
+        }
         return chain.filter(exchange.mutate().request(requestBuilder.build()).build());
+    }
+
+    private void addRealPortHeader(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest originalRequest) {
+        String realPort = originalRequest.getHeaders().getFirst(XForwardedHeader.X_REAL_PORT.getName());
+        if (!StringUtils.hasText(realPort) && originalRequest.getRemoteAddress() != null) {
+            int remotePort = originalRequest.getRemoteAddress().getPort();
+            realPort = String.valueOf(remotePort);
+        }
+        requestBuilder.header(XForwardedHeader.X_REAL_PORT.getName(), realPort);
     }
 
     /**
      * 添加 X-Original-URI 头部，记录被网关改写前的原始请求URI
      */
-    private void addOriginalUriHeader(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest request) {
-        String originalUri = request.getURI().getRawPath();
-        if (StringUtils.hasText(request.getURI().getRawQuery())) {
-            originalUri += "?" + request.getURI().getRawQuery();
+    private void addOriginalUriHeader(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest originalRequest) {
+        String originalUri = originalRequest.getHeaders().getFirst(XForwardedHeader.X_ORIGINAL_URI.getName());
+        if (!StringUtils.hasText(originalUri) ) {
+            originalUri = originalRequest.getURI().getRawPath();
+            if (StringUtils.hasText(originalRequest.getURI().getRawQuery())) {
+                originalUri += "?" + originalRequest.getURI().getRawQuery();
+            }
         }
-        requestBuilder.header(XForwardHeader.X_ORIGINAL_URI.getName(), originalUri);
+        requestBuilder.header(XForwardedHeader.X_ORIGINAL_URI.getName(), originalUri);
+
     }
 
     /**
@@ -74,20 +90,20 @@ public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
     private void addXForwardedHeaders(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest request) {
         // 1. 处理 X-Forwarded-For
         String clientIp = getClientIp(request);
-        String xffHeader = request.getHeaders().getFirst(XForwardHeader.X_FORWARDED_FOR.getName());
+        String xffHeader = request.getHeaders().getFirst(XForwardedHeader.X_FORWARDED_FOR.getName());
         String newXffHeader = (xffHeader == null) ? clientIp : xffHeader + ", " + clientIp;
-        requestBuilder.header(XForwardHeader.X_FORWARDED_FOR.getName(), newXffHeader);
+        requestBuilder.header(XForwardedHeader.X_FORWARDED_FOR.getName(), newXffHeader);
         // 2. 处理 X-Forwarded-Proto
         String scheme = request.getURI().getScheme();
-        requestBuilder.header(XForwardHeader.X_FORWARDED_PROTO.getName(), scheme);
+        requestBuilder.header(XForwardedHeader.X_FORWARDED_PROTO.getName(), scheme);
         // 3. 处理 X-Forwarded-Host
-        String host = request.getHeaders().getFirst(XForwardHeader.HOST.getName());
+        String host = request.getHeaders().getFirst(XForwardedHeader.HOST.getName());
         if (host != null) {
-            requestBuilder.header(XForwardHeader.X_FORWARDED_HOST.getName(), host);
+            requestBuilder.header(XForwardedHeader.X_FORWARDED_HOST.getName(), host);
         }
         // 4. 处理 X-Forwarded-Port
         String port = getPort(request);
-        requestBuilder.header(XForwardHeader.X_FORWARDED_PORT.getName(), port);
+        requestBuilder.header(XForwardedHeader.X_FORWARDED_PORT.getName(), port);
     }
 
     /**
@@ -95,16 +111,17 @@ public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
      */
     private void addForwardedHeader(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest request) {
         String clientIp = getClientIp(request);
+        String formattedIp = formatIpForForwardedHeader(clientIp);
         String proto = request.getURI().getScheme();
-        String host = request.getHeaders().getFirst(XForwardHeader.HOST.getName());
+        String host = request.getHeaders().getFirst(XForwardedHeader.HOST.getName());
 
         // 构建当前代理节点的信息
-        String currentForwarded = String.format("for=%s;proto=%s;host=%s", clientIp, proto, host);
+        String currentForwarded = String.format("for=%s;proto=%s;host=%s", formattedIp, proto, host);
 
-        String existingForwarded = request.getHeaders().getFirst(XForwardHeader.FORWARDED.getName());
+        String existingForwarded = request.getHeaders().getFirst(XForwardedHeader.FORWARDED.getName());
         String newForwardedHeader = (existingForwarded == null) ? currentForwarded : existingForwarded + ", " + currentForwarded;
 
-        requestBuilder.header(XForwardHeader.FORWARDED.getName(), newForwardedHeader);
+        requestBuilder.header(XForwardedHeader.FORWARDED.getName(), newForwardedHeader);
     }
 
     /**
@@ -113,10 +130,10 @@ public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
     private void addViaHeader(ServerHttpRequest.Builder requestBuilder, ServerHttpRequest request) {
         // ServerHttpRequest API 不提供直接获取HTTP版本的方法。
         // 根据RFC 7230，使用一个假名(pseudonym)来标识代理是完全合规的。
-        String existingVia = request.getHeaders().getFirst(XForwardHeader.VIA.getName());
+        String existingVia = request.getHeaders().getFirst(XForwardedHeader.VIA.getName());
         String newViaHeader = (existingVia == null) ? gatewayViaIdentifier : existingVia + ", " + gatewayViaIdentifier;
 
-        requestBuilder.header(XForwardHeader.VIA.getName(), newViaHeader);
+        requestBuilder.header(XForwardedHeader.VIA.getName(), newViaHeader);
     }
 
     /**
@@ -149,6 +166,15 @@ public class XForwardHeaderGlobalFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;
+    }
+
+
+    private String formatIpForForwardedHeader(String ip) {
+        // 如果是IPv6地址，需要用引号和方括号包围
+        if (ip != null && ip.contains(":")) {
+            return String.format("\"[%s]\"", ip);
+        }
+        return ip;
     }
 
 }

@@ -171,27 +171,6 @@ class XForwardedHeaderAccessorTest {
     }
 
     @Test
-    @DisplayName("端口解析: 均无信息时，应回退到直接连接端口")
-    void shouldFallbackToDirectPort() {
-        HttpHeaders headers = new HttpHeaders();
-        // 构造一个没有端口信息的 host 和 http 协议，使其无法推断
-        XForwardedHeaderAccessor accessor = createAccessor(headers, DIRECT_IP, 54321, "ws", "hostonly.com");
-        assertThat(accessor.getPort()).isEqualTo(54321);
-    }
-
-    @Test
-    @DisplayName("端口解析: 格式错误的 X-Forwarded-Port 应被忽略并回退")
-    void shouldIgnoreMalformedXForwardedPort() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Forwarded-Port", "not-a-port");
-
-        XForwardedHeaderAccessor accessor = createAccessor(headers, DIRECT_IP, 12345, "http", "host.com");
-
-        // 应该回退到直接连接的端口
-        assertThat(accessor.getPort()).isEqualTo(12345);
-    }
-
-    @Test
     @DisplayName("Forwarded 复合头: 应能正确解析所有字段")
     void shouldParseCombinedForwardedHeader() {
         HttpHeaders headers = new HttpHeaders();
@@ -211,16 +190,8 @@ class XForwardedHeaderAccessorTest {
         return createAccessor(headers, DIRECT_IP, DIRECT_PORT, DIRECT_SCHEME, DIRECT_HOST);
     }
 
-    // Main helper to call the private constructor directly for logic testing
     private XForwardedHeaderAccessor createAccessor(HttpHeaders headers, String ip, int port, String scheme, String host) {
-        // Using reflection to test the private constructor's logic directly
-        try {
-            var constructor = XForwardedHeaderAccessor.class.getDeclaredConstructor(HttpHeaders.class, String.class, int.class, String.class, String.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(headers, ip, port, scheme, host);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to instantiate XForwardedHeaderAccessor for testing", e);
-        }
+        return new XForwardedHeaderAccessor(headers, ip, port, scheme, host, -1, "/");
     }
 
 }

@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.common.web;
 
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
@@ -20,15 +22,29 @@ import org.springframework.util.StringUtils;
  *
  * @author fengwk
  */
+@Slf4j
 public final class XForwardedHeaderAccessor {
 
+    @Getter
     private final String clientIp;
+    @Getter
+    private final int clientPort;
+    @Getter
     private final String scheme;
+    @Getter
     private final String host;
+    @Getter
     private final int port;
+    @Getter
+    private final String originalUri;
+    @Getter
+    private final String via;
 
+    @Getter
     private final String directRemoteAddr;
+    @Getter
     private final int directRemotePort;
+    @Getter
     private final String directScheme;
 
     public XForwardedHeaderAccessor(
@@ -36,26 +52,58 @@ public final class XForwardedHeaderAccessor {
         String directRemoteAddr,
         int directRemotePort,
         String directScheme,
-        @Nullable String directHost) {
-
+        String directHost,
+        int directPort,
+        String directUri) {
         this.directRemoteAddr = directRemoteAddr;
         this.directRemotePort = directRemotePort;
         this.directScheme = directScheme;
 
         this.clientIp = resolveClientIp(headers, directRemoteAddr);
+        this.clientPort = resolveClientPort(headers, directRemotePort);
         this.scheme = resolveScheme(headers, directScheme);
         this.host = resolveHost(headers, directHost);
-        this.port = resolvePort(headers, this.scheme, this.host, directRemotePort);
+        this.port = resolvePort(headers, this.scheme, this.host, directPort);
+        this.originalUri = resolveOriginalUri(headers, directUri);
+        this.via = resolveVia(headers);
     }
 
     // --- 解析逻辑 ---
 
+    private int resolveClientPort(HttpHeaders headers, int fallback) {
+        String xrp = headers.getFirst(XForwardedHeader.X_REAL_PORT.getName());
+        if (StringUtils.hasText(xrp)) {
+            try {
+                return  Integer.parseInt(xrp);
+            } catch (NumberFormatException ex) {
+                log.debug("Invalid X-Real-Port, xrp: {}", xrp, ex);
+            }
+        }
+        return fallback;
+    }
+
+    private String resolveOriginalUri(HttpHeaders headers, String fallback) {
+        String originalUri = headers.getFirst(XForwardedHeader.X_ORIGINAL_URI.getName());
+        if (StringUtils.hasText(originalUri)) {
+            return originalUri;
+        }
+        return fallback;
+    }
+
+    private String resolveVia(HttpHeaders headers) {
+        String via = headers.getFirst(XForwardedHeader.VIA.getName());
+        if (StringUtils.hasText(via)) {
+            return via;
+        }
+        return null;
+    }
+
     private String resolveClientIp(HttpHeaders headers, String fallback) {
-        String xff = headers.getFirst(XForwardHeader.X_FORWARDED_FOR.getName());
+        String xff = headers.getFirst(XForwardedHeader.X_FORWARDED_FOR.getName());
         if (StringUtils.hasText(xff)) {
             return xff.split(",")[0].trim();
         }
-        String forwarded = headers.getFirst(XForwardHeader.FORWARDED.getName());
+        String forwarded = headers.getFirst(XForwardedHeader.FORWARDED.getName());
         if (StringUtils.hasText(forwarded)) {
             String ip = getForwardedHeaderValue(forwarded, "for");
             if (ip != null) {
@@ -66,11 +114,11 @@ public final class XForwardedHeaderAccessor {
     }
 
     private String resolveScheme(HttpHeaders headers, String fallback) {
-        String xfp = headers.getFirst(XForwardHeader.X_FORWARDED_PROTO.getName());
+        String xfp = headers.getFirst(XForwardedHeader.X_FORWARDED_PROTO.getName());
         if (StringUtils.hasText(xfp)) {
             return xfp.split(",")[0].trim().toLowerCase();
         }
-        String forwarded = headers.getFirst(XForwardHeader.FORWARDED.getName());
+        String forwarded = headers.getFirst(XForwardedHeader.FORWARDED.getName());
         if (StringUtils.hasText(forwarded)) {
             String proto = getForwardedHeaderValue(forwarded, "proto");
             if (proto != null) {
@@ -80,12 +128,12 @@ public final class XForwardedHeaderAccessor {
         return fallback;
     }
 
-    private String resolveHost(HttpHeaders headers, @Nullable String fallback) {
-        String xfh = headers.getFirst(XForwardHeader.X_FORWARDED_HOST.getName());
+    private String resolveHost(HttpHeaders headers, String fallback) {
+        String xfh = headers.getFirst(XForwardedHeader.X_FORWARDED_HOST.getName());
         if (StringUtils.hasText(xfh)) {
             return xfh.split(",")[0].trim();
         }
-        String forwarded = headers.getFirst(XForwardHeader.FORWARDED.getName());
+        String forwarded = headers.getFirst(XForwardedHeader.FORWARDED.getName());
         if (StringUtils.hasText(forwarded)) {
             String host = getForwardedHeaderValue(forwarded, "host");
             if (host != null) {
@@ -96,26 +144,23 @@ public final class XForwardedHeaderAccessor {
     }
 
     /**
-     * [已修正] 解析端口号。
+     * 解析端口号。
      * 此版本修复了当 'X-Forwarded-Port' 格式错误时，错误地回退到 scheme 推断端口的问题。
      * 正确的逻辑是：如果一个高优先级的头部（如 X-Forwarded-Port）存在但无效，
      * 应该立即停止解析并使用最可靠的备用值（直接连接端口），而不是进行不安全的推断。
      */
-    private int resolvePort(HttpHeaders headers, String resolvedScheme, @Nullable String resolvedHost, int fallback) {
-        // 1. 优先使用 X-Forwarded-Port
-        String portStr = headers.getFirst(XForwardHeader.X_FORWARDED_PORT.getName());
+    private int resolvePort(HttpHeaders headers, String resolvedScheme, String resolvedHost, int fallback) {
+        // 优先使用 X-Forwarded-Port
+        String portStr = headers.getFirst(XForwardedHeader.X_FORWARDED_PORT.getName());
         if (StringUtils.hasText(portStr)) {
             try {
                 return Integer.parseInt(portStr.split(",")[0].trim());
-            } catch (NumberFormatException ignored) {
-                // [核心修复]
-                // 头部存在但无效，是一个危险信号，表明代理配置可能出错。
-                // 此时最安全的做法是直接使用最终的 fallback，而不是继续进行推断。
-                return fallback;
+            } catch (NumberFormatException ex) {
+                log.debug("Invalid X-Forwarded-Port, xfr: {}", portStr);
             }
         }
 
-        // 2. 如果解析出的 Host 包含端口，则使用它
+        // 如果解析出的 Host 包含端口，则使用它
         if (resolvedHost != null && resolvedHost.contains(":")) {
             try {
                 // 支持 IPv6 地址格式 [::1]:port
@@ -125,16 +170,17 @@ public final class XForwardedHeaderAccessor {
             }
         }
 
-        // 3. 只有在完全没有指定端口的情况下，才根据 scheme 推断默认端口
+        if (fallback != -1) {
+            return fallback;
+        }
+
         if ("https".equalsIgnoreCase(resolvedScheme)) {
             return 443;
-        }
-        if ("http".equalsIgnoreCase(resolvedScheme)) {
+        } else if ("http".equalsIgnoreCase(resolvedScheme)) {
             return 80;
         }
 
-        // 4. 回退到直接连接的端口
-        return fallback;
+        return -1;
     }
 
     private String getForwardedHeaderValue(String forwardedHeader, String key) {
@@ -151,36 +197,6 @@ public final class XForwardedHeaderAccessor {
         return null;
     }
 
-    // --- 公共 Getters ---
-
-    /**
-     * 获取解析后的客户端真实 IP 地址。
-     */
-    public String getClientIp() {
-        return clientIp;
-    }
-
-    /**
-     * 获取解析后的客户端真实请求协议 (scheme)。
-     */
-    public String getScheme() {
-        return scheme;
-    }
-
-    /**
-     * 获取解析后的客户端真实请求 Host。
-     */
-    public String getHost() {
-        return host;
-    }
-
-    /**
-     * 获取解析后的客户端真实请求端口。
-     */
-    public int getPort() {
-        return port;
-    }
-
     /**
      * 判断解析后的协议是否为 https。
      */
@@ -188,25 +204,5 @@ public final class XForwardedHeaderAccessor {
         return "https".equalsIgnoreCase(getScheme());
     }
 
-    /**
-     * 获取直接连接到本服务器的客户端地址（通常是上一级代理的 IP）。
-     */
-    public String getDirectRemoteAddr() {
-        return directRemoteAddr;
-    }
-
-    /**
-     * 获取直接连接到本服务器的客户端端口。
-     */
-    public int getDirectRemotePort() {
-        return directRemotePort;
-    }
-
-    /**
-     * 获取直接连接的协议。
-     */
-    public String getDirectScheme() {
-        return directScheme;
-    }
 }
 

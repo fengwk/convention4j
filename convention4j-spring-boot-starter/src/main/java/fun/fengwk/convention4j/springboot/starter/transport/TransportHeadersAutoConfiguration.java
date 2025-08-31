@@ -23,4 +23,9 @@ public class TransportHeadersAutoConfiguration {
         return transportHeaders;
     }
 
+    @Bean
+    public XForwardedHeaderTransportHeadersModifier xForwardedHeaderTransportHeadersModifier() {
+        return new XForwardedHeaderTransportHeadersModifier();
+    }
+
 }

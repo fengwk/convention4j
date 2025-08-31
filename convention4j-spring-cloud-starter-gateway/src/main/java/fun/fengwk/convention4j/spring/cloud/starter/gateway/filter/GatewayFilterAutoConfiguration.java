@@ -9,7 +9,7 @@ import org.springframework.core.io.ResourceLoader;
 /**
  * @author fengwk
  */
-@EnableConfigurationProperties(XForwardHeaderProperties.class)
+@EnableConfigurationProperties(XForwardedHeaderProperties.class)
 @AutoConfiguration
 public class GatewayFilterAutoConfiguration {
 
@@ -29,9 +29,9 @@ public class GatewayFilterAutoConfiguration {
     }
 
     @Bean
-    public XForwardHeaderGlobalFilter xForwardHeaderGlobalFilter(XForwardHeaderProperties xForwardHeaderProperties,
-                                                                 Environment environment) {
-        return new XForwardHeaderGlobalFilter(xForwardHeaderProperties, environment);
+    public XForwardedHeaderGlobalFilter xForwardedHeaderGlobalFilter(XForwardedHeaderProperties xForwardHeaderProperties,
+                                                                     Environment environment) {
+        return new XForwardedHeaderGlobalFilter(xForwardHeaderProperties, environment);
     }
 
 }
