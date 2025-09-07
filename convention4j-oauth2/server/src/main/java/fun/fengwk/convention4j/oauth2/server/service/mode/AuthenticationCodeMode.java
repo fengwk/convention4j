@@ -11,6 +11,7 @@ import fun.fengwk.convention4j.oauth2.server.model.context.AuthorizeContext;
 import fun.fengwk.convention4j.oauth2.server.model.context.SsoProvider;
 import fun.fengwk.convention4j.oauth2.server.repo.AuthenticationCodeRepository;
 import fun.fengwk.convention4j.oauth2.server.repo.OAuth2TokenRepository;
+import fun.fengwk.convention4j.oauth2.server.util.OAuth2Utils;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2ErrorCodes;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
@@ -155,7 +156,7 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
             || !Objects.equals(curUri.getUserInfo(), storeUri.getUserInfo())
             || !Objects.equals(curUri.getHost(), storeUri.getHost())
             || !Objects.equals(curUri.getPort(), storeUri.getPort())
-            || !Objects.equals(curUri.getPath(), storeUri.getPath())
+            || !Objects.equals(OAuth2Utils.normalizeEmptyPath(curUri.getPath()), OAuth2Utils.normalizeEmptyPath(storeUri.getPath()))
             || !Objects.equals(curUri.getFragment(), storeUri.getFragment())) {
             log.warn("RedirectUri not match, currentRedirectUri: {}, storeRedirectUri: {}",
                 redirectUri, authenticationCode.getRedirectUri());

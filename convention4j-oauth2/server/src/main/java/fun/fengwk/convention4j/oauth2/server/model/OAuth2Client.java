@@ -4,6 +4,7 @@ import fun.fengwk.convention4j.common.util.AntPattern;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.oauth2.server.manager.OAuth2ScopeUtils;
+import fun.fengwk.convention4j.oauth2.server.util.OAuth2Utils;
 import fun.fengwk.convention4j.oauth2.share.constant.GrantType;
 import fun.fengwk.convention4j.oauth2.share.constant.OAuth2Mode;
 import fun.fengwk.convention4j.oauth2.share.constant.ResponseType;
@@ -124,7 +125,7 @@ public interface OAuth2Client {
         String userInfo = uri.getUserInfo();
         String host = uri.getHost();
         int port = uri.getPort();
-        String path = uri.getPath();
+        String path = OAuth2Utils.normalizeEmptyPath(uri.getPath());
         String fragment = uri.getFragment();
         for (String supportRedirectUri : getRedirectUris()) {
             try {
@@ -133,7 +134,7 @@ public interface OAuth2Client {
                 String supportUserInfo = supportUri.getUserInfo();
                 String supportHost = supportUri.getHost();
                 int supportPort = supportUri.getPort();
-                String supportPath = supportUri.getPath();
+                String supportPath = OAuth2Utils.normalizeEmptyPath(supportUri.getPath());
                 String supportFragment = supportUri.getFragment();
                 if (Objects.equals(scheme, supportScheme) && Objects.equals(userInfo, supportUserInfo)
                     && new AntPattern(supportHost).match(host)
