@@ -50,7 +50,7 @@ public class ImplicitMode<SUBJECT, CERTIFICATE> extends BaseOAuth2AuthorizeServi
             .queryParam("tokenType", NullSafe.map(oauth2Token.getTokenType(), TokenType::getCode))
             .queryParam("expiresIn",oauth2Token.accessTokenExpiresIn(client.getAccessTokenExpireSeconds()))
             .queryParam("state", state)
-            .build().toUri();
+            .build(true).toUri();
     }
 
 }

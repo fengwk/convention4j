@@ -71,7 +71,7 @@ public class AuthenticationCodeMode<SUBJECT, CERTIFICATE>
                 return redirectUriBuilder
                     .queryParam("code", code)
                     .queryParam("state", state)
-                    .build().toUri();
+                    .build(true).toUri();
             }
         };
         this.tokenDelegate = new BaseOAuth2TokenService<>(
