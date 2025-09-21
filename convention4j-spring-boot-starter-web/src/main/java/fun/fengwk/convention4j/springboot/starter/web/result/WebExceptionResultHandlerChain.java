@@ -64,10 +64,15 @@ public class WebExceptionResultHandlerChain extends ResponseEntityExceptionHandl
 
     @ExceptionHandler(value = { Exception.class })
     public ResponseEntity<Object> handleThrowable(
-            Exception ex, HttpServletRequest request, WebRequest webRequest, HandlerMethod handlerMethod) throws Exception {
+            Exception ex, HttpServletRequest request, WebRequest webRequest, @Nullable HandlerMethod handlerMethod) throws Exception {
+
+        // 无法处理的sse请求
+        if (isSseRequest(request)) {
+            throw ex;
+        }
 
         // 如果不是Result返回值使用默认的方式处理
-        if (!Result.class.isAssignableFrom(handlerMethod.getReturnType().getParameterType())) {
+        if (handlerMethod != null && !Result.class.isAssignableFrom(handlerMethod.getReturnType().getParameterType())) {
             return super.handleException(ex, webRequest);
         }
 
@@ -235,6 +240,14 @@ public class WebExceptionResultHandlerChain extends ResponseEntityExceptionHandl
             map.put(fe.getObjectName() + "." + fe.getField(), fe.getDefaultMessage());
         }
         return map;
+    }
+
+    private boolean isSseRequest(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        String acceptHeader = request.getHeader(HttpHeaders.ACCEPT);
+
+        return (contentType != null && contentType.contains(MediaType.TEXT_EVENT_STREAM_VALUE)) ||
+            (acceptHeader != null && acceptHeader.contains(MediaType.TEXT_EVENT_STREAM_VALUE));
     }
 
 }
