@@ -6,6 +6,8 @@ import reactor.core.publisher.Mono;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.ByteBuffer;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.util.function.Function;
 
 /**
@@ -47,24 +49,52 @@ public class ReactiveHttpSendSpec extends AbstractReactiveHttpSendSpec<Mono<Reac
     }
 
     /**
+     * bytes响应体
+     */
+    public ReactiveHttpSendMonoSpec<byte[]> bodyToBytes() {
+        return toMono(ReactiveHttpClientUtils::bodyToBytes);
+    }
+
+    /**
+     * base64响应体
+     */
+    public ReactiveHttpSendMonoSpec<String> bodyToBase64() {
+        return toMono(ReactiveHttpClientUtils::bodyToBase64);
+    }
+
+    /**
+     * 写入文件
+     */
+    public ReactiveHttpSendMonoSpec<Void> bodyToFile(Path path, OpenOption... options) {
+        return toMono(res -> ReactiveHttpClientUtils.bodyToFile(res, path, options));
+    }
+
+    /**
      * 字符串化的响应体
      */
-    public ReactiveHttpSendMonoSpec<String> bodyToStringMono() {
-        return toMono(ReactiveHttpClientUtils::bodyToStringMono);
+    public ReactiveHttpSendMonoSpec<String> bodyToString() {
+        return toMono(ReactiveHttpClientUtils::bodyToString);
+    }
+
+    /**
+     * 流式输出chunk
+     */
+    public ReactiveHttpSendFluxSpec<ByteBuffer> bodyToFlux() {
+        return toFlux(ReactiveHttpClientUtils::bodyToFlux);
     }
 
     /**
      * 流式输出每一行
      */
-    public ReactiveHttpSendFluxSpec<String> bodyToLineFlux() {
-        return toFlux(ReactiveHttpClientUtils::bodyToLineFlux);
+    public ReactiveHttpSendFluxSpec<String> bodyToLines() {
+        return toFlux(ReactiveHttpClientUtils::bodyToLines);
     }
 
     /**
      * 流式输出 SSE
      */
-    public ReactiveHttpSendFluxSpec<SSEEvent> bodyToSSEFlux() {
-        return toFlux(ReactiveHttpClientUtils::bodyToSSEFlux);
+    public ReactiveHttpSendFluxSpec<SSEEvent> bodyToSSE() {
+        return toFlux(ReactiveHttpClientUtils::bodyToSSE);
     }
 
 }
