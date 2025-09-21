@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -22,16 +21,22 @@ import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_ENCODING;
  */
 public class GzipSupportBodySubscriber
         extends AbstractSubscriber<List<ByteBuffer>>
-        implements HttpResponse.BodySubscriber<List<ByteBuffer>> {
+        implements HttpResponse.BodySubscriber<Void> {
 
     private final Flow.Subscriber<? super List<ByteBuffer>> userSubscriber;
     private final NonblockingGzipDecoder gzipDecoder;
-    private final CompletableFuture<List<ByteBuffer>> resultFuture = new CompletableFuture<>();
-    private final List<ByteBuffer> result = Collections.synchronizedList(new ArrayList<>());
+    private final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
+    private final BodyCollector bodyCollector;
 
     public GzipSupportBodySubscriber(HttpResponse.ResponseInfo responseInfo,
-            Flow.Subscriber<? super List<ByteBuffer>> userSubscriber) {
+                                     Flow.Subscriber<? super List<ByteBuffer>> userSubscriber) {
+        this(responseInfo, userSubscriber, null);
+    }
+
+    public GzipSupportBodySubscriber(HttpResponse.ResponseInfo responseInfo,
+            Flow.Subscriber<? super List<ByteBuffer>> userSubscriber, BodyCollector bodyCollector) {
         this.userSubscriber = Objects.requireNonNull(userSubscriber);
+        this.bodyCollector = bodyCollector;
         String contentEncoding = responseInfo.headers().firstValue(CONTENT_ENCODING).orElse(null);
         if (HttpUtils.gzip(contentEncoding)) {
             this.gzipDecoder = new NonblockingGzipDecoder();
@@ -41,7 +46,7 @@ public class GzipSupportBodySubscriber
     }
 
     @Override
-    public CompletionStage<List<ByteBuffer>> getBody() {
+    public CompletionStage<Void> getBody() {
         return resultFuture;
     }
 
@@ -65,8 +70,8 @@ public class GzipSupportBodySubscriber
             }
         }
 
-        for (ByteBuffer bb : processedList) {
-            result.add(copy(bb));
+        if (bodyCollector != null) {
+            bodyCollector.collect(processedList);
         }
 
         userSubscriber.onNext(processedList);
@@ -85,7 +90,7 @@ public class GzipSupportBodySubscriber
 
         userSubscriber.onComplete();
 
-        resultFuture.complete(result);
+        resultFuture.complete(null);
     }
 
     @Override
@@ -99,14 +104,6 @@ public class GzipSupportBodySubscriber
         userSubscriber.onError(throwable);
 
         resultFuture.completeExceptionally(throwable);
-    }
-
-    private ByteBuffer copy(ByteBuffer bb) {
-        ByteBuffer source = bb.duplicate();
-        ByteBuffer copy = ByteBuffer.allocate(source.remaining());
-        copy.put(source);
-        copy.flip();
-        return copy;
     }
 
 }

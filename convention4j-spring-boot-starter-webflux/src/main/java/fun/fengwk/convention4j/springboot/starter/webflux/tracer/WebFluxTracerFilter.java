@@ -7,6 +7,7 @@ import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import fun.fengwk.convention4j.tracer.util.SpanPropagation;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,8 @@ public class WebFluxTracerFilter implements WebFilter {
         SpanContext parentContext = GlobalTracer.get().extract(ServerWebExchangeExtract.FORMAT, exchange);
 
         // 启用新的span
-        return ReactorTracerUtils.newSpan(chainFilterMono, spanInfo, parentContext);
+        Tracer tracer = GlobalTracer.get();
+        return ReactorTracerUtils.newSpan(tracer, spanInfo, chainFilterMono, parentContext);
     }
 
     private void setResponseToSpan(Span span, ServerWebExchange exchange) {

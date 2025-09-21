@@ -1,7 +1,5 @@
 package fun.fengwk.convention4j.tracer.reactor;
 
-import com.google.auto.service.AutoService;
-import fun.fengwk.convention4j.common.util.OrderedObject;
 import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
 import fun.fengwk.convention4j.tracer.scope.TtlScopeManager;
 import io.opentracing.Scope;
@@ -18,10 +16,13 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  * @author fengwk
  */
 @Slf4j
-@AutoService(ConventionScopeManager.class)
 public class ReactorScopeManager implements ConventionScopeManager {
 
-    private TtlScopeManager ttlScopeManager = new TtlScopeManager();
+    private final TtlScopeManager ttlScopeManager;
+
+    public ReactorScopeManager(TtlScopeManager ttlScopeManager) {
+        this.ttlScopeManager = Objects.requireNonNull(ttlScopeManager, "ttlScopeManager must not be null");
+    }
 
     @Override
     public Scope activate(Span span) {
@@ -55,14 +56,6 @@ public class ReactorScopeManager implements ConventionScopeManager {
     @Override
     public void close() {
         // nothing to do
-    }
-
-    /**
-     * 优先使用ReactorScopeManager
-     */
-    @Override
-    public int getOrder() {
-        return OrderedObject.HIGHEST_PRECEDENCE;
     }
 
     @EqualsAndHashCode

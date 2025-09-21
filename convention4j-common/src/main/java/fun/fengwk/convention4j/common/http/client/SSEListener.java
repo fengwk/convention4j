@@ -50,12 +50,4 @@ public interface SSEListener {
     default void onReceiveEvent(SSEEvent sseEvent) {
     }
 
-    /**
-     * 当接受到 comment 时调用
-     *
-     * @param comment id
-     */
-    default void onReceiveComment(String comment) {
-    }
-
 }

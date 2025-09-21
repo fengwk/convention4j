@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Flow;
 
 import static fun.fengwk.convention4j.common.http.HttpHeaders.ACCEPT_ENCODING;
 import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
@@ -29,34 +28,14 @@ import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
  */
 public class HttpClientUtilsTest {
 
-//    @Test
-    public void testSend() throws IOException {
-//        System.setProperty("javax.net.debug", "ssl,handshake");
-        HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create("https://baidu.com/"))
-            .GET();
-        try (HttpSendResult sendResult = HttpClientUtils.send(httpRequestBuilder.build())) {
-            System.out.println(sendResult);
-            System.out.println(sendResult.parseBodyString());
-            Assertions.assertTrue(sendResult.is3xx());
-            Assertions.assertFalse(sendResult.hasError());
-        }
-        try (HttpSendResult sendResult = HttpClientUtils.send(httpRequestBuilder, 1)) {
-            System.out.println(sendResult);
-            System.out.println(sendResult.parseBodyString());
-            Assertions.assertTrue(sendResult.is2xx());
-            Assertions.assertFalse(sendResult.hasError());
-        }
-    }
-
-//    @Test
+    //    @Test
     public void testAsyncWithSSE() throws IOException, ExecutionException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
             .uri(URI.create("https://api.deepseek.com/chat/completions"))
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer " + System.getenv("OPENAI_API_KEY"))
+            .header("Authorization", "Bearer " + System.getenv("DEEPSEEK_API_KEY"))
             .POST(HttpRequest.BodyPublishers.ofString(
-                 "{\n" +
+                "{\n" +
                     "  \"model\": \"deepseek-chat\",\n" +
                     "  \"messages\": [\n" +
                     "    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
@@ -65,7 +44,7 @@ public class HttpClientUtilsTest {
                     "  \"stream\": true\n" +
                     "}", StandardCharsets.UTF_8))
             .build();
-        CompletableFuture<HttpSendResult> future = HttpClientUtils.sendAsyncWithSSEListener(
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsyncWithSSEListener(
             req, new SSEListener() {
                 @Override
                 public void onInit(HttpResponse.ResponseInfo responseInfo) {
@@ -83,11 +62,6 @@ public class HttpClientUtilsTest {
                 }
 
                 @Override
-                public void onReceiveComment(String comment) {
-                    System.out.println("[SSE] comment: " + comment);
-                }
-
-                @Override
                 public void onComplete() {
                     System.out.println("[SSE] complete");
                 }
@@ -97,21 +71,19 @@ public class HttpClientUtilsTest {
                     System.out.println("[SSE] error" + throwable);
                 }
             });
-        HttpSendResult result = future.get();
+        AsyncHttpSendResult result = future.get();
         Assertions.assertTrue(result.is2xx());
         Assertions.assertFalse(result.hasError());
-        String body = result.parseBodyString();
-        System.out.println("SSE Body=====================================");
-        System.out.println(body);
     }
 
     @Test
     public void testSendWithGzip() throws IOException {
-        HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
+        HttpRequest httpRequest = HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET();
-        try (HttpSendResult sendResult = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
+            .GET()
+            .build();
+        try (HttpSendResult sendResult = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
             System.out.println(sendResult);
             System.out.println(sendResult.parseBodyString());
             Assertions.assertTrue(sendResult.is2xx());
@@ -126,23 +98,23 @@ public class HttpClientUtilsTest {
             .header(ACCEPT_ENCODING, "gzip")
             .GET();
 
-        CompletableFuture<HttpResponse<List<ByteBuffer>>> future = HttpClientFactory.getDefaultHttpClient()
-            .sendAsync(httpRequestBuilder.build(), HttpClientUtils.fromSubscriber(new Flow.Subscriber<>() {
-
-                private volatile Flow.Subscription subscription;
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(httpRequestBuilder.build(),
+            new StreamBodyListener<>() {
 
                 @Override
-                public void onSubscribe(Flow.Subscription subscription) {
-                    this.subscription = subscription;
-                    subscription.request(1);
+                public void onInit(HttpResponse.ResponseInfo responseInfo) {
+                    System.out.println("init");
                 }
 
                 @Override
-                public void onNext(List<ByteBuffer> items) {
-                    System.out.println("====================================================");
-                    String value = readString(items, StandardCharsets.UTF_8);
+                public void onReceive(List<ByteBuffer> chunk) {
+                    String value = readString(chunk, StandardCharsets.UTF_8);
                     System.out.println(value);
-                    subscription.request(1);
+                }
+
+                @Override
+                public void onComplete() {
+                    System.out.println("onComplete");
                 }
 
                 @Override
@@ -150,16 +122,10 @@ public class HttpClientUtilsTest {
                     Assertions.assertNull(throwable);
                 }
 
-                @Override
-                public void onComplete() {
-                    System.out.println("onComplete");
-                }
-            }));
+            }, true);
 
-        HttpResponse<List<ByteBuffer>> response = future.get();
-        List<ByteBuffer> byteBufferList = response.body();
-        String contentType = response.headers().firstValue(CONTENT_TYPE).orElse(null);
-        String completedStr = readString(byteBufferList, HttpUtils.parseContentTypeCharset(contentType, StandardCharsets.UTF_8));
+        AsyncHttpSendResult result = future.get();
+        String completedStr = result.getBodyCollector().parseBodyString();
         System.out.println(completedStr);
 
         try (HttpSendResult sendResult = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
@@ -175,71 +141,79 @@ public class HttpClientUtilsTest {
     public void testSendAsync() throws IOException, ExecutionException, InterruptedException {
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
-            .GET());
+            .GET()
+            .build());
 
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
 
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.runoob.com"))
-            .GET());
+            .GET()
+            .build());
 
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.runoob.com"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
 
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.zdic.net"))
-            .GET());
+            .GET()
+            .build());
 
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.zdic.net"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
     }
 
-    private void doTestSendAsync(HttpRequest.Builder httpRequestBuilder)
-            throws InterruptedException, ExecutionException, IOException {
-        CompletableFuture<HttpSendResult> future = HttpClientUtils.sendAsync(httpRequestBuilder.build(), new StreamBodyListener<>() {
+    private void doTestSendAsync(HttpRequest httpRequest)
+        throws InterruptedException, ExecutionException, IOException {
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(httpRequest,
+            new StreamBodyListener<>() {
 
-            private volatile Charset charset;
+                private volatile Charset charset;
 
-            @Override
-            public void onInit(HttpResponse.ResponseInfo responseInfo) {
-                String contentType = responseInfo.headers().firstValue(CONTENT_TYPE).orElse(null);
-                this.charset = HttpUtils.parseContentTypeCharset(contentType, HttpUtils.DEFAULT_CHARSET);
-            }
+                @Override
+                public void onInit(HttpResponse.ResponseInfo responseInfo) {
+                    String contentType = responseInfo.headers().firstValue(CONTENT_TYPE).orElse(null);
+                    this.charset = HttpUtils.parseContentTypeCharset(contentType, HttpUtils.DEFAULT_CHARSET);
+                }
 
-            @Override
-            public void onReceive(List<ByteBuffer> chunk) {
-                String str = readString(chunk, charset);
-                System.out.println("=========================");
-                System.out.println(str);
-            }
+                @Override
+                public void onReceive(List<ByteBuffer> chunk) {
+                    String str = readString(chunk, charset);
+                    System.out.println("=========================");
+                    System.out.println(str);
+                }
 
-            @Override
-            public void onError(Throwable throwable) {
-                Assertions.assertNull(throwable);
-            }
+                @Override
+                public void onError(Throwable throwable) {
+                    Assertions.assertNull(throwable);
+                }
 
-            @Override
-            public void onComplete() {
-                System.out.println("onComplete");
-            }
+                @Override
+                public void onComplete() {
+                    System.out.println("onComplete");
+                }
 
-        });
+            }, true);
 
-        HttpSendResult sendResult = future.get();
+        AsyncHttpSendResult sendResult = future.get();
         Assertions.assertFalse(sendResult.hasError());
-        System.out.println(sendResult.parseBodyString());
+        String str1 = sendResult.getBodyCollector().parseBodyString();
+        System.out.println(str1);
 
-        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
+        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
             Assertions.assertTrue(sendResult2.is2xx());
             Assertions.assertFalse(sendResult2.hasError());
-            Assertions.assertEquals(sendResult.parseBodyString(), sendResult2.parseBodyString());
+            Assertions.assertEquals(str1, sendResult2.parseBodyString());
         }
     }
 
@@ -247,36 +221,42 @@ public class HttpClientUtilsTest {
     public void testAsyncWithLine() throws IOException, ExecutionException, InterruptedException {
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
-            .GET());
+            .GET()
+            .build());
 
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
 
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.runoob.com"))
-            .GET());
+            .GET()
+            .build());
 
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
 
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.zdic.net"))
-            .GET());
+            .GET()
+            .build());
 
         doTestAsyncWithLine(HttpRequest.newBuilder()
             .uri(URI.create("https://www.zdic.net"))
             .header(ACCEPT_ENCODING, "gzip")
-            .GET());
+            .GET()
+            .build());
     }
 
-    private void doTestAsyncWithLine(HttpRequest.Builder httpRequestBuilder)
-            throws InterruptedException, ExecutionException, IOException {
+    private void doTestAsyncWithLine(HttpRequest httpRequest)
+        throws InterruptedException, ExecutionException, IOException {
         List<String> lines = new ArrayList<>();
-        CompletableFuture<HttpSendResult> future = HttpClientUtils.sendAsyncWithLineListener(httpRequestBuilder.build(),
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsyncWithLineListener(httpRequest,
             new StreamBodyListener<>() {
 
                 @Override
@@ -298,12 +278,12 @@ public class HttpClientUtilsTest {
                     System.out.println("onComplete");
                 }
 
-            });
+            }, true);
 
-        HttpSendResult sendResult = future.get();
+        AsyncHttpSendResult sendResult = future.get();
         Assertions.assertFalse(sendResult.hasError());
 
-        String ss = sendResult.parseBodyString();
+        String ss = sendResult.getBodyCollector().parseBodyString();
         List<String> lines2 = new ArrayList<>();
         Scanner scanner = new Scanner(new StringReader(ss));
         while (scanner.hasNextLine()) {
@@ -314,10 +294,10 @@ public class HttpClientUtilsTest {
         diffLines(lines, lines2);
         Assertions.assertEquals(lines, lines2);
 
-        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
+        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
             Assertions.assertTrue(sendResult2.is2xx());
             Assertions.assertFalse(sendResult2.hasError());
-            Assertions.assertEquals(sendResult.parseBodyString(), sendResult2.parseBodyString());
+            Assertions.assertEquals(ss, sendResult2.parseBodyString());
         }
     }
 

@@ -2,12 +2,17 @@ package fun.fengwk.convention4j.tracer.reactor;
 
 import fun.fengwk.convention4j.common.function.Func0T1;
 import fun.fengwk.convention4j.common.util.NullSafe;
-import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
+import fun.fengwk.convention4j.tracer.finisher.Slf4jSpanFinisher;
 import fun.fengwk.convention4j.tracer.reactor.aspect.ReactorAspect;
+import fun.fengwk.convention4j.tracer.scope.TtlScopeManager;
+import fun.fengwk.convention4j.tracer.scope.aspect.MDCThreadScopeAspect;
+import fun.fengwk.convention4j.tracer.scope.aspect.ThreadScopeAspect;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
+import io.opentracing.ScopeManager;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -62,11 +67,15 @@ public class ReactorTracerUtils {
     }
 
     /**
-     * 初始化ReactorTracer，必须在最开始时调用此方法
+     * 初始化全局的 ReactorTracer，必须在最开始时调用此方法
      */
-    public static void initialize(SpanFinisher finisher) {
-        ReactorAspect.registerAspect(ASPECT_NAME, new ReactorTracerSubscriberAspect());
-        TracerUtils.initialize(finisher);
+    public static void initializeGlobalTracer() {
+        ThreadScopeAspect threadScopeAspect = new MDCThreadScopeAspect();
+        ScopeManager scopeManager = new ReactorScopeManager(new TtlScopeManager(threadScopeAspect));
+        Slf4jSpanFinisher finisher = new Slf4jSpanFinisher();
+        Tracer tracer = TracerUtils.buildTracer(scopeManager, finisher);
+        ReactorAspect.registerAspect(ASPECT_NAME, new ReactorTracerSubscriberAspect(tracer, threadScopeAspect));
+        GlobalTracer.registerIfAbsent(tracer);
     }
 
     /**
@@ -101,43 +110,45 @@ public class ReactorTracerUtils {
      * @see TracerUtils#executeAndReturn(Func0T1, SpanInfo)
      */
     public static <R, T extends Throwable> R executeAndReturn(
-        Func0T1<R, T> executor, SpanInfo spanInfo, Class<R> returnType) throws T {
+        Tracer tracer, SpanInfo spanInfo, Func0T1<R, T> executor, Class<R> returnType) throws T {
         if (returnType == Mono.class) {
             Mono<?> mono = (Mono<?>) executor.apply();
-            return (R) ReactorTracerUtils.newSpan(mono, spanInfo);
+            return (R) ReactorTracerUtils.newSpan(tracer, spanInfo, mono);
         } else if (returnType == Flux.class) {
             Flux<?> flux = (Flux<?>) executor.apply();
-            return (R) ReactorTracerUtils.newSpan(flux, spanInfo);
+            return (R) ReactorTracerUtils.newSpan(tracer, spanInfo, flux);
         } else {
-            return TracerUtils.executeAndReturn(executor, spanInfo);
+            return TracerUtils.executeAndReturn(tracer, spanInfo, executor);
         }
     }
 
     /**
      * 新开一个span
      *
-     * @param mono     Mono
+     * @param tracer   Tracer
      * @param spanInfo SpanInfo
+     * @param mono     Mono
      * @param <T>      T
      * @return Mono
      */
-    public static <T> Mono<T> newSpan(Mono<T> mono, SpanInfo spanInfo) {
-        // 使用GlobalTracer解决从普通代码切换到Flux代码的场景
-        Span span = GlobalTracer.get().activeSpan();
-        return newSpan(mono, spanInfo, span == null ? null : span.context());
+    public static <T> Mono<T> newSpan(Tracer tracer, SpanInfo spanInfo, Mono<T> mono) {
+        // 解决从普通代码切换到Flux代码的场景
+        Span span = tracer.activeSpan();
+        return newSpan(tracer, spanInfo, mono, span == null ? null : span.context());
     }
 
     /**
      * 新开一个span
      *
-     * @param mono     Mono
+     * @param tracer   Tracer
      * @param spanInfo SpanInfo
+     * @param mono     Mono
      * @param parent   SpanContext
      * @param <T>      T
      * @return Mono
      */
-    public static <T> Mono<T> newSpan(Mono<T> mono, SpanInfo spanInfo, SpanContext parent) {
-        return Mono.deferContextual(startSpan(spanInfo, parent))
+    public static <T> Mono<T> newSpan(Tracer tracer, SpanInfo spanInfo, Mono<T> mono, SpanContext parent) {
+        return Mono.deferContextual(startSpan(tracer, spanInfo, parent))
             .flatMap(spanOpt -> {
                 if (spanOpt.isEmpty()) {
                     return mono;
@@ -158,28 +169,30 @@ public class ReactorTracerUtils {
     /**
      * 新开一个span
      *
-     * @param flux     Flux
+     * @param tracer   Tracer
      * @param spanInfo SpanInfo
+     * @param flux     Flux
      * @param <T>      T
      * @return Flux
      */
-    public static <T> Flux<T> newSpan(Flux<T> flux, SpanInfo spanInfo) {
-        // 使用GlobalTracer解决从普通代码切换到Flux代码的场景
-        Span span = GlobalTracer.get().activeSpan();
-        return newSpan(flux, spanInfo, span == null ? null : span.context());
+    public static <T> Flux<T> newSpan(Tracer tracer, SpanInfo spanInfo, Flux<T> flux) {
+        // 解决从普通代码切换到Flux代码的场景
+        Span span = tracer.activeSpan();
+        return newSpan(tracer, spanInfo, flux, span == null ? null : span.context());
     }
 
     /**
      * 新开一个span
      *
-     * @param flux     Flux
+     * @param tracer   Tracer
      * @param spanInfo SpanInfo
+     * @param flux     Flux
      * @param parent   SpanContext
      * @param <T>      T
      * @return Flux
      */
-    public static <T> Flux<T> newSpan(Flux<T> flux, SpanInfo spanInfo, SpanContext parent) {
-        return Flux.deferContextual(startSpan(spanInfo, parent))
+    public static <T> Flux<T> newSpan(Tracer tracer, SpanInfo spanInfo, Flux<T> flux, SpanContext parent) {
+        return Flux.deferContextual(startSpan(tracer, spanInfo, parent))
             .flatMap(spanOpt -> {
                 if (spanOpt.isEmpty()) {
                     return flux;
@@ -217,7 +230,7 @@ public class ReactorTracerUtils {
      * @param spanInfo span信息
      * @return 上下文映射函数
      */
-    private static Function<ContextView, Mono<Optional<Span>>> startSpan(SpanInfo spanInfo, SpanContext parent) {
+    private static Function<ContextView, Mono<Optional<Span>>> startSpan(Tracer tracer, SpanInfo spanInfo, SpanContext parent) {
 
         return ctxView -> {
             ConcurrentLinkedDeque<Span> spanStack = getSpanStack(ctxView);
@@ -232,7 +245,7 @@ public class ReactorTracerUtils {
                 p = NullSafe.map(activeSpan, Span::context);
             }
 
-            Span span = TracerUtils.startSpan(spanInfo, p);
+            Span span = TracerUtils.startSpan(tracer, spanInfo, p);
             if (span != null) {
                 spanStack.addFirst(span);
                 keepSpanStackMaxSize(spanStack);

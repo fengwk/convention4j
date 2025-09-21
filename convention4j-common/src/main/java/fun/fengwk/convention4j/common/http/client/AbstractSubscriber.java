@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author fengwk
@@ -11,7 +12,8 @@ import java.util.concurrent.Flow.Subscription;
 @Slf4j
 public abstract class AbstractSubscriber<T> implements Flow.Subscriber<T> {
 
-    private volatile boolean done;
+    private final AtomicBoolean subscribe = new AtomicBoolean(false);
+    private final AtomicBoolean done = new AtomicBoolean(false);
 
     protected abstract void onSubscribe0(Subscription subscription) throws Exception;
 
@@ -23,52 +25,46 @@ public abstract class AbstractSubscriber<T> implements Flow.Subscriber<T> {
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        if (done) {
-            return;
-        }
-        try {
-            onSubscribe0(subscription);
-        } catch (Throwable err) {
-            onError(err);
+        if (!done.get() && subscribe.compareAndSet(false, true)) {
+            try {
+                onSubscribe0(subscription);
+            } catch (Throwable err) {
+                onError(err);
+            }
         }
     }
 
     @Override
     public void onNext(T item) {
-        if (done) {
-            return;
-        }
-        try {
-            onNext0(item);
-        } catch (Throwable err) {
-            onError(err);
+        if (!done.get()) {
+            try {
+                onNext0(item);
+            } catch (Throwable err) {
+                onError(err);
+            }
         }
     }
 
     @Override
     public void onComplete() {
-        if (done) {
-            return;
+        if (done.compareAndSet(false, true)) {
+            try {
+                onComplete0();
+            } catch (Throwable err) {
+                onError(err);
+            }
         }
-        try {
-            onComplete0();
-        } catch (Throwable err) {
-            onError(err);
-        }
-        done = true;
     }
 
     @Override
     public void onError(Throwable throwable) {
-        if (done) {
-            return;
+        if (done.compareAndSet(false, true)) {
+            try {
+                onError0(throwable);
+            } catch (Throwable err) {
+                log.error("failed to execute onError0", err);
+            }
         }
-        try {
-            onError0(throwable);
-        } catch (Throwable err) {
-            log.error("failed to execute onError0", err);
-        }
-        done = true;
     }
 
 }

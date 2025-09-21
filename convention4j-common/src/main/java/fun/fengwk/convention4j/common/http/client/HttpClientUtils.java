@@ -1,17 +1,16 @@
 package fun.fengwk.convention4j.common.http.client;
 
-import fun.fengwk.convention4j.api.code.HttpStatus;
 import fun.fengwk.convention4j.common.http.HttpUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -20,9 +19,11 @@ import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 
-import static fun.fengwk.convention4j.common.http.HttpHeaders.LOCATION;
+import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
 
 /**
+ * 重定向默认5次，设置方式 -Djdk.httpclient.redirects.retrylimit=10
+ *
  * @author fengwk
  */
 @Slf4j
@@ -56,87 +57,83 @@ public class HttpClientUtils {
     }
 
     /**
-     * 支持gzip版本的{@link HttpResponse.BodyHandlers#fromSubscriber(Flow.Subscriber)}
-     *
-     * @param subscriber subscriber
-     * @return HttpResponse.BodyHandler<List<ByteBuffer>>
-     */
-    public static HttpResponse.BodyHandler<List<ByteBuffer>> fromSubscriber(
-        Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
-        return fromSubscriber(responseInfo -> subscriber);
-    }
-
-    /**
-     * 支持gzip版本的{@link HttpResponse.BodyHandlers#fromSubscriber(Flow.Subscriber)}
-     *
-     * @param subscriberFactory subscriber factory
-     * @return HttpResponse.BodyHandler<List<ByteBuffer>>
-     */
-    public static HttpResponse.BodyHandler<List<ByteBuffer>> fromSubscriber(
-        Function<HttpResponse.ResponseInfo, Flow.Subscriber<? super List<ByteBuffer>>> subscriberFactory) {
-        return responseInfo -> new GzipSupportBodySubscriber(responseInfo, subscriberFactory.apply(responseInfo));
-    }
-
-    /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求，并使用SSE方式监听
+     * 异步发送http请求，并使用SSE方式监听
      *
      * @param httpRequest {@link HttpRequest}
      * @param sseListener 行字符串监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsyncWithSSEListener(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithSSEListener(
         HttpRequest httpRequest, SSEListener sseListener) {
-        return sendAsyncWithLineListener(HttpClientFactory.getDefaultHttpClient(), httpRequest, new SSEListenerAdapter(sseListener));
+        return sendAsyncWithSSEListener(HttpClientFactory.getDefaultHttpClient(), httpRequest, sseListener);
     }
 
     /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求，并逐行监听
+     * 异步发送http请求，并使用SSE方式监听
+     *
+     * @param httpRequest {@link HttpRequest}
+     * @param sseListener 行字符串监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithSSEListener(
+        HttpRequest httpRequest, SSEListener sseListener, boolean collectBody) {
+        return sendAsyncWithSSEListener(HttpClientFactory.getDefaultHttpClient(), httpRequest, sseListener, collectBody);
+    }
+
+    /**
+     * 异步发送http请求，并逐行监听
      *
      * @param httpRequest {@link HttpRequest}
      * @param lineListener 行字符串监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsyncWithLineListener(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithLineListener(
         HttpRequest httpRequest, StreamBodyListener<String> lineListener) {
-        return sendAsyncWithLineListener(HttpClientFactory.getDefaultHttpClient(), httpRequest, lineListener);
+        return sendAsyncWithLineListener(HttpClientFactory.getDefaultHttpClient(), httpRequest,
+            lineListener);
     }
 
     /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求
+     * 异步发送http请求，并逐行监听
+     *
+     * @param httpRequest {@link HttpRequest}
+     * @param lineListener 行字符串监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithLineListener(
+        HttpRequest httpRequest, StreamBodyListener<String> lineListener, boolean collectBody) {
+        return sendAsyncWithLineListener(HttpClientFactory.getDefaultHttpClient(), httpRequest,
+            lineListener, collectBody);
+    }
+
+    /**
+     * 异步发送http请求
      *
      * @param httpRequest {@link HttpRequest}
      * @param listener 监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsync(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsync(
         HttpRequest httpRequest, StreamBodyListener<List<ByteBuffer>> listener) {
         return sendAsync(HttpClientFactory.getDefaultHttpClient(), httpRequest, listener);
     }
 
     /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求
+     * 异步发送http请求
      *
      * @param httpRequest {@link HttpRequest}
-     * @param subscriber 订阅者
+     * @param listener 监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsync(
-        HttpRequest httpRequest, Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
-        return sendAsync(HttpClientFactory.getDefaultHttpClient(), httpRequest, subscriber);
+    public static CompletableFuture<AsyncHttpSendResult> sendAsync(
+        HttpRequest httpRequest, StreamBodyListener<List<ByteBuffer>> listener, boolean collectBody) {
+        return sendAsync(HttpClientFactory.getDefaultHttpClient(), httpRequest, listener, collectBody);
     }
 
-    /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}异步发送http请求
-     *
-     * @param httpRequest {@link HttpRequest}
-     * @param subscriberFactory 订阅者工厂
-     * @return {@link HttpSendResult}
-     */
-    public static CompletableFuture<HttpSendResult> sendAsync(
-        HttpRequest httpRequest,
-        Function<HttpResponse.ResponseInfo, Flow.Subscriber<? super List<ByteBuffer>>> subscriberFactory) {
-        return sendAsync(HttpClientFactory.getDefaultHttpClient(), httpRequest, subscriberFactory);
-    }
+    /* ------------------------------------------------------------------------------------------- */
 
     /**
      * 异步发送http请求，并使用SSE方式监听
@@ -146,9 +143,23 @@ public class HttpClientUtils {
      * @param sseListener 行字符串监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsyncWithSSEListener(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithSSEListener(
         HttpClient httpClient, HttpRequest httpRequest, SSEListener sseListener) {
-        return sendAsyncWithLineListener(httpClient, httpRequest, new SSEListenerAdapter(sseListener));
+        return sendAsyncWithSSEListener(httpClient, httpRequest, sseListener, false);
+    }
+
+    /**
+     * 异步发送http请求，并使用SSE方式监听
+     *
+     * @param httpClient {@link HttpClient}
+     * @param httpRequest {@link HttpRequest}
+     * @param sseListener 行字符串监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithSSEListener(
+        HttpClient httpClient, HttpRequest httpRequest, SSEListener sseListener, boolean collectBody) {
+        return sendAsyncWithLineListener(httpClient, httpRequest, new SSEListenerAdapter(sseListener), collectBody);
     }
 
     /**
@@ -159,9 +170,23 @@ public class HttpClientUtils {
      * @param lineListener 行字符串监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsyncWithLineListener(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithLineListener(
         HttpClient httpClient, HttpRequest httpRequest, StreamBodyListener<String> lineListener) {
-        return sendAsync(httpClient, httpRequest, new LineStreamBodyListenerAdapter(lineListener));
+        return sendAsyncWithLineListener(httpClient, httpRequest, lineListener, false);
+    }
+
+    /**
+     * 异步发送http请求，并逐行监听
+     *
+     * @param httpClient {@link HttpClient}
+     * @param httpRequest {@link HttpRequest}
+     * @param lineListener 行字符串监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
+     * @return {@link HttpSendResult}
+     */
+    public static CompletableFuture<AsyncHttpSendResult> sendAsyncWithLineListener(
+        HttpClient httpClient, HttpRequest httpRequest, StreamBodyListener<String> lineListener, boolean collectBody) {
+        return sendAsync(httpClient, httpRequest, new LineStreamBodyListenerAdapter(lineListener), collectBody);
     }
 
     /**
@@ -172,10 +197,9 @@ public class HttpClientUtils {
      * @param listener 监听器
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsync(
+    public static CompletableFuture<AsyncHttpSendResult> sendAsync(
         HttpClient httpClient, HttpRequest httpRequest, StreamBodyListener<List<ByteBuffer>> listener) {
-        return sendAsync(httpClient, httpRequest,
-            responseInfo -> new StreamBodyListenerAdapter(responseInfo, listener));
+        return sendAsync(httpClient, httpRequest, listener, false);
     }
 
     /**
@@ -183,12 +207,15 @@ public class HttpClientUtils {
      *
      * @param httpClient {@link HttpClient}
      * @param httpRequest {@link HttpRequest}
-     * @param subscriber 订阅者
+     * @param listener 监听器
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsync(
-        HttpClient httpClient, HttpRequest httpRequest, Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
-        return sendAsync(httpClient, httpRequest, responseInfo -> subscriber);
+    public static CompletableFuture<AsyncHttpSendResult> sendAsync(
+        HttpClient httpClient, HttpRequest httpRequest, StreamBodyListener<List<ByteBuffer>> listener,
+        boolean collectBody) {
+        return sendAsync(httpClient, httpRequest,
+            responseInfo -> new StreamBodyListenerAdapter(responseInfo, listener), collectBody);
     }
 
     /**
@@ -197,15 +224,18 @@ public class HttpClientUtils {
      * @param httpClient {@link HttpClient}
      * @param httpRequest {@link HttpRequest}
      * @param subscriberFactory 订阅者工厂
+     * @param collectBody 是否收集请求体，开启后无法流式释放内存中的请求体数据
      * @return {@link HttpSendResult}
      */
-    public static CompletableFuture<HttpSendResult> sendAsync(
+    private static CompletableFuture<AsyncHttpSendResult> sendAsync(
         HttpClient httpClient, HttpRequest httpRequest,
-        Function<HttpResponse.ResponseInfo, Flow.Subscriber<? super List<ByteBuffer>>> subscriberFactory) {
+        Function<HttpResponse.ResponseInfo, Flow.Subscriber<? super List<ByteBuffer>>> subscriberFactory,
+        boolean collectBody) {
+        BodyCollector bodyCollector = collectBody ? new BodyCollector() : null;
         return httpClient.sendAsync(
-            httpRequest, fromSubscriber(subscriberFactory))
+            httpRequest, fromSubscriber(subscriberFactory, bodyCollector))
             .thenApply(httpResponse -> {
-                HttpSendResult result = new HttpSendResult();
+                AsyncHttpSendResult result = new AsyncHttpSendResult(bodyCollector);
                 result.setStatusCode(httpResponse.statusCode());
                 HttpHeaders headers = httpResponse.headers();
                 if (headers != null) {
@@ -213,17 +243,40 @@ public class HttpClientUtils {
                 } else {
                     result.setHeaders(Collections.emptyMap());
                 }
-                List<ByteBuffer> byteBuffers = httpResponse.body();
-                byte[] bodyBytes = toBytes(byteBuffers);
-                result.setBodyBytes(bodyBytes);
                 return result;
             })
             .exceptionally(error -> {
-                HttpSendResult result = new HttpSendResult();
+                AsyncHttpSendResult result = new AsyncHttpSendResult(bodyCollector);
                 result.setError(error);
                 return result;
             });
     }
+
+    /**
+     * 支持gzip版本的{@link HttpResponse.BodyHandlers#fromSubscriber(Flow.Subscriber)}
+     *
+     * @param subscriberFactory subscriber factory
+     * @return HttpResponse.BodyHandler<Void>
+     */
+    private static HttpResponse.BodyHandler<Void> fromSubscriber(
+        Function<HttpResponse.ResponseInfo, Flow.Subscriber<? super List<ByteBuffer>>> subscriberFactory,
+        BodyCollector bodyCollector) {
+        return responseInfo -> {
+            if (bodyCollector != null) {
+                for (String contentType : responseInfo.headers().allValues(CONTENT_TYPE)) {
+                    Charset charset = HttpUtils.parseContentTypeCharset(contentType, HttpUtils.DEFAULT_CHARSET);
+                    if (charset != null) {
+                        bodyCollector.setCharset(charset);
+                        break;
+                    }
+                }
+            }
+            return new GzipSupportBodySubscriber(
+                responseInfo, subscriberFactory.apply(responseInfo), bodyCollector);
+        };
+    }
+
+    /* ------------------------------------------------------------------------------------------- */
 
     /**
      * 使用{@link HttpClientFactory#getDefaultHttpClient()}发送http请求
@@ -236,17 +289,6 @@ public class HttpClientUtils {
     }
 
     /**
-     * 使用{@link HttpClientFactory#getDefaultHttpClient()}发送http请求
-     *
-     * @param httpRequestBuilder {@link HttpRequest.Builder}
-     * @param redirectCount 支持重定向的次数
-     * @return {@link HttpSendResult}
-     */
-    public static HttpSendResult send(HttpRequest.Builder httpRequestBuilder, int redirectCount) {
-        return send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder, redirectCount);
-    }
-
-    /**
      * 发送http请求
      *
      * @param httpClient {@link HttpClient}
@@ -255,50 +297,6 @@ public class HttpClientUtils {
      */
     public static HttpSendResult send(HttpClient httpClient, HttpRequest httpRequest) {
         return doSend(httpClient, httpRequest);
-    }
-
-    /**
-     * 发送http请求
-     *
-     * @param httpClient {@link HttpClient}
-     * @param httpRequestBuilder {@link HttpRequest.Builder}
-     * @param redirectCount 支持重定向的次数
-     * @return {@link HttpSendResult}
-     */
-    public static HttpSendResult send(HttpClient httpClient, HttpRequest.Builder httpRequestBuilder, int redirectCount) {
-        HttpRequest.Builder copied = httpRequestBuilder.copy();
-        HttpRequest httpRequest = copied.build();
-        // 首次请求
-        HttpSendResult sendResult = doSend(httpClient, httpRequest);
-
-        String location;
-        while (redirectCount > 0 && needRedirect(sendResult.getStatusCode())
-            && (location = sendResult.getFirstHeader(LOCATION)) != null) {
-            // 解析Location，如果错误将终止
-            try {
-                URI uri = URI.create(location);
-                httpRequest = copied.uri(uri).build();
-            } catch (IllegalArgumentException ex) {
-                IllegalArgumentException locationEx = new IllegalArgumentException(String.format("invalid location '%s'", location), ex);
-                sendResult.setError(locationEx);
-                return sendResult;
-            }
-
-            // 发送新的重定向请求
-            HttpSendResult redirectSendResult = doSend(httpClient, httpRequest);
-
-            // 关闭旧的结果
-            sendResult.close();
-
-            // 使用新的结果代替
-            sendResult = redirectSendResult;
-
-            // 减少重定向计数
-            redirectCount--;
-        }
-
-        // 返回最终的结果
-        return sendResult;
     }
 
     private static HttpSendResult doSend(HttpClient httpClient, HttpRequest httpRequest) {
@@ -347,29 +345,6 @@ public class HttpClientUtils {
             }
         }
         return false;
-    }
-
-    private static boolean needRedirect(int statusCode) {
-        return statusCode == HttpStatus.MOVED_PERMANENTLY.getStatus()
-            || statusCode == HttpStatus.FOUND.getStatus()
-            || statusCode == HttpStatus.SEE_OTHER.getStatus()
-            || statusCode == HttpStatus.TEMPORARY_REDIRECT.getStatus()
-            || statusCode == HttpStatus.PERMANENT_REDIRECT.getStatus();
-    }
-
-    private static byte[] toBytes(List<ByteBuffer> byteBuffers) {
-        int len = 0;
-        for (ByteBuffer byteBuffer : byteBuffers) {
-            len += byteBuffer.remaining();
-        }
-        byte[] bodyBytes = new byte[len];
-        int offset = 0;
-        for (ByteBuffer byteBuffer : byteBuffers) {
-            int rem = byteBuffer.remaining();
-            byteBuffer.get(bodyBytes, offset, rem);
-            offset += rem;
-        }
-        return bodyBytes;
     }
 
 }

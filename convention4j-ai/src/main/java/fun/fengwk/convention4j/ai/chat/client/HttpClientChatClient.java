@@ -88,13 +88,13 @@ public class HttpClientChatClient implements ChatClient {
             clientOptions.getChatCompletionsUrl(), chatRequest);
 
         CompleteResponseStreamChatListener completeChatListener = new CompleteResponseStreamChatListener(chatListener);
-        return HttpClientUtils.sendAsyncWithSSEListener(httpRequest, completeChatListener)
+        return HttpClientUtils.sendAsyncWithSSEListener(httpRequest, completeChatListener, true)
             .thenApply(resp -> {
                 if (resp.hasError()) {
                     log.error("streamChatCompletions request error", resp.getError());
                 } else if (!resp.is2xx()) {
                     log.error("streamChatCompletions request failed, statusCode: {}, body: {}",
-                        resp.getStatusCode(), resp.tryParseBodyString());
+                        resp.getStatusCode(), resp.getBodyCollector().parseBodyString());
                 }
                 return completeChatListener.toChatCompletionsResponse();
             });

@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.springboot.starter.rocketmq;
 
+import fun.fengwk.convention4j.common.function.Func0T1;
 import fun.fengwk.convention4j.common.rocketmq.MessageBuilder;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import fun.fengwk.convention4j.tracer.util.SpanPropagation;
@@ -34,19 +35,19 @@ public class TracerProducer implements Producer {
     @Override
     public SendReceipt send(Message message) throws ClientException {
         SpanInfo spanInfo = buildSpanInfo(message);
-        return TracerUtils.executeAndReturn(() -> delegate.send(buildTracerMessage(message)), spanInfo);
+        return executeAndReturn(spanInfo, () -> delegate.send(buildTracerMessage(message)));
     }
 
     @Override
     public SendReceipt send(Message message, Transaction transaction) throws ClientException {
         SpanInfo spanInfo = buildSpanInfo(message);
-        return TracerUtils.executeAndReturn(() -> delegate.send(buildTracerMessage(message), transaction), spanInfo);
+        return executeAndReturn(spanInfo, () -> delegate.send(buildTracerMessage(message), transaction));
     }
 
     @Override
     public CompletableFuture<SendReceipt> sendAsync(Message message) {
         SpanInfo spanInfo = buildSpanInfo(message);
-        return TracerUtils.executeAndReturn(() -> delegate.sendAsync(buildTracerMessage(message)), spanInfo);
+        return executeAndReturn(spanInfo, () -> delegate.sendAsync(buildTracerMessage(message)));
     }
 
     @Override
@@ -57,6 +58,11 @@ public class TracerProducer implements Producer {
     @Override
     public void close() throws IOException {
         delegate.close();
+    }
+
+    private static <R, T extends Throwable> R executeAndReturn(SpanInfo spanInfo, Func0T1<R, T> executor) throws T {
+        Tracer tracer = GlobalTracer.get();
+        return TracerUtils.executeAndReturn(tracer, spanInfo, executor);
     }
 
     private static SpanInfo buildSpanInfo(Message message) {

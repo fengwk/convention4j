@@ -7,20 +7,20 @@ import fun.fengwk.convention4j.common.json.JsonUtils;
 import fun.fengwk.convention4j.common.lang.StringUtils;
 import fun.fengwk.convention4j.common.reflect.TypeToken;
 import fun.fengwk.convention4j.common.util.LazyServiceLoader;
-import fun.fengwk.convention4j.common.util.ListUtils;
 import fun.fengwk.convention4j.common.util.NullSafe;
-import fun.fengwk.convention4j.common.util.OrderedObject;
 import fun.fengwk.convention4j.common.web.UriUtils;
 import fun.fengwk.convention4j.tracer.Reference;
 import fun.fengwk.convention4j.tracer.TracerImpl;
+import fun.fengwk.convention4j.tracer.finisher.Slf4jSpanFinisher;
 import fun.fengwk.convention4j.tracer.finisher.SpanFinisher;
 import fun.fengwk.convention4j.tracer.propagation.TracerTransformer;
-import fun.fengwk.convention4j.tracer.scope.ConventionScopeManager;
+import fun.fengwk.convention4j.tracer.scope.TtlScopeManager;
+import fun.fengwk.convention4j.tracer.scope.aspect.MDCThreadScopeAspect;
+import fun.fengwk.convention4j.tracer.scope.aspect.ThreadScopeAspect;
 import io.opentracing.*;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,14 +41,17 @@ public class TracerUtils {
     private TracerUtils() {
     }
 
-    public static void initialize(SpanFinisher finisher) {
-        TracerTransformer tracerTransformer = new TracerTransformer();
-        List<ConventionScopeManager> scopeManagers = LazyServiceLoader
-                .loadServiceIgnoreLoadFailed(ConventionScopeManager.class);
-        scopeManagers = OrderedObject.sort(scopeManagers);
-        ConventionScopeManager priorityScopeManager = ListUtils.getFirst(scopeManagers);
-        TracerImpl tracer = new TracerImpl(new SystemClock(), priorityScopeManager, tracerTransformer, finisher);
+    public static void initializeGlobalTracer() {
+        ThreadScopeAspect threadScopeAspect = new MDCThreadScopeAspect();
+        ScopeManager scopeManager = new TtlScopeManager(threadScopeAspect);
+        Slf4jSpanFinisher finisher = new Slf4jSpanFinisher();
+        Tracer tracer = buildTracer(scopeManager, finisher);
         GlobalTracer.registerIfAbsent(tracer);
+    }
+
+    public static Tracer buildTracer(ScopeManager scopeManager, SpanFinisher finisher) {
+        TracerTransformer tracerTransformer = new TracerTransformer();
+        return new TracerImpl(new SystemClock(), scopeManager, tracerTransformer, finisher);
     }
 
     public static void initializeRootSpan(Span span) {
@@ -116,39 +119,12 @@ public class TracerUtils {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    public static Map<String, String> setMDC(SpanContext spanContext) {
-        Map<String, String> storeMdc = new HashMap<>();
-        storeMdc.put(TRACE_ID, MDC.get(TRACE_ID));
-        storeMdc.put(SPAN_ID, MDC.get(SPAN_ID));
-        if (spanContext != null) {
-            MDC.put(TRACE_ID, spanContext.toTraceId());
-            MDC.put(SPAN_ID, spanContext.toSpanId());
-        }
-        return storeMdc;
-    }
-
-    public static void clearMDC(Map<String, String> storeMdc) {
-        String storeTraceId = storeMdc.get(TRACE_ID);
-        String storeSpanId = storeMdc.get(SPAN_ID);
-        if (StringUtils.isBlank(storeTraceId)) {
-            MDC.remove(TRACE_ID);
-        } else {
-            MDC.put(TRACE_ID, storeTraceId);
-        }
-        if (StringUtils.isBlank(storeSpanId)) {
-            MDC.remove(SPAN_ID);
-        } else {
-            MDC.put(SPAN_ID, storeSpanId);
-        }
-    }
-
-    public static SpanContext activeSpanContext() {
-        Tracer tracer = GlobalTracer.get();
+    public static SpanContext activeSpanContext(Tracer tracer) {
         Span activeSpan = tracer.activeSpan();
         return NullSafe.map(activeSpan, Span::context);
     }
 
-    public static Span startSpan(SpanInfo spanInfo, SpanContext parent) {
+    public static Span startSpan(Tracer tracer, SpanInfo spanInfo, SpanContext parent) {
         if (spanInfo == null) {
             log.warn("Start span failed, spanInfo is null");
             return null;
@@ -174,7 +150,7 @@ public class TracerUtils {
             }
         }
 
-        Tracer.SpanBuilder spanBuilder = GlobalTracer.get().buildSpan(spanInfo.getOperationName())
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanInfo.getOperationName())
                 .withTag(TracerUtils.TAG_SPAN_ALIAS, alias);
         if (StringUtils.isNotBlank(spanInfo.getKind())) {
             spanBuilder.withTag(Tags.SPAN_KIND, spanInfo.getKind());
@@ -186,12 +162,12 @@ public class TracerUtils {
     }
 
     public static <R, T extends Throwable> R executeAndReturn(
-            Func0T1<R, T> executor, SpanInfo spanInfo) throws T {
-        Span span = TracerUtils.startSpan(spanInfo, TracerUtils.activeSpanContext());
+            Tracer tracer, SpanInfo spanInfo, Func0T1<R, T> executor) throws T {
+        Span span = TracerUtils.startSpan(tracer, spanInfo, TracerUtils.activeSpanContext(tracer));
         if (span == null) {
             return executor.apply();
         }
-        try (Scope ignored = GlobalTracer.get().activateSpan(span)) {
+        try (Scope ignored = tracer.activateSpan(span)) {
             R result = executor.apply();
             span.setTag(Tags.ERROR, false);
             return result;
@@ -205,11 +181,11 @@ public class TracerUtils {
     }
 
     public static <T extends Throwable> void execute(
-            VoidFunc0T1<T> executor, SpanInfo spanInfo) throws T {
-        executeAndReturn(() -> {
+        Tracer tracer, SpanInfo spanInfo, VoidFunc0T1<T> executor) throws T {
+        executeAndReturn(tracer, spanInfo, () -> {
             executor.apply();
             return null;
-        }, spanInfo);
+        });
     }
 
 }

@@ -2,6 +2,8 @@ package fun.fengwk.convention4j.springboot.starter.webflux.handler;
 
 import fun.fengwk.convention4j.tracer.reactor.ReactorTracerUtils;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -30,7 +32,8 @@ public class TestHandler {
         SpanInfo spanInfo = SpanInfo.builder().operationName("hello1-inner").build();
         Mono<ServerResponse> mono = Mono.fromRunnable(() -> log.info("execute hello1 inner"))
                 .then(ServerResponse.status(200).contentType(MediaType.TEXT_PLAIN).bodyValue("hello1"));
-        ReactorTracerUtils.newSpan(mono, spanInfo);
+        Tracer tracer = GlobalTracer.get();
+        ReactorTracerUtils.newSpan(tracer, spanInfo, mono);
         return mono;
     }
 

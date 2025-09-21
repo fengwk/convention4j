@@ -7,7 +7,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.85</version>
+        <version>1.1.86</version>
     </parent>
 
     <artifactId>convention4j-common</artifactId>
@@ -184,6 +184,11 @@
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-client-apis</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

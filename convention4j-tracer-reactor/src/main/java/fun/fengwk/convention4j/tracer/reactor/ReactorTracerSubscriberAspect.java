@@ -1,15 +1,17 @@
 package fun.fengwk.convention4j.tracer.reactor;
 
 import fun.fengwk.convention4j.tracer.reactor.aspect.SubscriberAspect;
-import fun.fengwk.convention4j.tracer.util.TracerUtils;
+import fun.fengwk.convention4j.tracer.scope.aspect.EmptyThreadScopeAspect;
+import fun.fengwk.convention4j.tracer.scope.aspect.ThreadScopeAspect;
 import io.opentracing.Span;
-import io.opentracing.util.GlobalTracer;
+import io.opentracing.Tracer;
 import lombok.Data;
 import org.reactivestreams.Subscription;
 import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -17,22 +19,30 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class ReactorTracerSubscriberAspect implements SubscriberAspect {
 
+    private final Tracer tracer;
+    private final ThreadScopeAspect threadScopeAspect;
+
+    public ReactorTracerSubscriberAspect(Tracer tracer, ThreadScopeAspect threadScopeAspect) {
+        this.tracer = Objects.requireNonNull(tracer, "tracer must not be null");
+        this.threadScopeAspect = threadScopeAspect == null ? new EmptyThreadScopeAspect() : threadScopeAspect;
+    }
+
     @Data
     static class StoreContext {
 
         private final ContextView storeContextView;
-        private final Map<String, String> storeMdc;
+        private final Map<String, String> store;
 
     }
 
     private Object onInit(ContextView ctx) {
         ContextView storeContextView = ReactorTracerUtils.setContextViewTL(ctx);
         Span span = ReactorTracerUtils.activeSpan(ctx);
-        Map<String, String> storeMdc = null;
+        Map<String, String> store = null;
         if (span != null) {
-            storeMdc = TracerUtils.setMDC(span.context());
+            store = threadScopeAspect.onEnter(span.context());
         }
-        return new StoreContext(storeContextView, storeMdc);
+        return new StoreContext(storeContextView, store);
     }
 
     private void onFinally(Object localContext) {
@@ -40,8 +50,8 @@ public class ReactorTracerSubscriberAspect implements SubscriberAspect {
         if (storeContext == null) {
             return;
         }
-        if (storeContext.getStoreMdc() != null) {
-            TracerUtils.clearMDC(storeContext.getStoreMdc());
+        if (storeContext.getStore() != null) {
+            threadScopeAspect.onExit(storeContext.getStore());
         }
         ReactorTracerUtils.removeContextViewTL(storeContext.getStoreContextView());
     }
@@ -55,7 +65,7 @@ public class ReactorTracerSubscriberAspect implements SubscriberAspect {
             return context;
         }
 
-        Span span = GlobalTracer.get().activeSpan();
+        Span span = tracer.activeSpan();
         if (span == null) {
             return context;
         }

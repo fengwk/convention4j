@@ -4,7 +4,6 @@ import fun.fengwk.convention4j.api.result.Result;
 import fun.fengwk.convention4j.common.result.Results;
 import fun.fengwk.convention4j.common.util.NullSafe;
 import fun.fengwk.convention4j.common.web.XForwardHeaderUtils;
-import fun.fengwk.convention4j.common.web.XForwardedHeaderAccessor;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultAuthorizeContext;
 import fun.fengwk.convention4j.oauth2.server.model.context.DefaultTokenContext;
 import fun.fengwk.convention4j.oauth2.server.service.OAuth2Service;

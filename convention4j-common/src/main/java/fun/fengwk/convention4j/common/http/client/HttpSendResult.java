@@ -2,77 +2,24 @@ package fun.fengwk.convention4j.common.http.client;
 
 import fun.fengwk.convention4j.common.http.HttpUtils;
 import fun.fengwk.convention4j.common.io.IoUtils;
-import fun.fengwk.convention4j.common.util.ListUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+
+import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
 
 /**
  * @author fengwk
  */
 @Slf4j
 @Data
-public class HttpSendResult implements AutoCloseable {
+public class HttpSendResult extends AbstractHttpSendResult implements AutoCloseable {
 
-    private int statusCode;
     private InputStream body;
-    private Map<String, List<String>> headers;
-    private Throwable error;
     private byte[] bodyBytes;
-
-    public boolean is2xx() {
-        return HttpUtils.is2xx(statusCode);
-    }
-
-    public boolean is3xx() {
-        return HttpUtils.is3xx(statusCode);
-    }
-
-    public boolean is4xx() {
-        return HttpUtils.is4xx(statusCode);
-    }
-
-    public boolean is5xx() {
-        return HttpUtils.is5xx(statusCode);
-    }
-
-    public boolean hasError() {
-        return error != null;
-    }
-
-    public List<String> getHeaders(String name) {
-        if (name == null) {
-            return Collections.emptyList();
-        }
-
-        if (headers == null) {
-            return Collections.emptyList();
-        }
-
-        List<String> list = headers.get(name);
-        if (list != null) {
-            return list;
-        }
-
-        for (String key : headers.keySet()) {
-            if (name.equalsIgnoreCase(key)) {
-                return headers.get(key);
-            }
-        }
-
-        return Collections.emptyList();
-    }
-
-    public String getFirstHeader(String name) {
-        List<String> headers = getHeaders(name);
-        return ListUtils.tryGetFirst(headers);
-    }
 
     public String tryParseBodyString() {
         try {
@@ -116,7 +63,7 @@ public class HttpSendResult implements AutoCloseable {
      * 计算响应的charset
      */
     private Charset charset() {
-        for (String contentType : getHeaders("Content-Type")) {
+        for (String contentType : getHeaders(CONTENT_TYPE)) {
             Charset charset = HttpUtils.parseContentTypeCharset(contentType);
             if (charset != null) {
                 return charset;

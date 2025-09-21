@@ -124,7 +124,7 @@ public class ChatClientTest {
     private ChatClient buildHttpChatClient() {
         ChatClientOptions options = new ChatClientOptions();
         options.setChatCompletionsUrl(URI.create("https://api.deepseek.com/chat/completions"));
-        options.setToken(System.getenv("OPENAI_API_KEY"));
+        options.setToken(System.getenv("DEEPSEEK_API_KEY"));
         return new HttpClientChatClient(options);
     }
 

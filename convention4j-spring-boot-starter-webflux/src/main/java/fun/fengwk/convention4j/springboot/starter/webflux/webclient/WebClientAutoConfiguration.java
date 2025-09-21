@@ -9,6 +9,7 @@ import fun.fengwk.convention4j.tracer.reactor.ReactorTracerUtils;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import io.netty.channel.ChannelOption;
 import io.opentracing.Span;
+import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
@@ -127,7 +128,8 @@ public class WebClientAutoConfiguration {
                     .operationName(request.url().toString())
                     .kind(Tags.SPAN_KIND_CLIENT)
                     .build();
-            return ReactorTracerUtils.newSpan(mono, spanInfo);
+            Tracer tracer = GlobalTracer.get();
+            return ReactorTracerUtils.newSpan(tracer, spanInfo, mono);
         };
     }
 

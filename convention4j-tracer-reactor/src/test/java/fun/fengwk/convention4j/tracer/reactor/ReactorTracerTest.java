@@ -1,11 +1,11 @@
 package fun.fengwk.convention4j.tracer.reactor;
 
-import fun.fengwk.convention4j.tracer.finisher.Slf4jSpanFinisher;
 import fun.fengwk.convention4j.tracer.util.SpanInfo;
 import fun.fengwk.convention4j.tracer.util.SpanPropagation;
 import fun.fengwk.convention4j.tracer.util.TracerUtils;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -22,8 +22,11 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class ReactorTracerTest {
 
-    static {
-        ReactorTracerUtils.initialize(new Slf4jSpanFinisher());
+    private static final Tracer TRACER;
+
+    static  {
+        ReactorTracerUtils.initializeGlobalTracer();
+        TRACER = GlobalTracer.get();
     }
 
     private void checkId(AtomicReference<String> idRef, String id) {
@@ -97,7 +100,7 @@ public class ReactorTracerTest {
                     System.out.println("[flatMap] spanId: " + spanId);
 
                     Mono<Object> subMono = Mono.fromRunnable(() -> {
-                        Span span = GlobalTracer.get().activeSpan();
+                        Span span = TRACER.activeSpan();
                         SpanContext spanContext = span.context();
                         String subTraceId = spanContext.toTraceId();
                         String subSpanId = spanContext.toSpanId();
@@ -107,12 +110,12 @@ public class ReactorTracerTest {
 
                     SpanInfo subSpanInfo = SpanInfo.builder().operationName("subTestMonoTest")
                             .propagation(SpanPropagation.SUPPORTS).build();
-                    subMono = ReactorTracerUtils.newSpan(subMono, subSpanInfo);
+                    subMono = ReactorTracerUtils.newSpan(TRACER, subSpanInfo, subMono);
 
                     return subMono.then(Mono.just(s));
                 })
                 .map(s -> {
-                    SpanContext spanContext = GlobalTracer.get().activeSpan().context();
+                    SpanContext spanContext = TRACER.activeSpan().context();
                     String traceId = spanContext.toTraceId();
                     String spanId = spanContext.toSpanId();
                     System.out.println("[map] traceId: " + traceId);
@@ -122,7 +125,7 @@ public class ReactorTracerTest {
                     return s;
                 });
 
-        mono = ReactorTracerUtils.newSpan(mono, spanInfo);
+        mono = ReactorTracerUtils.newSpan(TRACER, spanInfo, mono);
 
         mono.subscribe();
     }
@@ -147,7 +150,7 @@ public class ReactorTracerTest {
 
                     Mono<Object> subMono = Mono.fromRunnable(() -> {
                         System.out.println("Mono.fromRunnable: " + s);
-                        Span span = GlobalTracer.get().activeSpan();
+                        Span span = TRACER.activeSpan();
                         SpanContext spanContext = span.context();
                         String subTraceId = spanContext.toTraceId();
                         String subSpanId = spanContext.toSpanId();
@@ -157,11 +160,11 @@ public class ReactorTracerTest {
 
                     SpanInfo subSpanInfo = SpanInfo.builder().operationName("subTestMonoTest")
                             .propagation(SpanPropagation.SUPPORTS).build();
-                    subMono = ReactorTracerUtils.newSpan(subMono, subSpanInfo);
+                    subMono = ReactorTracerUtils.newSpan(TRACER, subSpanInfo, subMono);
 
                     Flux<Integer> subFlux = Flux.just(1, 2, 3).doOnNext(subI -> {
                         System.out.println("subFlux.doOnNext: " + s + "-" + subI);
-                        Span span = GlobalTracer.get().activeSpan();
+                        Span span = TRACER.activeSpan();
                         SpanContext spanContext = span.context();
                         String subTraceId = spanContext.toTraceId();
                         String subSpanId = spanContext.toSpanId();
@@ -171,14 +174,14 @@ public class ReactorTracerTest {
 
                     SpanInfo subFluxSpanInfo = SpanInfo.builder().operationName("subTestFluxTest")
                             .propagation(SpanPropagation.SUPPORTS).build();
-                    subFlux = ReactorTracerUtils.newSpan(subFlux, subFluxSpanInfo);
+                    subFlux = ReactorTracerUtils.newSpan(TRACER, subFluxSpanInfo, subFlux);
                     subFlux.subscribe();
 
                     return subMono.then(Mono.just(s));
                 })
                 .map(s -> {
                     System.out.println("Flux.map: " + s);
-                    SpanContext spanContext = GlobalTracer.get().activeSpan().context();
+                    SpanContext spanContext = TRACER.activeSpan().context();
                     String traceId = spanContext.toTraceId();
                     String spanId = spanContext.toSpanId();
                     System.out.println("[map] traceId: " + traceId);
@@ -188,7 +191,7 @@ public class ReactorTracerTest {
                     return s;
                 });
 
-        flux = ReactorTracerUtils.newSpan(flux, spanInfo);
+        flux = ReactorTracerUtils.newSpan(TRACER, spanInfo, flux);
 
         flux.subscribe();
     }
@@ -197,23 +200,23 @@ public class ReactorTracerTest {
     public void testNoFlux() {
         SpanInfo spanInfo = SpanInfo.builder()
                 .operationName("test").propagation(SpanPropagation.REQUIRED).build();
-        TracerUtils.execute(() -> {
-            Span span = GlobalTracer.get().activeSpan();
+        TracerUtils.execute(TRACER, spanInfo, () -> {
+            Span span = TRACER.activeSpan();
             Assertions.assertNotNull(span);
             SpanContext context = span.context();
             Assertions.assertNotNull(context);
             System.out.println("traceId: " + context.toTraceId());
             System.out.println("spanId: " + context.toSpanId());
             subSpanTest();
-        }, spanInfo);
+        });
     }
 
     @Test
     public void testNoFluxToFlux() {
         SpanInfo spanInfo = SpanInfo.builder()
                 .operationName("test").propagation(SpanPropagation.REQUIRED).build();
-        TracerUtils.execute(() -> {
-            Span span = GlobalTracer.get().activeSpan();
+        TracerUtils.execute(TRACER, spanInfo, () -> {
+            Span span = TRACER.activeSpan();
             Assertions.assertNotNull(span);
             SpanContext context = span.context();
             Assertions.assertNotNull(context);
@@ -222,7 +225,7 @@ public class ReactorTracerTest {
 
             Mono<Integer> mono = Mono.just(1)
                     .doOnNext(i -> {
-                        Span subSpan = GlobalTracer.get().activeSpan();
+                        Span subSpan = TRACER.activeSpan();
                         Assertions.assertNotNull(subSpan);
                         SpanContext subContext = subSpan.context();
                         Assertions.assertNotNull(subContext);
@@ -234,24 +237,24 @@ public class ReactorTracerTest {
             SpanInfo subSpanInfo = SpanInfo.builder()
                     .operationName("subFluxTest").propagation(SpanPropagation.REQUIRED).build();
 
-            mono = ReactorTracerUtils.newSpan(mono, subSpanInfo);
+            mono = ReactorTracerUtils.newSpan(TRACER, subSpanInfo, mono);
             mono.subscribe();
 
-        }, spanInfo);
+        });
     }
 
     private void subSpanTest() {
         SpanInfo subSpanInfo = SpanInfo.builder()
                 .operationName("subSpanTest").propagation(SpanPropagation.REQUIRED).build();
 
-        TracerUtils.execute(() -> {
-            Span subSpan = GlobalTracer.get().activeSpan();
+        TracerUtils.execute(TRACER, subSpanInfo, () -> {
+            Span subSpan = TRACER.activeSpan();
             Assertions.assertNotNull(subSpan);
             SpanContext subContext = subSpan.context();
             Assertions.assertNotNull(subContext);
             System.out.println("subTraceId: " + subContext.toTraceId());
             System.out.println("subSpanId: " + subContext.toSpanId());
-        }, subSpanInfo);
+        });
     }
 
 }
