@@ -2,6 +2,7 @@ package fun.fengwk.convention4j.springboot.starter.webflux.webclient;
 
 import fun.fengwk.convention4j.common.json.jackson.ObjectMapperHolder;
 import fun.fengwk.convention4j.common.lang.StringUtils;
+import fun.fengwk.convention4j.common.util.CollectionUtils;
 import fun.fengwk.convention4j.springboot.starter.transport.TransportHeaders;
 import fun.fengwk.convention4j.springboot.starter.webflux.context.WebFluxContext;
 import fun.fengwk.convention4j.springboot.starter.webflux.tracer.ClientRequestBuilderInject;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientCodecCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.codec.CodecCustomizer;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
@@ -73,7 +75,8 @@ public class WebClientAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public WebClient.Builder webClientBuilder(WebClientProperties webClientProperties,
-                                              ObjectProvider<List<WebClientRequestModifier>> requestModifiersProvider) {
+                                              ObjectProvider<List<WebClientRequestModifier>> requestModifiersProvider,
+                                              ObjectProvider<CodecCustomizer> codecCustomizerProvider) {
         // @see InetAddressCachePolicy
         Long cacheTtl = parseLong(System.getProperty("sun.net.inetaddr.ttl"));
         Long negCacheTtl = parseLong(System.getProperty("sun.net.inetaddr.negative.ttl"));
@@ -92,7 +95,12 @@ public class WebClientAutoConfiguration {
                 })
                 .responseTimeout(webClientProperties.getResponseTimeout());
         // 构建WebClient
-        return WebClient.builder()
+        WebClient.Builder builder = WebClient.builder();
+        List<CodecCustomizer> codecCustomizers = codecCustomizerProvider.orderedStream().toList();
+        if (CollectionUtils.isNotEmpty(codecCustomizers)) {
+            new WebClientCodecCustomizer(codecCustomizers).customize(builder);
+        }
+        return builder
                 .codecs(this::configure)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .filter(tracerFilter())
