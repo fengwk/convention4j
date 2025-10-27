@@ -5,12 +5,14 @@ import fun.fengwk.convention4j.common.path.PathParser;
 import fun.fengwk.convention4j.common.tika.ThreadLocalTika;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.GatewayFilterFactory;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -22,11 +24,9 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -95,10 +95,10 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
                 // 首先从路径中读取，路径中不存在使用index尝试读取
                 String path = exchange.getRequest().getPath().pathWithinApplication().value();
                 Resource resource = createReadableRelativeResource(
-                        baseResource, asRelativePath(PATH_PARSER.normalize(path)));
+                    baseResource, asRelativePath(PATH_PARSER.normalize(path)));
                 if (resource == null && StringUtils.isNotBlank(config.getIndex())) {
                     resource = createReadableRelativeResource(
-                            baseResource, getRelativePath(path, config.getIndex()));
+                        baseResource, getRelativePath(path, config.getIndex()));
                 }
 
                 // 获取请求响应信息
@@ -143,9 +143,9 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
             @Override
             public String toString() {
                 return filterToStringCreator(ResourceGatewayFilterFactory.this)
-                        .append("index", config.getIndex())
-                        .append("chunkSize", config.getChunkSize())
-                        .toString();
+                    .append("index", config.getIndex())
+                    .append("chunkSize", config.getChunkSize())
+                    .toString();
             }
         };
     }
@@ -233,53 +233,76 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
     }
 
     private Mono<Void> writeResource(ServerHttpResponse response, Resource resource, int chunkSize, boolean gzip) {
-        // 读取资源为Flux<DataBuffer>
-        Flux<DataBuffer> dataBufferFlux = DataBufferUtils.read(resource, response.bufferFactory(), chunkSize);
-
-        if (gzip) {
-            // 如果开启了gzip将每个DataBuffer映射为压缩后的DataBuffer
-            ByteArrayOutputStream bytesOutput = new ByteArrayOutputStream();
-            GZIPOutputStream gzipOutput = gzipWrap(bytesOutput);
-            dataBufferFlux = dataBufferFlux
-                    // 使用concatMap确保顺序性
-                    .concatMap(dataBuffer -> {
-                        // synchronized确保可见性
-                        synchronized (gzipOutput) {
-                            while (dataBuffer.readableByteCount() > 0) {
-                                write(gzipOutput, dataBuffer.read());
-                            }
-                            byte[] buf = bytesOutput.toByteArray();
-                            bytesOutput.reset();
-                            DataBuffer gzipDataBuf = dataBuffer.factory().wrap(buf);
-                            DataBufferUtils.release(dataBuffer);
-                            return Mono.just(gzipDataBuf);
-                        }
-                    });
-            dataBufferFlux = Flux.concat(dataBufferFlux, Mono.defer(() -> {
-                // synchronized确保可见性
-                synchronized (gzipOutput) {
-                    // 最终去调用gzip finish发送0数据块
-                    gzipFinish(gzipOutput);
-                    byte[] buf = bytesOutput.toByteArray();
-                    DataBuffer finishBuf = response.bufferFactory().wrap(buf);
-                    return Mono.just(finishBuf);
-                }
-            }));
-            // 写入所有Flux<DataBuffer>
+        if (!gzip) {
+            Flux<DataBuffer> dataBufferFlux = DataBufferUtils.read(resource, response.bufferFactory(), chunkSize);
             return response.writeWith(dataBufferFlux)
-                    // 定义DataBuffer释放方法
-                    .doOnDiscard(DataBuffer.class, DataBufferUtils::release)
-                    .doFinally(s -> {
-                        synchronized (gzipOutput) {
-                            close(gzipOutput);
-                        }
-                    });
-        } else {
-            // 写入所有Flux<DataBuffer>
-            return response.writeWith(dataBufferFlux)
-                    // 定义DataBuffer释放方法
-                    .doOnDiscard(DataBuffer.class, DataBufferUtils::release);
+                .doOnDiscard(DataBuffer.class, DataBufferUtils::release);
         }
+
+        Flux<DataBuffer> gzipDataBufferFlux = Flux.using(
+            () -> {
+                // 1. 创建管道
+                PipedOutputStream pos = new PipedOutputStream();
+                PipedInputStream pis = new PipedInputStream(pos);
+                // 2. GZIPOutputStream 包装管道输出端
+                GZIPOutputStream gzipOutput = new GZIPOutputStream(pos);
+
+                // 返回一个包含所有需要被管理的资源的对象
+                return new GzipResources(pis, pos, gzipOutput);
+            },
+            resources -> {
+                // 3. 这个函数定义了如何从资源生成 Flux
+
+                // 读取原始文件数据的源 Flux
+                Flux<DataBuffer> sourceFlux = DataBufferUtils.read(resource, response.bufferFactory(), chunkSize);
+                // 启动一个后台任务来处理压缩
+                // doOnNext: 将每个 dataBuffer 写入 GZIP 流
+                // doOnComplete: 完成时关闭 GZIP 流（这会写入 GZIP 的尾部数据并关闭管道）
+                // doOnError: 出错时关闭管道
+                // subscribeOn: 确保这个订阅和写操作在专门的 I/O 线程池上执行，不阻塞主流程
+                sourceFlux
+                    .doOnNext(buffer -> {
+                        try {
+                            // 使用更高效的方式写入
+                            try (InputStream is = buffer.asInputStream(true)) { // true 表示释放 buffer
+                                is.transferTo(resources.getGzipOutput());
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e); // 错误会传播并被 doOnError 捕获
+                        }
+                    })
+                    .doOnComplete(() -> {
+                        try {
+                            resources.getGzipOutput().close(); // 关键！完成压缩并关闭管道
+                        } catch (IOException e) {
+                            // 忽略，因为管道另一端可能已经关闭
+                        }
+                    })
+                    .doOnError(e -> {
+                        try {
+                            resources.getGzipOutput().close(); // 出错也要尝试关闭
+                        } catch (IOException ignored) {}
+                    })
+                    .subscribeOn(Schedulers.boundedElastic()) // 在 I/O 线程上执行
+                    .subscribe(); // 触发执行
+                // 4. 主流程返回一个新的 Flux，它从管道的输入端读取压缩好的数据
+                return DataBufferUtils.read(
+                    new InputStreamResource(resources.getPis()), // 将 InputStream 包装成 Resource
+                    response.bufferFactory(),
+                    chunkSize
+                );
+            },
+            resources -> {
+                // 5. 这个函数定义了当流完成或取消时如何清理资源
+                try {
+                    resources.close();
+                } catch (IOException e) {
+                    log.warn("Error closing gzip resources", e);
+                }
+            }
+        );
+        return response.writeWith(gzipDataBufferFlux)
+            .doOnDiscard(DataBuffer.class, DataBufferUtils::release);
     }
 
     private Resource createReadableRelativeResource(Resource baseResource, String relativePath) {
@@ -357,6 +380,27 @@ public class ResourceGatewayFilterFactory implements GatewayFilterFactory<Resour
         private String index;
         private int chunkSize = DEFAULT_CHUNK_SIZE;
 
+    }
+
+    @AllArgsConstructor
+    @Getter
+    private static class GzipResources implements AutoCloseable {
+        private final PipedInputStream pis;
+        private final PipedOutputStream pos;
+        private final GZIPOutputStream gzipOutput;
+        @Override
+        public void close() throws IOException {
+            // 关闭顺序很重要，先关外层包装的
+            try {
+                gzipOutput.close();
+            } finally {
+                try {
+                    pos.close();
+                } finally {
+                    pis.close();
+                }
+            }
+        }
     }
 
 }
