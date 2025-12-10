@@ -305,6 +305,7 @@ public class HttpClientUtils {
             HttpResponse<InputStream> httpResponse = httpClient.send(
                 httpRequest, HttpResponse.BodyHandlers.ofInputStream());
             result.setStatusCode(httpResponse.statusCode());
+            result.setUri(httpResponse.uri());
             HttpHeaders headers = httpResponse.headers();
             if (headers != null) {
                 result.setHeaders(Collections.unmodifiableMap(headers.map()));

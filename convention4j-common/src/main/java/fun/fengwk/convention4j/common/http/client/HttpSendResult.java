@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.Charset;
 
 import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
@@ -18,6 +19,7 @@ import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
 @Data
 public class HttpSendResult extends AbstractHttpSendResult implements AutoCloseable {
 
+    private URI uri;
     private InputStream body;
     private byte[] bodyBytes;
 
