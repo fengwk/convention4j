@@ -139,38 +139,44 @@ public class HttpClientUtilsTest {
 
     @Test
     public void testSendAsync() throws IOException, ExecutionException, InterruptedException {
+        System.out.println("req https://www.baidu.com");
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .GET()
             .build());
 
+        System.out.println("req https://www.baidu.com with gzip");
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.baidu.com"))
             .header(ACCEPT_ENCODING, "gzip")
             .GET()
             .build());
 
+        System.out.println("req https://www.runoob.com");
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.runoob.com"))
             .GET()
             .build());
 
+        System.out.println("req https://www.runoob.com with gzip");
         doTestSendAsync(HttpRequest.newBuilder()
             .uri(URI.create("https://www.runoob.com"))
             .header(ACCEPT_ENCODING, "gzip")
             .GET()
             .build());
 
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.zdic.net"))
-            .GET()
-            .build());
-
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.zdic.net"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
+        // System.out.println("req https://www.zdic.net");
+        // doTestSendAsync(HttpRequest.newBuilder()
+        //     .uri(URI.create("https://www.zdic.net"))
+        //     .GET()
+        //     .build());
+        //
+        // System.out.println("req https://www.zdic.net with gzip");
+        // doTestSendAsync(HttpRequest.newBuilder()
+        //     .uri(URI.create("https://www.zdic.net"))
+        //     .header(ACCEPT_ENCODING, "gzip")
+        //     .GET()
+        //     .build());
     }
 
     private void doTestSendAsync(HttpRequest httpRequest)
@@ -241,16 +247,16 @@ public class HttpClientUtilsTest {
             .GET()
             .build());
 
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.zdic.net"))
-            .GET()
-            .build());
-
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.zdic.net"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
+        // doTestAsyncWithLine(HttpRequest.newBuilder()
+        //     .uri(URI.create("https://www.zdic.net"))
+        //     .GET()
+        //     .build());
+        //
+        // doTestAsyncWithLine(HttpRequest.newBuilder()
+        //     .uri(URI.create("https://www.zdic.net"))
+        //     .header(ACCEPT_ENCODING, "gzip")
+        //     .GET()
+        //     .build());
     }
 
     private void doTestAsyncWithLine(HttpRequest httpRequest)

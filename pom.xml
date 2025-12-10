@@ -6,7 +6,7 @@
 
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-parent</artifactId>
-    <version>1.1.91</version>
+    <version>1.1.92</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -56,14 +56,14 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-        <convention4j.version>1.1.91</convention4j.version>
+        <convention4j.version>1.1.92</convention4j.version>
         <springdoc-openapi-starter-webmvc-ui.version>2.2.0</springdoc-openapi-starter-webmvc-ui.version>
         <auto-mapper.version>0.0.48</auto-mapper.version>
         <spring-boot-dependencies.version>3.5.0</spring-boot-dependencies.version>
         <spring-cloud-dependencies.version>2025.0.0</spring-cloud-dependencies.version>
         <spring-cloud-alibaba-dependencies.version>2023.0.1.2</spring-cloud-alibaba-dependencies.version>
         <mybatis-spring-boot-starter.version>3.0.5</mybatis-spring-boot-starter.version>
-        <spring-ai.version>1.0.1</spring-ai.version>
+        <spring-ai.version>1.1.2</spring-ai.version>
         <mysql-connector-java.version>5.1.49</mysql-connector-java.version>
         <resteasy-jaxrs.version>3.15.6.Final</resteasy-jaxrs.version>
         <jakarta.el.version>5.0.0-M1</jakarta.el.version>
