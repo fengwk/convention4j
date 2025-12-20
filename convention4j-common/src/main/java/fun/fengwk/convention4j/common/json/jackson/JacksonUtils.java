@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -291,6 +292,30 @@ public class JacksonUtils {
         }
     }
 
+    public static JsonNode readTree(byte[] content) {
+        if (content == null) {
+            return null;
+        }
+        try {
+            return ObjectMapperHolder.getInstance().readTree(content);
+        } catch (Exception ex) {
+            log.error("readTree error", ex);
+            return null;
+        }
+    }
+
+    public static JsonNode readTree(String content) {
+        if (content == null) {
+            return null;
+        }
+        try {
+            return ObjectMapperHolder.getInstance().readTree(content);
+        } catch (Exception ex) {
+            log.error("readTree error", ex);
+            return null;
+        }
+    }
+
     public static <T> T readValue(DataInput src, Class<T> valueType) throws IOException
     {
         if (src == null) {
@@ -357,6 +382,24 @@ public class JacksonUtils {
         } catch (Exception ex) {
             log.error("writeValueAsBytes error", ex);
             return new byte[0];
+        }
+    }
+
+    /**
+     * 将 Java 对象转换为 JsonNode
+     *
+     * @param value 要转换的对象
+     * @return JsonNode表示，转换失败返回null
+     */
+    public static JsonNode valueToTree(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return ObjectMapperHolder.getInstance().valueToTree(value);
+        } catch (Exception ex) {
+            log.error("valueToTree error", ex);
+            return null;
         }
     }
 
