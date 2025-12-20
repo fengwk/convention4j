@@ -7,7 +7,7 @@
 - ✅ **异步非阻塞**: 支持响应式和同步两种调用方式
 - ✅ **实时进度监听**: 获取工作流执行的实时事件流
 - ✅ **动态工作流操作**: 修改提示词、种子、Checkpoint 等参数
-- ✅ **文件上传下载**: 上传输入图像、下载生成的图像/视频/音频
+- ✅ **多类型文件支持**: 上传/下载图像、音频、视频等多种文件类型
 - ✅ **超时控制**: 防止任务无限等待
 - ✅ **自动资源管理**: 支持 try-with-resources
 - ✅ **类型安全**: 强类型 API，编译期检查
@@ -21,7 +21,7 @@
 <dependency>
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-comfyui</artifactId>
-    <version>1.1.95</version>
+    <version>1.1.96</version>
 </dependency>
 ```
 
@@ -91,6 +91,11 @@ workflow.setSeed("3", 123456789L);
 // 随机化所有种子
 workflow.randomizeSeed();
 
+// 设置文件输入（自动检测节点类型：LoadImage/LoadAudio/LoadVideo）
+workflow.setFileInput("4", "input.png");    // LoadImage 节点
+workflow.setFileInput("47", "audio.mp3");   // LoadAudio 节点
+workflow.setFileInput("5", "video.mp4");    // LoadVideo 节点
+
 // 通用属性设置
 workflow.setProperty("3", "inputs/steps", 20);
 ```
@@ -116,13 +121,15 @@ ExecutionOptions options = ExecutionOptions.builder()
     // 随机化种子
     .randomizeSeed(true)
     
-    // 输入文件
+    // 输入文件（自动根据 MIME 类型推断类型）
     .inputFiles(List.of(
-        new InputFile("input.png", imageData, "image/png")
+        InputFile.image("photo.png", imageData, "image/png"),
+        InputFile.audio("music.mp3", audioData, "audio/mpeg"),
+        InputFile.video("clip.mp4", videoData, "video/mp4")
     ))
     
-    // 图像节点 ID 映射
-    .imageNodeIds(List.of("5", "6"))
+    // 文件节点 ID 列表（与 inputFiles 一一对应）
+    .fileNodeIds(List.of("4", "47", "5"))
     
     // 执行监听器（实时进度回调）
     .listener(new ExecutionListener() {
@@ -285,7 +292,74 @@ graph LR
 
 ## 高级用法
 
-### 1. 自定义 HttpClient
+### 1. 便捷的上传并设置方法
+
+SDK 提供了自动上传文件并设置到工作流节点的便捷方法：
+
+```java
+// 单个文件：自动上传 + 设置节点
+Workflow updatedWorkflow = client.uploadAndSetFile(
+    workflow,
+    "4",                    // 节点ID
+    "photo.png",            // 文件名
+    imageData,              // 文件数据
+    "image/png"            // MIME类型
+).block();
+
+// 批量文件：自动上传 + 批量设置
+List<InputFile> files = List.of(
+    InputFile.image("photo.png", imageData, "image/png"),
+    InputFile.audio("music.mp3", audioData, "audio/mpeg")
+);
+List<String> nodeIds = List.of("4", "47");
+
+Workflow updatedWorkflow = client.uploadAndSetFiles(workflow, files, nodeIds).block();
+
+// 然后直接执行
+ExecutionResult result = client.execute(updatedWorkflow).block();
+```
+
+### 2. 多类型文件输入
+
+SDK 支持图像、音频、视频等多种类型的文件输入：
+
+```java
+// 使用工厂方法创建特定类型的输入文件
+InputFile imageFile = InputFile.image("input.png", imageBytes, "image/png");
+InputFile audioFile = InputFile.audio("bgm.mp3", audioBytes, "audio/mpeg");
+InputFile videoFile = InputFile.video("clip.mp4", videoBytes, "video/mp4");
+
+// 或使用构造器（根据 MIME 类型自动推断）
+InputFile autoDetect = new InputFile("file.png", data, "image/png"); // 自动识别为 IMAGE
+
+// 配置执行选项（inputFiles 和 fileNodeIds 一一对应）
+ExecutionOptions options = ExecutionOptions.builder()
+    .inputFiles(List.of(imageFile, audioFile, videoFile))
+    .fileNodeIds(List.of("4", "47", "5"))  // 与 inputFiles 顺序对应
+    .build();
+
+// 执行工作流
+client.execute(workflow, options).block();
+```
+
+**工作流中设置文件输入：**
+
+```java
+// 使用通用方法（自动检测节点类型）
+workflow.setFileInput("4", "input.png");   // LoadImage 节点
+workflow.setFileInput("47", "audio.mp3");  // LoadAudio 节点
+workflow.setFileInput("5", "video.mp4");   // LoadVideo 节点
+```
+
+**支持的文件类型和节点：**
+
+| 文件类型 | 节点类型 | MIME 类型示例 |
+|---------|---------|--------------|
+| IMAGE | LoadImage | image/png, image/jpeg |
+| AUDIO | LoadAudio | audio/mpeg, audio/wav |
+| VIDEO | LoadVideo | video/mp4, video/avi |
+
+### 3. 自定义 HttpClient
 
 ```java
 HttpClient customClient = HttpClient.newBuilder()
@@ -295,7 +369,7 @@ HttpClient customClient = HttpClient.newBuilder()
 ComfyUIClientFactory factory = new ComfyUIClientFactory(customClient);
 ```
 
-### 2. 批量处理
+### 4. 批量处理
 
 ```java
 List<String> prompts = List.of("prompt1", "prompt2", "prompt3");
@@ -312,7 +386,7 @@ Flux.fromIterable(prompts)
     });
 ```
 
-### 3. 错误处理
+### 5. 错误处理
 
 ```java
 client.execute(workflow)

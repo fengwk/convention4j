@@ -219,23 +219,24 @@ public class Workflow {
         return this;
     }
 
-    public Workflow setImageInput(String nodeId, String imageName) {
-        return setProperty(nodeId, ComfyUIConstants.InputFields.IMAGE, imageName); // LoadImage uses 'image' input
-    }
-
-    public Workflow setImageInputs(List<String> imageNames) {
-        List<WorkflowNode> loadNodes = getNodesByType(ComfyUIConstants.NodeTypes.LOAD_IMAGE);
-        for (int i = 0; i < Math.min(imageNames.size(), loadNodes.size()); i++) {
-            setImageInput(loadNodes.get(i).getId(), imageNames.get(i));
+    /**
+     * 设置文件输入（根据节点类型自动选择正确的输入字段）
+     * 支持 LoadImage、LoadAudio、LoadVideo 等节点
+     */
+    public Workflow setFileInput(String nodeId, String filename) {
+        WorkflowNode node = getNode(nodeId);
+        if (node == null) {
+            throw new WorkflowException("Node not found: " + nodeId);
         }
-        return this;
-    }
-
-    public Workflow setImageInputs(List<String> imageNames, List<String> nodeIds) {
-        for (int i = 0; i < Math.min(imageNames.size(), nodeIds.size()); i++) {
-            setImageInput(nodeIds.get(i), imageNames.get(i));
-        }
-        return this;
+        
+        String inputField = switch (node.getClassType()) {
+            case ComfyUIConstants.NodeTypes.LOAD_IMAGE -> ComfyUIConstants.InputFields.IMAGE;
+            case ComfyUIConstants.NodeTypes.LOAD_AUDIO -> ComfyUIConstants.InputFields.AUDIO;
+            case ComfyUIConstants.NodeTypes.LOAD_VIDEO -> ComfyUIConstants.InputFields.VIDEO;
+            default -> throw new WorkflowException("Unsupported node type for file input: " + node.getClassType());
+        };
+        
+        return setProperty(nodeId, inputField, filename);
     }
 
     // ==================== 转换方法 ====================

@@ -35,7 +35,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 默认ComfyUI客户端实现
@@ -115,7 +114,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                     // 1. 处理输入文件上传
                     if (options.getInputFiles() != null && !options.getInputFiles().isEmpty()) {
                         for (InputFile inputFile : options.getInputFiles()) {
-                            uploadImage(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType()).block();
+                            uploadFile(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType()).block();
                         }
                     }
 
@@ -125,12 +124,13 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                         finalWorkflow.randomizeSeed();
                     }
 
-                    // 3. 设置图像输入节点顺序
-                    if (options.getImageNodeIds() != null && options.getInputFiles() != null) {
-                        List<String> imageNames = options.getInputFiles().stream()
-                                .map(InputFile::getFilename)
-                                .collect(Collectors.toList());
-                        finalWorkflow.setImageInputs(imageNames, options.getImageNodeIds());
+                    // 3. 设置文件输入节点（根据 fileNodeIds 一一对应）
+                    if (options.getFileNodeIds() != null && options.getInputFiles() != null) {
+                        List<InputFile> files = options.getInputFiles();
+                        List<String> nodeIds = options.getFileNodeIds();
+                        for (int i = 0; i < Math.min(files.size(), nodeIds.size()); i++) {
+                            finalWorkflow.setFileInput(nodeIds.get(i), files.get(i).getFilename());
+                        }
                     }
 
                     // 4. 提交任务
@@ -344,7 +344,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     }
 
     @Override
-    public Mono<UploadResult> uploadImage(String filename, byte[] data, String mimeType) {
+    public Mono<UploadResult> uploadFile(String filename, byte[] data, String mimeType) {
         String boundary = "----WebKitFormBoundary" + UUID.randomUUID().toString().replace("-", "");
         byte[] body = buildMultipartBody(boundary, filename, data, mimeType);
         

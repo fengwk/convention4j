@@ -96,6 +96,8 @@ public final class ComfyUIConstants {
         private NodeTypes() {}
         
         public static final String LOAD_IMAGE = "LoadImage";
+        public static final String LOAD_AUDIO = "LoadAudio";
+        public static final String LOAD_VIDEO = "LoadVideo";
     }
 
     /**
@@ -104,8 +106,9 @@ public final class ComfyUIConstants {
     public static final class InputFields {
         private InputFields() {}
         
-        public static final String TEXT = JsonFields.TEXT;
         public static final String IMAGE = "image";
+        public static final String AUDIO = "audio";
+        public static final String VIDEO = "video";
         public static final String CKPT_NAME = "ckpt_name";
         public static final String SEED = "seed";
         public static final String NOISE_SEED = "noise_seed";

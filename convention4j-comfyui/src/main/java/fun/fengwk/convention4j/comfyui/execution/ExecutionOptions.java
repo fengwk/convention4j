@@ -27,9 +27,10 @@ public class ExecutionOptions {
     private final List<InputFile> inputFiles;
 
     /**
-     * 图像节点ID映射（指定图像输入顺序）
+     * 文件节点ID列表（与 inputFiles 一一对应）
+     * 指定每个输入文件对应的节点ID
      */
-    private final List<String> imageNodeIds;
+    private final List<String> fileNodeIds;
 
     /**
      * 执行监听器（同步执行时使用）
