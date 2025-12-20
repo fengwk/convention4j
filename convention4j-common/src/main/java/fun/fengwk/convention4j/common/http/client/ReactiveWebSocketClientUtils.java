@@ -5,6 +5,8 @@ import reactor.core.publisher.Flux;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,8 +37,25 @@ public class ReactiveWebSocketClientUtils {
      * @return 文本消息 Flux
      */
     public static Flux<String> connectText(HttpClient httpClient, URI uri) {
+        return connectText(httpClient, uri, null, null);
+    }
+
+    /**
+     * 响应式 WebSocket 连接，使用指定 HttpClient，支持自定义请求头和连接超时，返回文本消息 Flux
+     *
+     * @param httpClient     HttpClient 实例
+     * @param uri            WebSocket URI
+     * @param headers        自定义请求头（可选）
+     * @param connectTimeout 连接超时时间（可选）
+     * @return 文本消息 Flux
+     */
+    public static Flux<String> connectText(
+            HttpClient httpClient,
+            URI uri,
+            Map<String, String> headers,
+            Duration connectTimeout) {
         return Flux.create(sink -> {
-            CompletableFuture<WebSocketConnection> connectFuture = WebSocketClientUtils.connect(httpClient, uri, new WebSocketListener() {
+            CompletableFuture<WebSocketConnection> connectFuture = WebSocketClientUtils.connect(httpClient, uri, headers, connectTimeout, new WebSocketListener() {
                 @Override
                 public void onOpen(WebSocketConnection connection) {
                     // 连接建立
@@ -86,8 +105,25 @@ public class ReactiveWebSocketClientUtils {
      * @return 二进制消息 Flux
      */
     public static Flux<ByteBuffer> connectBinary(HttpClient httpClient, URI uri) {
+        return connectBinary(httpClient, uri, null, null);
+    }
+
+    /**
+     * 响应式 WebSocket 连接，使用指定 HttpClient，支持自定义请求头和连接超时，返回二进制消息 Flux
+     *
+     * @param httpClient     HttpClient 实例
+     * @param uri            WebSocket URI
+     * @param headers        自定义请求头（可选）
+     * @param connectTimeout 连接超时时间（可选）
+     * @return 二进制消息 Flux
+     */
+    public static Flux<ByteBuffer> connectBinary(
+            HttpClient httpClient,
+            URI uri,
+            Map<String, String> headers,
+            Duration connectTimeout) {
         return Flux.create(sink -> {
-            CompletableFuture<WebSocketConnection> connectFuture = WebSocketClientUtils.connect(httpClient, uri, new WebSocketListener() {
+            CompletableFuture<WebSocketConnection> connectFuture = WebSocketClientUtils.connect(httpClient, uri, headers, connectTimeout, new WebSocketListener() {
                 @Override
                 public void onOpen(WebSocketConnection connection) {
                     // 连接建立

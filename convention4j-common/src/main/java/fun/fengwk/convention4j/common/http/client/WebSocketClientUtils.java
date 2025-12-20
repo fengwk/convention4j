@@ -6,8 +6,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -42,6 +44,25 @@ public class WebSocketClientUtils {
      * @return WebSocket 连接 Future
      */
     public static CompletableFuture<WebSocketConnection> connect(HttpClient httpClient, URI uri, WebSocketListener listener) {
+        return connect(httpClient, uri, null, null, listener);
+    }
+
+    /**
+     * 使用指定 HttpClient 建立 WebSocket 连接，支持自定义请求头和连接超时
+     *
+     * @param httpClient     HttpClient 实例
+     * @param uri            WebSocket URI
+     * @param headers        自定义请求头（可选）
+     * @param connectTimeout 连接超时时间（可选）
+     * @param listener       WebSocket 监听器
+     * @return WebSocket 连接 Future
+     */
+    public static CompletableFuture<WebSocketConnection> connect(
+            HttpClient httpClient,
+            URI uri,
+            Map<String, String> headers,
+            Duration connectTimeout,
+            WebSocketListener listener) {
         CompletableFuture<WebSocketConnection> future = new CompletableFuture<>();
 
         WebSocket.Listener wsListener = new WebSocket.Listener() {
@@ -106,8 +127,21 @@ public class WebSocketClientUtils {
             }
         };
 
-        httpClient.newWebSocketBuilder()
-                .buildAsync(uri, wsListener)
+        WebSocket.Builder builder = httpClient.newWebSocketBuilder();
+        
+        // 添加自定义请求头
+        if (headers != null && !headers.isEmpty()) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+        }
+        
+        // 设置连接超时
+        if (connectTimeout != null) {
+            builder.connectTimeout(connectTimeout);
+        }
+        
+        builder.buildAsync(uri, wsListener)
                 .exceptionally(ex -> {
                     future.completeExceptionally(ex);
                     return null;

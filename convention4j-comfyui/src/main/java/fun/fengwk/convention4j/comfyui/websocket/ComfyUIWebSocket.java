@@ -12,8 +12,11 @@ import reactor.core.publisher.Sinks;
 
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ComfyUI WebSocket 客户端
@@ -26,13 +29,26 @@ public class ComfyUIWebSocket {
     private final HttpClient httpClient;
     private final String baseUrl;
     private final String clientId;
+    private final String apiKey;
+    private final Duration websocketTimeout;
     private final Sinks.Many<ExecutionEvent> eventSink;
     private volatile Disposable webSocketSubscription;
 
-    public ComfyUIWebSocket(HttpClient httpClient, String baseUrl, String clientId) {
+    /**
+     * 创建 ComfyUI WebSocket 客户端
+     *
+     * @param httpClient       HttpClient 实例
+     * @param baseUrl          ComfyUI 服务器基础 URL
+     * @param clientId         客户端 ID
+     * @param apiKey           API 密钥（可选）
+     * @param websocketTimeout WebSocket 连接超时时间（可选）
+     */
+    public ComfyUIWebSocket(HttpClient httpClient, String baseUrl, String clientId, String apiKey, Duration websocketTimeout) {
         this.httpClient = httpClient;
         this.baseUrl = baseUrl;
         this.clientId = clientId;
+        this.apiKey = apiKey;
+        this.websocketTimeout = websocketTimeout;
         this.eventSink = Sinks.many().multicast().onBackpressureBuffer();
         
         connect();
@@ -45,7 +61,15 @@ public class ComfyUIWebSocket {
 
         log.info("Connecting to ComfyUI WebSocket: {}", wsUrl);
 
-        webSocketSubscription = ReactiveWebSocketClientUtils.connectText(httpClient, uri)
+        // 准备自定义请求头
+        Map<String, String> headers = null;
+        if (apiKey != null && !apiKey.isEmpty()) {
+            headers = new HashMap<>();
+            headers.put(ComfyUIConstants.HttpHeaders.AUTHORIZATION,
+                       ComfyUIConstants.HttpHeaders.BEARER_PREFIX + apiKey);
+        }
+
+        webSocketSubscription = ReactiveWebSocketClientUtils.connectText(httpClient, uri, headers, websocketTimeout)
                 .doOnNext(this::handleMessage)
                 .doOnError(e -> {
                     log.error("WebSocket error", e);
@@ -164,7 +188,7 @@ public class ComfyUIWebSocket {
      */
     public void close() {
         if (webSocketSubscription != null && !webSocketSubscription.isDisposed()) {
-            log.info("Closing WebSocket connection for client: {}", clientId);
+            log.debug("Closing WebSocket connection for client: {}", clientId);
             webSocketSubscription.dispose();
         }
         eventSink.tryEmitComplete();

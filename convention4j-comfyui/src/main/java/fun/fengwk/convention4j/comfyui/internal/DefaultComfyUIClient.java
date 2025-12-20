@@ -20,7 +20,6 @@ import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import fun.fengwk.convention4j.comfyui.output.OutputType;
 import fun.fengwk.convention4j.comfyui.websocket.ComfyUIWebSocket;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
-import fun.fengwk.convention4j.common.http.client.HttpClientFactory;
 import fun.fengwk.convention4j.common.http.client.HttpClientUtils;
 import fun.fengwk.convention4j.common.http.client.HttpSendResult;
 import fun.fengwk.convention4j.common.http.client.ReactiveHttpClientUtils;
@@ -53,9 +52,36 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     public DefaultComfyUIClient(ComfyUIClientOptions options) {
         this.options = options;
-        this.httpClient = options.getHttpClient() != null ? options.getHttpClient() : HttpClientFactory.getDefaultHttpClient();
+        this.httpClient = createHttpClient(options);
         this.clientId = UUID.randomUUID().toString();
-        this.webSocket = new ComfyUIWebSocket(httpClient, options.getBaseUrl(), clientId);
+        this.webSocket = new ComfyUIWebSocket(httpClient, options.getBaseUrl(), clientId, options.getApiKey(), options.getWebsocketTimeout());
+    }
+
+    /**
+     * 创建 HttpClient，应用 connectTimeout 配置
+     */
+    private HttpClient createHttpClient(ComfyUIClientOptions options) {
+        if (options.getHttpClient() != null) {
+            return options.getHttpClient();
+        }
+        
+        return HttpClient.newBuilder()
+                .connectTimeout(options.getConnectTimeout())
+                .build();
+    }
+
+    /**
+     * 构建 HttpRequest.Builder，自动添加 Authorization 头（如果配置了 apiKey）
+     */
+    private HttpRequest.Builder buildHttpRequest() {
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+        
+        if (options.getApiKey() != null && !options.getApiKey().isEmpty()) {
+            builder.header(ComfyUIConstants.HttpHeaders.AUTHORIZATION,
+                          ComfyUIConstants.HttpHeaders.BEARER_PREFIX + options.getApiKey());
+        }
+        
+        return builder;
     }
 
     @Override
@@ -188,7 +214,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         
         String body = JacksonUtils.writeValueAsString(bodyNode);
 
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
                 .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
@@ -228,7 +254,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     private HistoryResult getHistorySync(String promptId) {
         String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.HISTORY + promptId;
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
                 .GET()
                 .timeout(options.getReadTimeout())
@@ -322,7 +348,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         String boundary = "----WebKitFormBoundary" + UUID.randomUUID().toString().replace("-", "");
         byte[] body = buildMultipartBody(boundary, filename, data, mimeType);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = buildHttpRequest()
             .uri(URI.create(options.getBaseUrl() + ComfyUIConstants.ApiPaths.UPLOAD_IMAGE))
             .POST(HttpRequest.BodyPublishers.ofByteArray(body))
             .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.MULTIPART_FORM_DATA_PREFIX + boundary)
@@ -379,7 +405,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 url.append("&").append(ComfyUIConstants.UrlParams.TYPE).append("=").append(URLEncoder.encode(type, StandardCharsets.UTF_8));
             }
             
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = buildHttpRequest()
                     .uri(URI.create(url.toString()))
                     .GET()
                     .timeout(options.getReadTimeout())
@@ -400,7 +426,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public void close() {
-        log.info("Closing ComfyUI client for {}", options.getBaseUrl());
+        log.debug("Closing ComfyUI client for {}", options.getBaseUrl());
         if (webSocket != null) {
             webSocket.close();
         }

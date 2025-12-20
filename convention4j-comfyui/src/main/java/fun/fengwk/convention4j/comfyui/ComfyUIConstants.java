@@ -73,6 +73,8 @@ public final class ComfyUIConstants {
         public static final String CONTENT_TYPE = "Content-Type";
         public static final String APPLICATION_JSON = "application/json";
         public static final String MULTIPART_FORM_DATA_PREFIX = "multipart/form-data; boundary=";
+        public static final String AUTHORIZATION = "Authorization";
+        public static final String BEARER_PREFIX = "Bearer ";
     }
 
     /**
