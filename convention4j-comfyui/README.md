@@ -21,7 +21,7 @@
 <dependency>
     <groupId>fun.fengwk.convention4j</groupId>
     <artifactId>convention4j-comfyui</artifactId>
-    <version>1.1.96</version>
+    <version>1.1.97</version>
 </dependency>
 ```
 

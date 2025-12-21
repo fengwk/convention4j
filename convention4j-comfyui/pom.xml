@@ -6,7 +6,7 @@
     <parent>
         <groupId>fun.fengwk.convention4j</groupId>
         <artifactId>convention4j-parent</artifactId>
-        <version>1.1.96</version>
+        <version>1.1.97</version>
     </parent>
 
     <artifactId>convention4j-comfyui</artifactId>
@@ -14,23 +14,14 @@
     <name>${project.artifactId}</name>
 
     <dependencies>
-        <!-- 复用 HTTP 工具类和 JSON 工具 -->
         <dependency>
             <groupId>fun.fengwk.convention4j</groupId>
             <artifactId>convention4j-common</artifactId>
         </dependency>
-        <!-- 响应式编程 -->
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
         </dependency>
-        <!-- 简化代码 -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- 日志 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
