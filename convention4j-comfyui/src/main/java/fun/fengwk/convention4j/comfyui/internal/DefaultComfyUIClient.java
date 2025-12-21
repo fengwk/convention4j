@@ -20,14 +20,11 @@ import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import fun.fengwk.convention4j.comfyui.output.OutputType;
 import fun.fengwk.convention4j.comfyui.websocket.ComfyUIWebSocket;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
-import fun.fengwk.convention4j.common.http.client.HttpClientUtils;
-import fun.fengwk.convention4j.common.http.client.HttpSendResult;
 import fun.fengwk.convention4j.common.http.client.ReactiveHttpClientUtils;
 import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -91,13 +88,23 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     @Override
     public Mono<ExecutionResult> execute(Workflow workflow, ExecutionOptions options) {
         return executeWithEvents(workflow, options)
-                .filter(event -> event instanceof ExecutionEvent.Completed || event instanceof ExecutionEvent.Error)
+                .filter(event -> event instanceof ExecutionEvent.Completed
+                              || event instanceof ExecutionEvent.Error
+                              || event instanceof ExecutionEvent.ConnectionClosed)
                 .last()
+                .onErrorMap(NoSuchElementException.class, e ->
+                    new ComfyUIException(
+                        "Workflow execution failed: No completion event received from ComfyUI. " +
+                        "Possible causes: ComfyUI server not running, WebSocket connection failed, " +
+                        "or workflow terminated unexpectedly."))
                 .flatMap(event -> {
                     if (event instanceof ExecutionEvent.Completed completed) {
                         return Mono.just(completed.result());
                     } else if (event instanceof ExecutionEvent.Error error) {
                         return Mono.error(error.exception());
+                    } else if (event instanceof ExecutionEvent.ConnectionClosed closed) {
+                        return Mono.error(new ComfyUIException(
+                            "Workflow execution failed: " + closed.message()));
                     }
                     return Mono.error(new ComfyUIException("Unknown execution result"));
                 });
@@ -110,14 +117,18 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public Flux<ExecutionEvent> executeWithEvents(Workflow workflow, ExecutionOptions options) {
-        Flux<ExecutionEvent> eventFlux = Mono.fromCallable(() -> {
-                    // 1. 处理输入文件上传
-                    if (options.getInputFiles() != null && !options.getInputFiles().isEmpty()) {
-                        for (InputFile inputFile : options.getInputFiles()) {
-                            uploadFile(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType()).block();
-                        }
-                    }
-
+        // 1. 处理输入文件上传（响应式）
+        Mono<Void> uploadMono;
+        if (options.getInputFiles() != null && !options.getInputFiles().isEmpty()) {
+            uploadMono = Flux.fromIterable(options.getInputFiles())
+                    .flatMap(inputFile -> uploadFile(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType()))
+                    .then();
+        } else {
+            uploadMono = Mono.empty();
+        }
+        
+        Flux<ExecutionEvent> eventFlux = uploadMono
+                .then(Mono.fromSupplier(() -> {
                     // 2. 随机种子
                     Workflow finalWorkflow = workflow.copy();
                     if (options.isRandomizeSeed()) {
@@ -132,14 +143,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                             finalWorkflow.setFileInput(nodeIds.get(i), files.get(i).getFilename());
                         }
                     }
-
-                    // 4. 提交任务
-                    String promptId = queuePrompt(finalWorkflow);
-                    return promptId;
-                })
-                .subscribeOn(Schedulers.boundedElastic())
+                    return finalWorkflow;
+                }))
+                .flatMap(this::queuePrompt)
                 .flatMapMany(promptId -> {
-                    // 5. 监听WebSocket事件
+                    // 4. 监听WebSocket事件
                     return webSocket.getEvents()
                             .filter(event -> isEventForPrompt(event, promptId))
                             .doOnNext(event -> {
@@ -147,7 +155,9 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                                     handleListenerEvent(event, options.getListener());
                                 }
                             })
-                            .takeUntil(event -> event instanceof ExecutionEvent.ExecutionSucceeded || event instanceof ExecutionEvent.Completed || event instanceof ExecutionEvent.Error)
+                            .takeUntil(event -> event instanceof ExecutionEvent.ExecutionSucceeded
+                                             || event instanceof ExecutionEvent.Completed
+                                             || event instanceof ExecutionEvent.Error)
                             .concatMap(event -> {
                                 if (event instanceof ExecutionEvent.ExecutionSucceeded) {
                                     // 获取历史记录和输出
@@ -203,10 +213,15 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             listener.onComplete(completed.result());
         } else if (event instanceof ExecutionEvent.Error error) {
             listener.onError(error.message(), error.exception());
+        } else if (event instanceof ExecutionEvent.ConnectionClosed closed) {
+            listener.onError(closed.message(), new ComfyUIException(closed.message()));
         }
     }
 
-    private String queuePrompt(Workflow workflow) {
+    /**
+     * 异步提交工作流到队列
+     */
+    private Mono<String> queuePrompt(Workflow workflow) {
         String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.PROMPT;
         ObjectNode bodyNode = JsonNodeFactory.instance.objectNode();
         bodyNode.put(ComfyUIConstants.JsonFields.CLIENT_ID, clientId);
@@ -221,38 +236,32 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .timeout(options.getReadTimeout())
                 .build();
 
-        try (HttpSendResult result = HttpClientUtils.send(httpClient, request)) {
-            if (result.hasError()) {
-                throw new ComfyUIException("Failed to queue prompt", result.getError());
-            }
-            String responseBody;
-            try {
-                responseBody = result.parseBodyString();
-            } catch (Exception e) {
-                throw new ComfyUIException("Failed to parse response body", e);
-            }
-            JsonNode response = JacksonUtils.readTree(responseBody);
-            if (response == null) {
-                throw new ComfyUIException("Failed to parse response: " + responseBody);
-            }
-            if (response.has(ComfyUIConstants.JsonFields.ERROR)) {
-                throw new ComfyUIException("ComfyUI error: " + responseBody);
-            }
-            return response.path(ComfyUIConstants.JsonFields.PROMPT_ID).asText();
-        } catch (Exception e) {
-            if (e instanceof ComfyUIException) {
-                throw (ComfyUIException) e;
-            }
-            throw new ComfyUIException("Failed to queue prompt", e);
-        }
+        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
+                .bodyToString()
+                .send()
+                .flatMap(responseBody -> {
+                    JsonNode response = JacksonUtils.readTree(responseBody);
+                    if (response == null) {
+                        return Mono.error(new ComfyUIException("Failed to parse response: " + responseBody));
+                    }
+                    if (response.has(ComfyUIConstants.JsonFields.ERROR)) {
+                        return Mono.error(new ComfyUIException("ComfyUI error: " + responseBody));
+                    }
+                    return Mono.just(response.path(ComfyUIConstants.JsonFields.PROMPT_ID).asText());
+                })
+                .onErrorMap(e -> {
+                    if (e instanceof ComfyUIException) {
+                        return e;
+                    }
+                    return new ComfyUIException("Failed to queue prompt", e);
+                });
     }
     
+    /**
+     * 异步获取执行历史
+     */
     @Override
     public Mono<HistoryResult> getHistory(String promptId) {
-        return Mono.fromCallable(() -> getHistorySync(promptId));
-    }
-
-    private HistoryResult getHistorySync(String promptId) {
         String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.HISTORY + promptId;
         HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
@@ -260,28 +269,24 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .timeout(options.getReadTimeout())
                 .build();
 
-        try (HttpSendResult result = HttpClientUtils.send(httpClient, request)) {
-            if (result.hasError()) {
-                throw new ComfyUIException("Failed to get history", result.getError());
-            }
-            String responseBody;
-            try {
-                responseBody = result.parseBodyString();
-            } catch (Exception e) {
-                throw new ComfyUIException("Failed to parse response body", e);
-            }
-            // 历史记录返回格式: { "prompt_id": { ... } }
-            Map<String, HistoryResult> map = JacksonUtils.readValue(responseBody, new TypeReference<Map<String, HistoryResult>>() {});
-            if (map == null) {
-                throw new ComfyUIException("Failed to parse history response: " + responseBody);
-            }
-            return map.get(promptId);
-        } catch (Exception e) {
-            if (e instanceof ComfyUIException) {
-                throw (ComfyUIException) e;
-            }
-            throw new ComfyUIException("Failed to get history", e);
-        }
+        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
+                .bodyToString()
+                .send()
+                .flatMap(responseBody -> {
+                    // 历史记录返回格式: { "prompt_id": { ... } }
+                    Map<String, HistoryResult> map = JacksonUtils.readValue(
+                            responseBody, new TypeReference<Map<String, HistoryResult>>() {});
+                    if (map == null) {
+                        return Mono.error(new ComfyUIException("Failed to parse history response: " + responseBody));
+                    }
+                    return Mono.justOrEmpty(map.get(promptId));
+                })
+                .onErrorMap(e -> {
+                    if (e instanceof ComfyUIException) {
+                        return e;
+                    }
+                    return new ComfyUIException("Failed to get history", e);
+                });
     }
     
     private ExecutionResult createExecutionResult(String promptId, HistoryResult history) {

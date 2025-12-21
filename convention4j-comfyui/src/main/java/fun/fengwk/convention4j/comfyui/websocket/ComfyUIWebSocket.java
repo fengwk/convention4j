@@ -74,9 +74,14 @@ public class ComfyUIWebSocket {
                 .doOnError(e -> {
                     log.error("WebSocket error", e);
                     Exception exception = (e instanceof Exception) ? (Exception) e : new RuntimeException(e);
-                    eventSink.tryEmitNext(new ExecutionEvent.Error("WebSocket error", exception));
+                    eventSink.tryEmitNext(new ExecutionEvent.Error("WebSocket error: " + e.getMessage(), exception));
                 })
-                .doOnComplete(() -> log.info("WebSocket connection closed"))
+                .doOnComplete(() -> {
+                    log.info("WebSocket connection closed");
+                    // 发出连接关闭事件，确保下游不会收到空流
+                    eventSink.tryEmitNext(new ExecutionEvent.ConnectionClosed(
+                        "WebSocket connection closed unexpectedly without completion event"));
+                })
                 .subscribe();
     }
 

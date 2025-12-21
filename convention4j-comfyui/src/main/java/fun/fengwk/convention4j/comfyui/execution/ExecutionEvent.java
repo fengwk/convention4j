@@ -48,4 +48,9 @@ public sealed interface ExecutionEvent {
      * 执行错误事件
      */
     record Error(String message, Exception exception) implements ExecutionEvent {}
+
+    /**
+     * WebSocket 连接关闭事件（无正常终结信号时发出）
+     */
+    record ConnectionClosed(String message) implements ExecutionEvent {}
 }
