@@ -95,8 +95,12 @@ public class ComfyUIClientStatelessTest {
                     {
                       "id": "job/id +?",
                       "status": "paused_future",
+                      "priority": 4.5,
                       "create_time": 1716200000000,
                       "update_time": 1716200100000,
+                      "workflow_id": "workflow-1",
+                      "execution_start_time": 1716200005000,
+                      "execution_end_time": 1716200099000,
                       "outputs_count": 3,
                       "outputs": {"9": {"images": [{"filename": "out.png"}]}},
                       "execution_error": {"node_id": "4", "message": "failed"},
@@ -115,8 +119,12 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertNotNull(job);
             Assertions.assertEquals("job/id +?", job.getId());
             Assertions.assertEquals("paused_future", job.getStatus());
+            Assertions.assertEquals(4.5, job.getPriority());
             Assertions.assertEquals(1716200000000L, job.getCreateTime());
             Assertions.assertEquals(1716200100000L, job.getUpdateTime());
+            Assertions.assertEquals("workflow-1", job.getWorkflowId());
+            Assertions.assertEquals(1716200005000L, job.getExecutionStartTime());
+            Assertions.assertEquals(1716200099000L, job.getExecutionEndTime());
             Assertions.assertEquals(3, job.getOutputsCount());
             Assertions.assertEquals("out.png", job.getOutputs().path("9").path("images").path(0).path("filename").asText());
             Assertions.assertEquals("failed", job.getExecutionError().path("message").asText());
@@ -127,6 +135,37 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertEquals("GET", captured.get().method());
             Assertions.assertEquals("/api/jobs/job%2Fid%20%2B%3F", captured.get().rawPath());
             Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testGetPendingJobWithoutUpdateTime() throws IOException {
+        startServer(exchange -> respondJson(exchange, 200, """
+                {
+                  "id": "pending-job",
+                  "status": "pending",
+                  "priority": 12,
+                  "create_time": 1716200000000,
+                  "outputs_count": 0,
+                  "workflow_id": "workflow-pending"
+                }
+                """));
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // 精确复现 normalize_queue_item 响应：没有 update_time 和终态执行字段。
+            ComfyUIJob job = client.getJob("pending-job").block(Duration.ofSeconds(5));
+
+            Assertions.assertNotNull(job);
+            Assertions.assertEquals("pending", job.getStatus());
+            Assertions.assertEquals(12.0, job.getPriority());
+            Assertions.assertEquals(1716200000000L, job.getCreateTime());
+            Assertions.assertNull(job.getUpdateTime());
+            Assertions.assertEquals("workflow-pending", job.getWorkflowId());
+            Assertions.assertNull(job.getExecutionStartTime());
+            Assertions.assertNull(job.getExecutionEndTime());
+            Assertions.assertEquals(0, job.getOutputsCount());
+            Assertions.assertNull(job.getOutputs());
         }
     }
 
@@ -183,8 +222,48 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertThrows(IllegalArgumentException.class, () -> client.submit(null).block());
             Assertions.assertThrows(IllegalArgumentException.class, () -> client.getJob("  ").block());
             Assertions.assertThrows(IllegalArgumentException.class, () -> client.cancelJob(null).block());
+            Assertions.assertThrows(IllegalArgumentException.class, () -> client.getHistory(" ").block());
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("bad\"name.png", new byte[0], "image/png").block());
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("name.png", null, "image/png").block());
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("name.png", new byte[0], null).block());
             Assertions.assertEquals(requestsBeforeValidation, requestCount.get());
             Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testHistoryStatusMissingEntryAndEncodedPath() throws IOException {
+        AtomicReference<CapturedRequest> captured = new AtomicReference<>();
+        startServer(exchange -> {
+            captured.set(capture(exchange));
+            String path = exchange.getRequestURI().getRawPath();
+            if (path.endsWith("not-found")) {
+                respondJson(exchange, 404, "{\"error\":\"History unavailable\"}");
+            } else if (path.endsWith("missing-entry")) {
+                respondJson(exchange, 200, "{}");
+            } else {
+                respondJson(exchange, 200, "{\"prompt/id\":{\"outputs\":{\"1\":{\"text\":[\"ok\"]}}}}");
+            }
+        });
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // 历史查询复用严格HTTP/JSON处理，并对缺失prompt条目给出显式错误。
+            ComfyUIException notFound = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getHistory("not-found").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(notFound.getMessage().contains("HTTP 404"));
+
+            ComfyUIException missing = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getHistory("missing-entry").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(missing.getMessage().contains("did not contain the prompt entry"));
+
+            Assertions.assertNotNull(client.getHistory("prompt/id").block(Duration.ofSeconds(5)));
+            Assertions.assertEquals("/history/prompt%2Fid", captured.get().rawPath());
         }
     }
 
@@ -226,7 +305,7 @@ public class ComfyUIClientStatelessTest {
     }
 
     private ComfyUIClient createClient(HttpClient httpClient, String apiKey) {
-        String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+        String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort() + "///";
         return new ComfyUIClientFactory(httpClient).create(ComfyUIClientOptions.builder()
                 .baseUrl(baseUrl)
                 .apiKey(apiKey)

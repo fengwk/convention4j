@@ -1,6 +1,5 @@
 package fun.fengwk.convention4j.comfyui.internal;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +33,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 默认ComfyUI客户端实现
@@ -45,13 +45,17 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     private final HttpClient httpClient;
     private final ComfyUIClientOptions options;
+    private final String baseUrl;
     private final String clientId;
-    private final Object webSocketLock = new Object();
-    private volatile ComfyUIWebSocket webSocket;
+    private final Set<ComfyUIWebSocket> activeExecutionSockets = ConcurrentHashMap.newKeySet();
     private volatile boolean closed;
 
     public DefaultComfyUIClient(ComfyUIClientOptions options) {
+        if (options == null) {
+            throw new IllegalArgumentException("options must not be null");
+        }
         this.options = options;
+        this.baseUrl = normalizeBaseUrl(options.getBaseUrl());
         this.httpClient = createHttpClient(options);
         this.clientId = UUID.randomUUID().toString();
     }
@@ -83,39 +87,61 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         return builder;
     }
 
-    private ComfyUIWebSocket getWebSocket() {
+    private String normalizeBaseUrl(String configuredBaseUrl) {
+        if (configuredBaseUrl == null || configuredBaseUrl.isBlank()) {
+            throw new IllegalArgumentException("baseUrl must not be blank");
+        }
+        String normalized = configuredBaseUrl.trim();
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        URI uri;
+        try {
+            uri = URI.create(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("baseUrl must be a valid HTTP URL", e);
+        }
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                || uri.getHost() == null
+                || uri.getRawQuery() != null
+                || uri.getRawFragment() != null) {
+            throw new IllegalArgumentException("baseUrl must be an absolute HTTP URL without query or fragment");
+        }
+        String normalizedScheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        return normalizedScheme + normalized.substring(uri.getScheme().length());
+    }
+
+    private ComfyUIWebSocket createExecutionWebSocket(String executionClientId) {
         if (closed) {
             throw new ComfyUIException("ComfyUI client is closed");
         }
-        ComfyUIWebSocket current = webSocket;
-        if (current != null) {
-            return current;
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient,
+                baseUrl,
+                executionClientId,
+                options.getApiKey(),
+                options.getWebsocketTimeout());
+        activeExecutionSockets.add(webSocket);
+        if (closed && activeExecutionSockets.remove(webSocket)) {
+            webSocket.close();
+            throw new ComfyUIException("ComfyUI client is closed");
         }
-        synchronized (webSocketLock) {
-            if (closed) {
-                throw new ComfyUIException("ComfyUI client is closed");
-            }
-            if (webSocket == null) {
-                webSocket = new ComfyUIWebSocket(
-                        httpClient,
-                        options.getBaseUrl(),
-                        clientId,
-                        options.getApiKey(),
-                        options.getWebsocketTimeout());
-            }
-            return webSocket;
-        }
+        return webSocket;
     }
 
     @Override
     public Mono<PromptSubmission> submit(Workflow workflow) {
+        return submit(workflow, clientId);
+    }
+
+    private Mono<PromptSubmission> submit(Workflow workflow, String requestClientId) {
         if (workflow == null) {
             return Mono.error(new IllegalArgumentException("workflow must not be null"));
         }
 
-        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.PROMPT;
+        String url = baseUrl + ComfyUIConstants.ApiPaths.PROMPT;
         ObjectNode bodyNode = JsonNodeFactory.instance.objectNode();
-        bodyNode.put(ComfyUIConstants.JsonFields.CLIENT_ID, clientId);
+        bodyNode.put(ComfyUIConstants.JsonFields.CLIENT_ID, requestClientId);
         bodyNode.set(ComfyUIConstants.JsonFields.PROMPT, workflow.toJsonNode());
 
         HttpRequest request = buildHttpRequest()
@@ -140,7 +166,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             return Mono.error(new IllegalArgumentException("jobId must not be blank"));
         }
 
-        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.JOBS + encodePathSegment(jobId);
+        String url = baseUrl + ComfyUIConstants.ApiPaths.JOBS + encodePathSegment(jobId);
         HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
                 .GET()
@@ -152,8 +178,12 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .map(response -> new ComfyUIJob(
                         requiredText(response, ComfyUIConstants.JsonFields.ID, operation),
                         requiredText(response, ComfyUIConstants.JsonFields.STATUS, operation),
-                        requiredLong(response, ComfyUIConstants.JsonFields.CREATE_TIME, operation),
-                        requiredLong(response, ComfyUIConstants.JsonFields.UPDATE_TIME, operation),
+                        optionalNumber(response, ComfyUIConstants.JsonFields.PRIORITY, operation),
+                        optionalLong(response, ComfyUIConstants.JsonFields.CREATE_TIME, operation),
+                        optionalLong(response, ComfyUIConstants.JsonFields.UPDATE_TIME, operation),
+                        optionalText(response, ComfyUIConstants.JsonFields.WORKFLOW_ID, operation),
+                        optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_START_TIME, operation),
+                        optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_END_TIME, operation),
                         optionalInteger(response, ComfyUIConstants.JsonFields.OUTPUTS_COUNT, operation),
                         optionalField(response, ComfyUIConstants.JsonFields.OUTPUTS),
                         optionalField(response, ComfyUIConstants.JsonFields.EXECUTION_ERROR),
@@ -168,7 +198,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             return Mono.error(new IllegalArgumentException("jobId must not be blank"));
         }
 
-        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.JOBS
+        String url = baseUrl + ComfyUIConstants.ApiPaths.JOBS
                 + encodePathSegment(jobId) + ComfyUIConstants.ApiPaths.CANCEL;
         HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
@@ -228,9 +258,34 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         return field.asDouble();
     }
 
-    private long requiredLong(JsonNode response, String fieldName, String operation) {
-        JsonNode field = requiredField(response, fieldName, operation);
-        if (!field.isIntegralNumber()) {
+    private String optionalText(JsonNode response, String fieldName, String operation) {
+        JsonNode field = optionalField(response, fieldName);
+        if (field == null) {
+            return null;
+        }
+        if (!field.isTextual()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be text", response.toString());
+        }
+        return field.asText();
+    }
+
+    private Double optionalNumber(JsonNode response, String fieldName, String operation) {
+        JsonNode field = optionalField(response, fieldName);
+        if (field == null) {
+            return null;
+        }
+        if (!field.isNumber()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be a number", response.toString());
+        }
+        return field.asDouble();
+    }
+
+    private Long optionalLong(JsonNode response, String fieldName, String operation) {
+        JsonNode field = optionalField(response, fieldName);
+        if (field == null) {
+            return null;
+        }
+        if (!field.isIntegralNumber() || !field.canConvertToLong()) {
             throw malformedResponse(operation, "field '" + fieldName + "' must be an integer", response.toString());
         }
         return field.asLong();
@@ -316,93 +371,97 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (workflow == null) {
             return Flux.error(new IllegalArgumentException("workflow must not be null"));
         }
-
-        ComfyUIWebSocket executionWebSocket;
-        try {
-            executionWebSocket = getWebSocket();
-        } catch (Exception e) {
-            return Flux.error(e);
+        if (options == null) {
+            return Flux.error(new IllegalArgumentException("options must not be null"));
         }
 
-        // 1. 处理输入文件上传（响应式）
-        Mono<Void> uploadMono;
-        if (options.getInputFiles() != null && !options.getInputFiles().isEmpty()) {
-            uploadMono = Flux.fromIterable(options.getInputFiles())
-                    .flatMap(inputFile -> uploadFile(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType()))
-                    .then();
-        } else {
-            uploadMono = Mono.empty();
+        List<InputFile> inputFiles = options.getInputFiles() == null
+                ? Collections.emptyList() : options.getInputFiles();
+        List<String> fileNodeIds = options.getFileNodeIds() == null
+                ? Collections.emptyList() : options.getFileNodeIds();
+        if (inputFiles.size() != fileNodeIds.size()) {
+            return Flux.error(new IllegalArgumentException(
+                    "inputFiles and fileNodeIds must have the same size"));
         }
-        
-        Flux<ExecutionEvent> eventFlux = uploadMono
-                .then(Mono.fromSupplier(() -> {
-                    // 2. 随机种子
+
+        Flux<ExecutionEvent> eventFlux = Flux.defer(() -> {
+            String executionClientId = UUID.randomUUID().toString();
+            ComfyUIWebSocket executionWebSocket;
+            try {
+                executionWebSocket = createExecutionWebSocket(executionClientId);
+            } catch (Exception e) {
+                return Flux.error(e);
+            }
+
+            return executionWebSocket.awaitReady()
+                    .then(prepareWorkflow(workflow, options, inputFiles, fileNodeIds))
+                    .flatMap(finalWorkflow -> Mono.defer(() -> {
+                        if (closed || executionWebSocket.isClosed()) {
+                            return Mono.error(new ComfyUIException("ComfyUI client is closed"));
+                        }
+                        return submit(finalWorkflow, executionClientId);
+                    }))
+                    .flatMapMany(submission -> {
+                        String promptId = submission.getPromptId();
+                        return executionWebSocket.getEvents(promptId)
+                                .takeUntil(this::isTerminalExecutionEvent)
+                                .concatMap(event -> {
+                                    if (event instanceof ExecutionEvent.ExecutionSucceeded) {
+                                        return getHistory(promptId)
+                                                .map(history -> createExecutionResult(promptId, history))
+                                                .map(ExecutionEvent.Completed::new);
+                                    }
+                                    return Mono.just(event);
+                                })
+                                .doOnNext(event -> {
+                                    if (options.getListener() != null) {
+                                        handleListenerEvent(event, options.getListener());
+                                    }
+                                });
+                    })
+                    .doOnError(error -> {
+                        if (!closed) {
+                            log.error("Error during workflow execution", error);
+                        }
+                    })
+                    .doFinally(signalType -> {
+                        activeExecutionSockets.remove(executionWebSocket);
+                        executionWebSocket.close();
+                    });
+        });
+
+        if (options.getTimeout() != null) {
+            eventFlux = eventFlux.timeout(options.getTimeout())
+                    .onErrorMap(java.util.concurrent.TimeoutException.class,
+                            e -> new fun.fengwk.convention4j.comfyui.exception.ExecutionException(
+                                    "Workflow execution timeout after " + options.getTimeout()));
+        }
+
+        return eventFlux;
+    }
+
+    private Mono<Workflow> prepareWorkflow(
+            Workflow workflow,
+            ExecutionOptions options,
+            List<InputFile> inputFiles,
+            List<String> fileNodeIds) {
+        return Mono.fromSupplier(() -> {
                     Workflow finalWorkflow = workflow.copy();
                     if (options.isRandomizeSeed()) {
                         finalWorkflow.randomizeSeed();
                     }
-
-                    // 3. 设置文件输入节点（根据 fileNodeIds 一一对应）
-                    if (options.getFileNodeIds() != null && options.getInputFiles() != null) {
-                        List<InputFile> files = options.getInputFiles();
-                        List<String> nodeIds = options.getFileNodeIds();
-                        for (int i = 0; i < Math.min(files.size(), nodeIds.size()); i++) {
-                            finalWorkflow.setFileInput(nodeIds.get(i), files.get(i).getFilename());
-                        }
-                    }
                     return finalWorkflow;
-                }))
-                .flatMap(finalWorkflow -> submit(finalWorkflow).map(PromptSubmission::getPromptId))
-                .flatMapMany(promptId -> {
-                    // 4. 监听WebSocket事件
-                    return executionWebSocket.getEvents()
-                            .filter(event -> isEventForPrompt(event, promptId))
-                            .doOnNext(event -> {
-                                if (options.getListener() != null) {
-                                    handleListenerEvent(event, options.getListener());
-                                }
-                            })
-                            .takeUntil(event -> event instanceof ExecutionEvent.ExecutionSucceeded
-                                             || event instanceof ExecutionEvent.Completed
-                                             || event instanceof ExecutionEvent.Error)
-                            .concatMap(event -> {
-                                if (event instanceof ExecutionEvent.ExecutionSucceeded) {
-                                    // 获取历史记录和输出
-                                    return getHistory(promptId)
-                                            .map(history -> createExecutionResult(promptId, history))
-                                            .map(ExecutionEvent.Completed::new);
-                                }
-                                return Mono.just(event);
-                            });
                 })
-                .doOnError(error -> {
-                    // 确保异常时记录日志
-                    log.error("Error during workflow execution", error);
-                });
-        
-        // 应用执行超时控制
-        if (options.getTimeout() != null) {
-            eventFlux = eventFlux.timeout(options.getTimeout())
-                    .onErrorMap(java.util.concurrent.TimeoutException.class,
-                        e -> new fun.fengwk.convention4j.comfyui.exception.ExecutionException(
-                            "Workflow execution timeout after " + options.getTimeout()));
-        }
-        
-        return eventFlux;
+                .flatMap(finalWorkflow -> inputFiles.isEmpty()
+                        ? Mono.just(finalWorkflow)
+                        : uploadAndSetFiles(finalWorkflow, inputFiles, fileNodeIds));
     }
 
-    /**
-     * 检查事件是否属于指定的prompt
-     * 注意：当前实现假设单任务模式，对于Started事件验证promptId，其他事件默认接受
-     * 如需支持并发任务，需要在ExecutionEvent中为所有事件类型添加promptId字段
-     */
-    private boolean isEventForPrompt(ExecutionEvent event, String promptId) {
-        if (event instanceof ExecutionEvent.Started started) {
-            return started.promptId().equals(promptId);
-        }
-        // 对于其他事件类型，当前简化处理为接受所有事件
-        // 这在单任务场景下是安全的，ComfyUI的WebSocket会按顺序推送事件
-        return true;
+    private boolean isTerminalExecutionEvent(ExecutionEvent event) {
+        return event instanceof ExecutionEvent.ExecutionSucceeded
+                || event instanceof ExecutionEvent.Completed
+                || event instanceof ExecutionEvent.Error
+                || event instanceof ExecutionEvent.ConnectionClosed;
     }
     
     private void handleListenerEvent(ExecutionEvent event, ExecutionListener listener) {
@@ -430,30 +489,35 @@ public class DefaultComfyUIClient implements ComfyUIClient {
      */
     @Override
     public Mono<HistoryResult> getHistory(String promptId) {
-        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.HISTORY + promptId;
+        if (promptId == null || promptId.isBlank()) {
+            return Mono.error(new IllegalArgumentException("promptId must not be blank"));
+        }
+        String url = baseUrl + ComfyUIConstants.ApiPaths.HISTORY + encodePathSegment(promptId);
         HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
                 .GET()
                 .timeout(options.getReadTimeout())
                 .build();
 
-        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                .bodyToString()
-                .send()
-                .flatMap(responseBody -> {
-                    // 历史记录返回格式: { "prompt_id": { ... } }
-                    Map<String, HistoryResult> map = JacksonUtils.readValue(
-                            responseBody, new TypeReference<Map<String, HistoryResult>>() {});
-                    if (map == null) {
-                        return Mono.error(new ComfyUIException("Failed to parse history response: " + responseBody));
+        String operation = "Get history " + promptId;
+        return sendJson(request, operation)
+                .flatMap(response -> {
+                    JsonNode historyNode = response.get(promptId);
+                    if (historyNode == null || !historyNode.isObject()) {
+                        return Mono.error(new ComfyUIException(
+                                operation + " response did not contain the prompt entry: " + response));
                     }
-                    return Mono.justOrEmpty(map.get(promptId));
-                })
-                .onErrorMap(e -> {
-                    if (e instanceof ComfyUIException) {
-                        return e;
+                    try {
+                        HistoryResult history = JacksonUtils.readValue(historyNode.toString(), HistoryResult.class);
+                        if (history == null) {
+                            return Mono.error(malformedResponse(
+                                    operation, "prompt entry could not be mapped", historyNode.toString()));
+                        }
+                        return Mono.just(history);
+                    } catch (Exception e) {
+                        return Mono.error(new ComfyUIException(
+                                operation + " returned malformed prompt history: " + historyNode, e));
                     }
-                    return new ComfyUIException("Failed to get history", e);
                 });
     }
     
@@ -518,34 +582,50 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public Mono<UploadResult> uploadFile(String filename, byte[] data, String mimeType) {
+        if (filename == null || filename.isBlank()) {
+            return Mono.error(new IllegalArgumentException("filename must not be blank"));
+        }
+        if (containsInvalidFilenameCharacter(filename)) {
+            return Mono.error(new IllegalArgumentException("filename contains invalid multipart header characters"));
+        }
+        if (data == null) {
+            return Mono.error(new IllegalArgumentException("data must not be null"));
+        }
+        if (mimeType == null || mimeType.isBlank()) {
+            return Mono.error(new IllegalArgumentException("mimeType must not be blank"));
+        }
+        if (containsControlCharacter(mimeType)) {
+            return Mono.error(new IllegalArgumentException("mimeType contains invalid header characters"));
+        }
+
         String boundary = "----WebKitFormBoundary" + UUID.randomUUID().toString().replace("-", "");
         byte[] body = buildMultipartBody(boundary, filename, data, mimeType);
-        
         HttpRequest request = buildHttpRequest()
-            .uri(URI.create(options.getBaseUrl() + ComfyUIConstants.ApiPaths.UPLOAD_IMAGE))
-            .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-            .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.MULTIPART_FORM_DATA_PREFIX + boundary)
-            .timeout(options.getReadTimeout())
-            .build();
-        
-        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-            .send()
-            .flatMap(result -> {
-                if (!result.is2xx()) {
-                    return Mono.error(new ComfyUIException("Upload failed: " + result.getStatusCode()));
-                }
-                return ReactiveHttpClientUtils.bodyToString(result);
-            })
-            .map(responseBody -> {
-                JsonNode response = JacksonUtils.readTree(responseBody);
-                if (response == null) {
-                    throw new ComfyUIException("Failed to parse upload response: " + responseBody);
-                }
-                return new UploadResult(
-                    response.path(ComfyUIConstants.JsonFields.NAME).asText(),
-                    response.path(ComfyUIConstants.JsonFields.SUBFOLDER).asText(null)
-                );
-            });
+                .uri(URI.create(baseUrl + ComfyUIConstants.ApiPaths.UPLOAD_IMAGE))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE,
+                        ComfyUIConstants.HttpHeaders.MULTIPART_FORM_DATA_PREFIX + boundary)
+                .timeout(options.getReadTimeout())
+                .build();
+
+        String operation = "Upload file " + filename;
+        return sendJson(request, operation)
+                .map(response -> new UploadResult(
+                        requiredText(response, ComfyUIConstants.JsonFields.NAME, operation),
+                        optionalText(response, ComfyUIConstants.JsonFields.SUBFOLDER, operation)));
+    }
+
+    private boolean containsInvalidFilenameCharacter(String filename) {
+        return filename.indexOf('"') >= 0 || containsControlCharacter(filename);
+    }
+
+    private boolean containsControlCharacter(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isISOControl(value.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private byte[] buildMultipartBody(String boundary, String filename, byte[] data, String mimeType) {
@@ -570,7 +650,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     public Mono<byte[]> getFile(String filename, String subfolder, String type) {
         try {
             String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
-            StringBuilder url = new StringBuilder(options.getBaseUrl() + ComfyUIConstants.ApiPaths.VIEW + "?" + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
+            StringBuilder url = new StringBuilder(baseUrl + ComfyUIConstants.ApiPaths.VIEW + "?" + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
             if (subfolder != null && !subfolder.isEmpty()) {
                 url.append("&").append(ComfyUIConstants.UrlParams.SUBFOLDER).append("=").append(URLEncoder.encode(subfolder, StandardCharsets.UTF_8));
             }
@@ -599,12 +679,10 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public void close() {
-        log.debug("Closing ComfyUI client for {}", options.getBaseUrl());
-        synchronized (webSocketLock) {
-            closed = true;
-            if (webSocket != null) {
-                webSocket.close();
-            }
-        }
+        log.debug("Closing ComfyUI client for {}", baseUrl);
+        closed = true;
+        List<ComfyUIWebSocket> sockets = new ArrayList<>(activeExecutionSockets);
+        activeExecutionSockets.clear();
+        sockets.forEach(ComfyUIWebSocket::close);
     }
 }

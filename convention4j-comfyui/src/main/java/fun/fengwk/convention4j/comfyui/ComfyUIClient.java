@@ -101,8 +101,11 @@ public interface ComfyUIClient extends Closeable {
      * @return 更新后的工作流
      */
     default Mono<Workflow> uploadAndSetFile(Workflow workflow, String nodeId, String filename, byte[] data, String mimeType) {
+        if (workflow == null) {
+            return Mono.error(new IllegalArgumentException("workflow must not be null"));
+        }
         return uploadFile(filename, data, mimeType)
-                .map(result -> workflow.setFileInput(nodeId, result.getName()));
+                .map(result -> workflow.setFileInput(nodeId, uploadedFilePath(result)));
     }
     
     /**
@@ -114,18 +117,29 @@ public interface ComfyUIClient extends Closeable {
      * @return 更新后的工作流
      */
     default Mono<Workflow> uploadAndSetFiles(Workflow workflow, List<InputFile> files, List<String> nodeIds) {
+        if (workflow == null) {
+            return Mono.error(new IllegalArgumentException("workflow must not be null"));
+        }
         if (files == null || nodeIds == null || files.size() != nodeIds.size()) {
             return Mono.error(new IllegalArgumentException("files and nodeIds must be non-null and have the same size"));
         }
-        
+
         return Flux.range(0, files.size())
-                .flatMap(i -> {
+                .concatMap(i -> {
                     InputFile file = files.get(i);
                     String nodeId = nodeIds.get(i);
                     return uploadFile(file.getFilename(), file.getData(), file.getMimeType())
-                            .doOnNext(result -> workflow.setFileInput(nodeId, result.getName()));
+                            .doOnNext(result -> workflow.setFileInput(nodeId, uploadedFilePath(result)));
                 })
                 .then(Mono.just(workflow));
+    }
+
+    private static String uploadedFilePath(UploadResult result) {
+        String subfolder = result.getSubfolder();
+        if (subfolder == null || subfolder.isBlank()) {
+            return result.getName();
+        }
+        return subfolder + "/" + result.getName();
     }
 
     // ==================== 历史记录 ====================

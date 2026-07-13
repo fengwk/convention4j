@@ -40,8 +40,12 @@ public final class ComfyUIConstants {
         public static final String NODE_ERRORS = "node_errors";
         public static final String ID = "id";
         public static final String STATUS = "status";
+        public static final String PRIORITY = "priority";
         public static final String CREATE_TIME = "create_time";
         public static final String UPDATE_TIME = "update_time";
+        public static final String WORKFLOW_ID = "workflow_id";
+        public static final String EXECUTION_START_TIME = "execution_start_time";
+        public static final String EXECUTION_END_TIME = "execution_end_time";
         public static final String OUTPUTS_COUNT = "outputs_count";
         public static final String OUTPUTS = "outputs";
         public static final String EXECUTION_ERROR = "execution_error";
@@ -63,6 +67,8 @@ public final class ComfyUIConstants {
         public static final String VALUE = "value";
         public static final String MAX = "max";
         public static final String NODES = "nodes";
+        public static final String NODE_ID = "node_id";
+        public static final String NODE_TYPE = "node_type";
         public static final String EXCEPTION_MESSAGE = "exception_message";
         
         // Workflow 字段

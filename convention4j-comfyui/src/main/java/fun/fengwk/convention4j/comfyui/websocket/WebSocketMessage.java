@@ -13,6 +13,7 @@ public enum WebSocketMessage {
     EXECUTED("executed"),                 // 节点执行完成
     EXECUTION_START("execution_start"),   // 开始执行
     EXECUTION_ERROR("execution_error"),   // 执行错误
+    EXECUTION_INTERRUPTED("execution_interrupted"), // 执行中断
     EXECUTION_SUCCESS("execution_success"), // 执行成功
     PROGRESS_STATE("progress_state"),     // 进度状态
     CRYSTOOLS_MONITOR("crystools.monitor"); // Crystools监控消息

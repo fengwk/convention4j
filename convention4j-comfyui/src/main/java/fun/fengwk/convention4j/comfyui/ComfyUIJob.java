@@ -17,9 +17,17 @@ public class ComfyUIJob {
 
     private final String status;
 
-    private final long createTime;
+    private final Double priority;
 
-    private final long updateTime;
+    private final Long createTime;
+
+    private final Long updateTime;
+
+    private final String workflowId;
+
+    private final Long executionStartTime;
+
+    private final Long executionEndTime;
 
     private final Integer outputsCount;
 
