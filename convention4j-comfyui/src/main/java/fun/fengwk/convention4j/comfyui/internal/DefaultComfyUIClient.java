@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.fengwk.convention4j.comfyui.ComfyUIClient;
 import fun.fengwk.convention4j.comfyui.ComfyUIClientOptions;
 import fun.fengwk.convention4j.comfyui.ComfyUIConstants;
+import fun.fengwk.convention4j.comfyui.ComfyUIJob;
+import fun.fengwk.convention4j.comfyui.PromptSubmission;
 import fun.fengwk.convention4j.comfyui.exception.ComfyUIException;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionEvent;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionListener;
@@ -44,13 +46,14 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     private final HttpClient httpClient;
     private final ComfyUIClientOptions options;
     private final String clientId;
-    private final ComfyUIWebSocket webSocket;
+    private final Object webSocketLock = new Object();
+    private volatile ComfyUIWebSocket webSocket;
+    private volatile boolean closed;
 
     public DefaultComfyUIClient(ComfyUIClientOptions options) {
         this.options = options;
         this.httpClient = createHttpClient(options);
         this.clientId = UUID.randomUUID().toString();
-        this.webSocket = new ComfyUIWebSocket(httpClient, options.getBaseUrl(), clientId, options.getApiKey(), options.getWebsocketTimeout());
     }
 
     /**
@@ -78,6 +81,199 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         }
         
         return builder;
+    }
+
+    private ComfyUIWebSocket getWebSocket() {
+        if (closed) {
+            throw new ComfyUIException("ComfyUI client is closed");
+        }
+        ComfyUIWebSocket current = webSocket;
+        if (current != null) {
+            return current;
+        }
+        synchronized (webSocketLock) {
+            if (closed) {
+                throw new ComfyUIException("ComfyUI client is closed");
+            }
+            if (webSocket == null) {
+                webSocket = new ComfyUIWebSocket(
+                        httpClient,
+                        options.getBaseUrl(),
+                        clientId,
+                        options.getApiKey(),
+                        options.getWebsocketTimeout());
+            }
+            return webSocket;
+        }
+    }
+
+    @Override
+    public Mono<PromptSubmission> submit(Workflow workflow) {
+        if (workflow == null) {
+            return Mono.error(new IllegalArgumentException("workflow must not be null"));
+        }
+
+        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.PROMPT;
+        ObjectNode bodyNode = JsonNodeFactory.instance.objectNode();
+        bodyNode.put(ComfyUIConstants.JsonFields.CLIENT_ID, clientId);
+        bodyNode.set(ComfyUIConstants.JsonFields.PROMPT, workflow.toJsonNode());
+
+        HttpRequest request = buildHttpRequest()
+                .uri(URI.create(url))
+                .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        JacksonUtils.writeValueAsString(bodyNode), StandardCharsets.UTF_8))
+                .timeout(options.getReadTimeout())
+                .build();
+
+        String operation = "Submit workflow";
+        return sendJson(request, operation)
+                .map(response -> new PromptSubmission(
+                        requiredText(response, ComfyUIConstants.JsonFields.PROMPT_ID, operation),
+                        requiredNumber(response, ComfyUIConstants.JsonFields.NUMBER, operation),
+                        requiredField(response, ComfyUIConstants.JsonFields.NODE_ERRORS, operation)));
+    }
+
+    @Override
+    public Mono<ComfyUIJob> getJob(String jobId) {
+        if (jobId == null || jobId.isBlank()) {
+            return Mono.error(new IllegalArgumentException("jobId must not be blank"));
+        }
+
+        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.JOBS + encodePathSegment(jobId);
+        HttpRequest request = buildHttpRequest()
+                .uri(URI.create(url))
+                .GET()
+                .timeout(options.getReadTimeout())
+                .build();
+
+        String operation = "Get job " + jobId;
+        return sendJson(request, operation)
+                .map(response -> new ComfyUIJob(
+                        requiredText(response, ComfyUIConstants.JsonFields.ID, operation),
+                        requiredText(response, ComfyUIConstants.JsonFields.STATUS, operation),
+                        requiredLong(response, ComfyUIConstants.JsonFields.CREATE_TIME, operation),
+                        requiredLong(response, ComfyUIConstants.JsonFields.UPDATE_TIME, operation),
+                        optionalInteger(response, ComfyUIConstants.JsonFields.OUTPUTS_COUNT, operation),
+                        optionalField(response, ComfyUIConstants.JsonFields.OUTPUTS),
+                        optionalField(response, ComfyUIConstants.JsonFields.EXECUTION_ERROR),
+                        optionalField(response, ComfyUIConstants.JsonFields.EXECUTION_STATUS),
+                        optionalField(response, ComfyUIConstants.JsonFields.WORKFLOW),
+                        optionalField(response, ComfyUIConstants.JsonFields.PREVIEW_OUTPUT)));
+    }
+
+    @Override
+    public Mono<Boolean> cancelJob(String jobId) {
+        if (jobId == null || jobId.isBlank()) {
+            return Mono.error(new IllegalArgumentException("jobId must not be blank"));
+        }
+
+        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.JOBS
+                + encodePathSegment(jobId) + ComfyUIConstants.ApiPaths.CANCEL;
+        HttpRequest request = buildHttpRequest()
+                .uri(URI.create(url))
+                .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .timeout(options.getReadTimeout())
+                .build();
+
+        String operation = "Cancel job " + jobId;
+        return sendJson(request, operation)
+                .map(response -> requiredBoolean(response, ComfyUIConstants.JsonFields.CANCELLED, operation));
+    }
+
+    private Mono<JsonNode> sendJson(HttpRequest request, String operation) {
+        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
+                .send()
+                .flatMap(result -> ReactiveHttpClientUtils.bodyToString(result)
+                        .defaultIfEmpty("")
+                        .flatMap(responseBody -> {
+                            if (!result.is2xx()) {
+                                return Mono.error(new ComfyUIException(
+                                        operation + " failed with HTTP " + result.getStatusCode()
+                                                + ": " + responseBody));
+                            }
+                            try {
+                                JsonNode response = JacksonUtils.readTree(responseBody);
+                                if (response == null || !response.isObject()) {
+                                    return Mono.error(malformedResponse(operation, "expected a JSON object", responseBody));
+                                }
+                                return Mono.just(response);
+                            } catch (Exception e) {
+                                return Mono.error(new ComfyUIException(
+                                        operation + " returned malformed JSON: " + responseBody, e));
+                            }
+                        }))
+                .onErrorMap(e -> {
+                    if (e instanceof ComfyUIException) {
+                        return e;
+                    }
+                    return new ComfyUIException(operation + " failed", e);
+                });
+    }
+
+    private String requiredText(JsonNode response, String fieldName, String operation) {
+        JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isTextual() || field.asText().isBlank()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be nonblank text", response.toString());
+        }
+        return field.asText();
+    }
+
+    private double requiredNumber(JsonNode response, String fieldName, String operation) {
+        JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isNumber()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be a number", response.toString());
+        }
+        return field.asDouble();
+    }
+
+    private long requiredLong(JsonNode response, String fieldName, String operation) {
+        JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isIntegralNumber()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be an integer", response.toString());
+        }
+        return field.asLong();
+    }
+
+    private boolean requiredBoolean(JsonNode response, String fieldName, String operation) {
+        JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isBoolean()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be a boolean", response.toString());
+        }
+        return field.asBoolean();
+    }
+
+    private Integer optionalInteger(JsonNode response, String fieldName, String operation) {
+        JsonNode field = optionalField(response, fieldName);
+        if (field == null) {
+            return null;
+        }
+        if (!field.isIntegralNumber() || !field.canConvertToInt()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be an integer", response.toString());
+        }
+        return field.asInt();
+    }
+
+    private JsonNode requiredField(JsonNode response, String fieldName, String operation) {
+        JsonNode field = response.get(fieldName);
+        if (field == null || field.isNull()) {
+            throw malformedResponse(operation, "missing field '" + fieldName + "'", response.toString());
+        }
+        return field;
+    }
+
+    private JsonNode optionalField(JsonNode response, String fieldName) {
+        JsonNode field = response.get(fieldName);
+        return field == null || field.isNull() ? null : field;
+    }
+
+    private ComfyUIException malformedResponse(String operation, String reason, String responseBody) {
+        return new ComfyUIException(operation + " returned malformed response (" + reason + "): " + responseBody);
+    }
+
+    private String encodePathSegment(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     @Override
@@ -117,6 +313,17 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public Flux<ExecutionEvent> executeWithEvents(Workflow workflow, ExecutionOptions options) {
+        if (workflow == null) {
+            return Flux.error(new IllegalArgumentException("workflow must not be null"));
+        }
+
+        ComfyUIWebSocket executionWebSocket;
+        try {
+            executionWebSocket = getWebSocket();
+        } catch (Exception e) {
+            return Flux.error(e);
+        }
+
         // 1. 处理输入文件上传（响应式）
         Mono<Void> uploadMono;
         if (options.getInputFiles() != null && !options.getInputFiles().isEmpty()) {
@@ -145,10 +352,10 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                     }
                     return finalWorkflow;
                 }))
-                .flatMap(this::queuePrompt)
+                .flatMap(finalWorkflow -> submit(finalWorkflow).map(PromptSubmission::getPromptId))
                 .flatMapMany(promptId -> {
                     // 4. 监听WebSocket事件
-                    return webSocket.getEvents()
+                    return executionWebSocket.getEvents()
                             .filter(event -> isEventForPrompt(event, promptId))
                             .doOnNext(event -> {
                                 if (options.getListener() != null) {
@@ -218,45 +425,6 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         }
     }
 
-    /**
-     * 异步提交工作流到队列
-     */
-    private Mono<String> queuePrompt(Workflow workflow) {
-        String url = options.getBaseUrl() + ComfyUIConstants.ApiPaths.PROMPT;
-        ObjectNode bodyNode = JsonNodeFactory.instance.objectNode();
-        bodyNode.put(ComfyUIConstants.JsonFields.CLIENT_ID, clientId);
-        bodyNode.set(ComfyUIConstants.JsonFields.PROMPT, workflow.toJsonNode());
-        
-        String body = JacksonUtils.writeValueAsString(bodyNode);
-
-        HttpRequest request = buildHttpRequest()
-                .uri(URI.create(url))
-                .header(ComfyUIConstants.HttpHeaders.CONTENT_TYPE, ComfyUIConstants.HttpHeaders.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-                .timeout(options.getReadTimeout())
-                .build();
-
-        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                .bodyToString()
-                .send()
-                .flatMap(responseBody -> {
-                    JsonNode response = JacksonUtils.readTree(responseBody);
-                    if (response == null) {
-                        return Mono.error(new ComfyUIException("Failed to parse response: " + responseBody));
-                    }
-                    if (response.has(ComfyUIConstants.JsonFields.ERROR)) {
-                        return Mono.error(new ComfyUIException("ComfyUI error: " + responseBody));
-                    }
-                    return Mono.just(response.path(ComfyUIConstants.JsonFields.PROMPT_ID).asText());
-                })
-                .onErrorMap(e -> {
-                    if (e instanceof ComfyUIException) {
-                        return e;
-                    }
-                    return new ComfyUIException("Failed to queue prompt", e);
-                });
-    }
-    
     /**
      * 异步获取执行历史
      */
@@ -432,8 +600,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     @Override
     public void close() {
         log.debug("Closing ComfyUI client for {}", options.getBaseUrl());
-        if (webSocket != null) {
-            webSocket.close();
+        synchronized (webSocketLock) {
+            closed = true;
+            if (webSocket != null) {
+                webSocket.close();
+            }
         }
     }
 }

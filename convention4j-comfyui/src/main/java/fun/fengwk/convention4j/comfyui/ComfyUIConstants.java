@@ -18,6 +18,8 @@ public final class ComfyUIConstants {
         private ApiPaths() {}
         
         public static final String PROMPT = "/prompt";
+        public static final String JOBS = "/api/jobs/";
+        public static final String CANCEL = "/cancel";
         public static final String HISTORY = "/history/";
         public static final String UPLOAD_IMAGE = "/upload/image";
         public static final String VIEW = "/view";
@@ -34,6 +36,19 @@ public final class ComfyUIConstants {
         public static final String CLIENT_ID = "client_id";
         public static final String PROMPT = "prompt";
         public static final String PROMPT_ID = "prompt_id";
+        public static final String NUMBER = "number";
+        public static final String NODE_ERRORS = "node_errors";
+        public static final String ID = "id";
+        public static final String STATUS = "status";
+        public static final String CREATE_TIME = "create_time";
+        public static final String UPDATE_TIME = "update_time";
+        public static final String OUTPUTS_COUNT = "outputs_count";
+        public static final String OUTPUTS = "outputs";
+        public static final String EXECUTION_ERROR = "execution_error";
+        public static final String EXECUTION_STATUS = "execution_status";
+        public static final String WORKFLOW = "workflow";
+        public static final String PREVIEW_OUTPUT = "preview_output";
+        public static final String CANCELLED = "cancelled";
         public static final String ERROR = "error";
         
         // 文件相关字段

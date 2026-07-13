@@ -21,6 +21,23 @@ import java.util.List;
  */
 public interface ComfyUIClient extends Closeable {
 
+    // ==================== 无状态任务操作 ====================
+
+    /**
+     * 提交工作流，不等待执行完成
+     */
+    Mono<PromptSubmission> submit(Workflow workflow);
+
+    /**
+     * 获取任务详情
+     */
+    Mono<ComfyUIJob> getJob(String jobId);
+
+    /**
+     * 取消任务
+     */
+    Mono<Boolean> cancelJob(String jobId);
+
     // ==================== 工作流执行 ====================
 
     /**
