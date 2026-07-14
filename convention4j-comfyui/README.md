@@ -4,8 +4,9 @@
 
 ## 功能特性
 
-- ✅ **异步非阻塞**: 支持响应式和同步两种调用方式
-- ✅ **实时进度监听**: 获取工作流执行的实时事件流
+- ✅ **异步非阻塞**: 支持 Reactor 响应式调用，也可按需使用 `block()` 同步等待
+- ✅ **无状态任务 API**: 提交、查询和取消任务不需要建立 WebSocket
+- ✅ **实时进度监听**: 每次执行使用独立 WebSocket 获取实时事件流
 - ✅ **动态工作流操作**: 修改提示词、种子、Checkpoint 等参数
 - ✅ **多类型文件支持**: 上传/下载图像、音频、视频等多种文件类型
 - ✅ **超时控制**: 防止任务无限等待
@@ -53,6 +54,28 @@ try (ComfyUIClient client = factory.create("http://localhost:8188")) {
     }
 }
 ```
+
+### 无状态任务 API
+
+只需要提交、轮询或取消任务时，不会创建 WebSocket：
+
+```java
+try (ComfyUIClient client = factory.create("http://localhost:8188")) {
+    PromptSubmission submission = client.submit(workflow).block();
+    String runId = submission.getPromptId();
+
+    ComfyUIJob job = client.getJob(runId).block();
+    if (job != null && "in_progress".equals(job.getStatus())) {
+        boolean cancelled = Boolean.TRUE.equals(client.cancelJob(runId).block());
+        System.out.println("cancelled=" + cancelled);
+    }
+}
+```
+
+- `submit`、`getJob`、`cancelJob`、`getHistory`、`uploadFile` 和 `getFile` 都是冷响应式操作，请求在订阅时才发送。
+- 同一个 `Mono` 被多次订阅会产生多次 HTTP 请求；`submit` 被重复订阅也会重复提交工作流。
+- `close()` 后的新订阅会在本地失败；已经开始的 HTTP 请求不会被强制取消。
+- `ComfyUIJob.outputs` 等复杂字段保留服务端原始 JSON，调用方可以按当前 ComfyUI 协议解析。
 
 ## 核心概念
 
@@ -108,11 +131,13 @@ ComfyUIClientOptions options = ComfyUIClientOptions.builder()
     .apiKey("your-api-key")  // 可选
     .connectTimeout(Duration.ofSeconds(10))
     .readTimeout(Duration.ofSeconds(30))
-    .websocketTimeout(Duration.ofMinutes(30))
+    .websocketTimeout(Duration.ofMinutes(30)) // WebSocket 握手超时；可设为 null
     .build();
 
 ComfyUIClient client = factory.create(options);
 ```
+
+默认工厂会按 `connectTimeout` 创建 `HttpClient`。如果在 options 或 `ComfyUIClientFactory(HttpClient)` 中显式提供自定义 `HttpClient`，连接超时、代理、重定向等底层行为由该自定义实例负责。
 
 ### 3. 执行选项
 
@@ -245,12 +270,15 @@ sequenceDiagram
     participant API as ComfyUI HTTP API
     participant WS as WebSocket
     
-    App->>SDK: execute(workflow)
-    SDK->>SDK: 上传输入文件
-    SDK->>SDK: 修改工作流参数
-    SDK->>API: POST /prompt
+    App->>SDK: execute(workflow) 组装冷流
+    SDK->>SDK: 快照工作流、文件绑定和文件字节并完成校验
+    App->>SDK: 订阅执行流
+    SDK->>WS: 使用独立 clientId 建立连接
+    WS-->>SDK: WebSocket ready
+    SDK->>SDK: 从快照复制本次工作流并按需随机化种子
+    SDK->>API: 顺序上传输入文件
+    SDK->>API: POST /prompt（携带同一 clientId）
     API-->>SDK: promptId
-    SDK->>WS: 连接并监听
     
     loop 执行过程
         WS-->>SDK: execution_start
@@ -266,6 +294,10 @@ sequenceDiagram
     SDK-->>App: ExecutionResult
 ```
 
+ComfyUI 可能先发送 `execution_success`，随后才持久化 history。SDK 只在 HTTP 2xx JSON 对象缺少当前 prompt entry 时按 200ms 固定间隔重试，最多查询 10 次；认证失败、非 2xx、非法 JSON 和非法 history 结构不会重试。
+
+`execute` 和 `executeWithEvents` 返回冷流，每次订阅都会创建独立 clientId、WebSocket 并提交一次新的工作流。工作流、文件绑定和文件字节会在调用方法时建立防御性快照，因此调用方之后的修改不会改变已组装的执行；多次订阅仍会基于该快照发起多次独立执行。需要共享同一次执行事件时，应由调用方对返回流执行显式共享，而不是重复订阅原始流。
+
 ### WebSocket 事件映射
 
 ```mermaid
@@ -277,6 +309,7 @@ graph LR
     A -->|execution_cached| F[NodesCached]
     A -->|execution_success| G[ExecutionSucceeded]
     A -->|execution_error| H[Error]
+    A -->|execution_interrupted| H
     
     B --> I[ExecutionEvent]
     C --> I
@@ -318,6 +351,8 @@ Workflow updatedWorkflow = client.uploadAndSetFiles(workflow, files, nodeIds).bl
 // 然后直接执行
 ExecutionResult result = client.execute(updatedWorkflow).block();
 ```
+
+便捷方法会按顺序上传并修改传入的 `Workflow`；不要对同一个工作流实例并发调用。文件列表和文件字节会在方法调用时建立快照。
 
 ### 2. 多类型文件输入
 
@@ -443,9 +478,11 @@ try {
 ```
 
 关闭时会：
-1. 关闭 WebSocket 连接
-2. 完成事件流
-3. 释放相关资源
+
+1. 将客户端标记为 closed，后续新订阅在本地失败。
+2. 关闭所有仍活跃的 execution-scoped WebSocket，并终止等待连接或事件的执行流。
+3. 不会为只调用 stateless HTTP API 的客户端创建 WebSocket。
+4. 已经发送的 HTTP 请求不会被强制中断，调用方仍应为请求和执行配置合理超时。
 
 ## 最佳实践
 
@@ -453,29 +490,30 @@ try {
 
 ```java
 ExecutionOptions options = ExecutionOptions.builder()
-    .timeout(Duration.ofMinutes(5))  // 防止无限等待
+    .timeout(Duration.ofMinutes(5))  // 防止客户端无限等待
     .build();
 ```
 
-### 2. 使用工作流副本
+执行超时只会终止客户端等待并关闭该次执行的 WebSocket，不会自动取消已经提交到 ComfyUI 的任务。需要服务端取消语义时，应使用 `submit/getJob/cancelJob` API 管理任务，或从执行事件中取得 `promptId` 后显式调用 `cancelJob`。
+
+### 2. 在组装执行前使用工作流副本
 
 ```java
-// 避免修改原始工作流
 Workflow original = Workflow.fromApiJson(json);
 Workflow modified = original.copy();
 modified.setPrompt("6", "new prompt");
 ```
 
+`execute` 会在方法调用时再次建立内部快照；上面的副本用于让调用方自己的多个工作流变体保持彼此独立。
+
 ### 3. 正确处理输出文件
 
+`getFile` 会将完整响应聚合为 `byte[]`，调用方应限制可下载文件大小，避免对不受信任的大文件直接使用该方法。
+
 ```java
-// 下载大文件时注意内存使用
 for (OutputFile file : result.getImages()) {
     client.getFile(file)
-        .subscribe(data -> {
-            // 流式保存到文件
-            Files.write(Paths.get(file.getFilename()), data);
-        });
+        .subscribe(data -> Files.write(Paths.get(file.getFilename()), data));
 }
 ```
 

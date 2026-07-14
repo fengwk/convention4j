@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.fengwk.convention4j.comfyui.ComfyUIConstants;
 import fun.fengwk.convention4j.comfyui.exception.WorkflowException;
+import fun.fengwk.convention4j.comfyui.input.InputType;
 import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -206,7 +207,7 @@ public class Workflow {
      * 随机化所有节点的seed值
      */
     public Workflow randomizeSeed() {
-        long newSeed = Math.abs(new Random().nextLong());
+        long newSeed = new Random().nextLong() & Long.MAX_VALUE;
         
         // 查找所有具有 seed 相关字段的节点并设置
         nodes.values().forEach(node -> {
@@ -228,32 +229,45 @@ public class Workflow {
         if (node == null) {
             throw new WorkflowException("Node not found: " + nodeId);
         }
-        
-        String inputField = switch (node.getClassType()) {
-            case ComfyUIConstants.NodeTypes.LOAD_IMAGE -> ComfyUIConstants.InputFields.IMAGE;
-            case ComfyUIConstants.NodeTypes.LOAD_AUDIO -> ComfyUIConstants.InputFields.AUDIO;
-            case ComfyUIConstants.NodeTypes.LOAD_VIDEO -> ComfyUIConstants.InputFields.VIDEO;
-            default -> throw new WorkflowException("Unsupported node type for file input: " + node.getClassType());
-        };
-        
-        return setProperty(nodeId, inputField, filename);
+
+        InputType inputType = findFileInputType(node)
+                .orElseThrow(() -> new WorkflowException(
+                        "Unsupported node type for file input: " + node.getClassType()));
+        return setProperty(nodeId, inputType.getInputField(), filename);
+    }
+
+    /**
+     * 验证文件上传绑定，避免在上传后才发现节点无效。
+     */
+    public void validateFileInputBinding(String nodeId, InputType inputType) {
+        if (nodeId == null || nodeId.isBlank()) {
+            throw new IllegalArgumentException("file node ID must not be blank");
+        }
+        WorkflowNode node = getNode(nodeId);
+        if (node == null) {
+            throw new IllegalArgumentException("File input node not found: " + nodeId);
+        }
+
+        InputType expectedType = findFileInputType(node)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unsupported file input node type for node " + nodeId + ": " + node.getClassType()));
+        if (inputType != null && inputType != expectedType) {
+            throw new IllegalArgumentException(
+                    "Input file type " + inputType + " does not match node " + nodeId
+                            + " type " + node.getClassType());
+        }
+    }
+
+    private Optional<InputType> findFileInputType(WorkflowNode node) {
+        return Arrays.stream(InputType.values())
+                .filter(type -> type.matchesNodeType(node.getClassType()))
+                .findFirst();
     }
 
     // ==================== 转换方法 ====================
 
     public String toApiJson() {
-        ObjectNode output = JsonNodeFactory.instance.objectNode();
-        for (Map.Entry<String, WorkflowNode> entry : nodes.entrySet()) {
-            ObjectNode nodeData = JsonNodeFactory.instance.objectNode();
-            nodeData.put(ComfyUIConstants.JsonFields.CLASS_TYPE, entry.getValue().getClassType());
-            nodeData.set(ComfyUIConstants.JsonFields.INPUTS, entry.getValue().getInputs());
-            JsonNode meta = entry.getValue().getMeta();
-            if (meta != null && !meta.isMissingNode() && !meta.isEmpty()) {
-                nodeData.set(ComfyUIConstants.JsonFields.META, meta);
-            }
-            output.set(entry.getKey(), nodeData);
-        }
-        return JacksonUtils.writeValueAsString(output);
+        return JacksonUtils.writeValueAsString(toJsonNode());
     }
 
     public JsonNode toJsonNode() {
@@ -261,10 +275,10 @@ public class Workflow {
         for (Map.Entry<String, WorkflowNode> entry : nodes.entrySet()) {
             ObjectNode nodeData = JsonNodeFactory.instance.objectNode();
             nodeData.put(ComfyUIConstants.JsonFields.CLASS_TYPE, entry.getValue().getClassType());
-            nodeData.set(ComfyUIConstants.JsonFields.INPUTS, entry.getValue().getInputs());
+            nodeData.set(ComfyUIConstants.JsonFields.INPUTS, entry.getValue().getInputs().deepCopy());
             JsonNode meta = entry.getValue().getMeta();
             if (meta != null && !meta.isMissingNode() && !meta.isEmpty()) {
-                nodeData.set(ComfyUIConstants.JsonFields.META, meta);
+                nodeData.set(ComfyUIConstants.JsonFields.META, meta.deepCopy());
             }
             output.set(entry.getKey(), nodeData);
         }

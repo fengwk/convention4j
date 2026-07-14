@@ -25,7 +25,7 @@ public class ComfyUIClientOptions {
     private final String apiKey;
 
     /**
-     * 连接超时时间
+     * 客户端自行创建 HttpClient 时使用的连接超时时间；自定义 HttpClient 由调用方配置。
      */
     @Builder.Default
     private final Duration connectTimeout = Duration.ofSeconds(10);
@@ -37,7 +37,7 @@ public class ComfyUIClientOptions {
     private final Duration readTimeout = Duration.ofSeconds(30);
 
     /**
-     * WebSocket超时时间
+     * WebSocket握手超时时间；设为null时使用HttpClient默认行为
      */
     @Builder.Default
     private final Duration websocketTimeout = Duration.ofMinutes(30);

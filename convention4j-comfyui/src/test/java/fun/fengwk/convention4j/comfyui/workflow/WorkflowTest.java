@@ -1,5 +1,6 @@
 package fun.fengwk.convention4j.comfyui.workflow;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -83,6 +84,20 @@ public class WorkflowTest {
     }
 
     @Test
+    public void testToJsonNodeDoesNotExposeWorkflowState() {
+        Workflow workflow = Workflow.fromApiJson(
+                "{\"3\": {\"class_type\": \"KSampler\", \"inputs\": {\"seed\": 123}}}");
+
+        // 返回 JSON 必须是深拷贝，调用方修改它不能反向修改工作流。
+        ObjectNode exportedInputs = (ObjectNode) workflow.toJsonNode().path("3").path("inputs");
+        exportedInputs.put("seed", 456);
+
+        Assertions.assertEquals(123L, workflow.getNode("3").getInput("seed").asLong());
+        Assertions.assertEquals(123L, Workflow.fromApiJson(workflow.toApiJson())
+                .getNode("3").getInput("seed").asLong());
+    }
+
+    @Test
     public void testRandomizeSeed() {
         String json = "{\"3\": {\"class_type\": \"KSampler\", \"inputs\": {\"seed\": 123}}}";
         Workflow workflow = Workflow.fromApiJson(json);
@@ -90,5 +105,6 @@ public class WorkflowTest {
         workflow.randomizeSeed();
         long newSeed = workflow.getNode("3").getInput("seed").asLong();
         Assertions.assertNotEquals(123L, newSeed);
+        Assertions.assertTrue(newSeed >= 0);
     }
 }

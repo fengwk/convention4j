@@ -80,6 +80,7 @@ public final class ComfyUIConstants {
         // 输出字段
         public static final String IMAGES = "images";
         public static final String VIDEO = "video";
+        public static final String VIDEOS = "videos";
         public static final String AUDIO = "audio";
         public static final String TEXT = "text";
         public static final String VALUE_OUTPUT = "value";

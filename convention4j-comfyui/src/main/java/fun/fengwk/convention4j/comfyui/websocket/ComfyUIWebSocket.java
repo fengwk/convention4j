@@ -15,11 +15,14 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,7 +37,7 @@ public class ComfyUIWebSocket {
 
     private final String clientId;
     private final Sinks.One<Void> readySink = Sinks.one();
-    // Each execution owns one socket; closing it completes this replay buffer and stops further growth.
+    // 每次执行独占连接；关闭时完成回放缓冲区，避免继续增长。
     private final Sinks.Many<EventEnvelope> eventSink = Sinks.many().replay().all();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean connectionTerminated = new AtomicBoolean();
@@ -51,8 +54,57 @@ public class ComfyUIWebSocket {
      * @param websocketTimeout WebSocket 连接超时时间（可选）
      */
     public ComfyUIWebSocket(HttpClient httpClient, String baseUrl, String clientId, String apiKey, Duration websocketTimeout) {
+        if (httpClient == null) {
+            throw new IllegalArgumentException("httpClient must not be null");
+        }
+        if (clientId == null || clientId.isBlank()) {
+            throw new IllegalArgumentException("clientId must not be blank");
+        }
+        if (websocketTimeout != null && (websocketTimeout.isZero() || websocketTimeout.isNegative())) {
+            throw new IllegalArgumentException("websocketTimeout must be positive when specified");
+        }
+        if (apiKey != null && containsControlCharacter(apiKey)) {
+            throw new IllegalArgumentException("apiKey contains invalid header characters");
+        }
         this.clientId = clientId;
-        this.connectFuture = connect(httpClient, baseUrl, apiKey, websocketTimeout);
+        this.connectFuture = connect(httpClient, normalizeBaseUrl(baseUrl), apiKey, websocketTimeout);
+    }
+
+    private static boolean containsControlCharacter(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isISOControl(value.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeBaseUrl(String configuredBaseUrl) {
+        if (configuredBaseUrl == null || configuredBaseUrl.isBlank()) {
+            throw new IllegalArgumentException("baseUrl must not be blank");
+        }
+        String normalized = configuredBaseUrl.trim();
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        URI uri;
+        try {
+            uri = URI.create(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("baseUrl must be a valid HTTP URL", e);
+        }
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                || uri.getHost() == null
+                || uri.getPort() == 0
+                || uri.getPort() > 65535
+                || uri.getRawUserInfo() != null
+                || uri.getRawQuery() != null
+                || uri.getRawFragment() != null) {
+            throw new IllegalArgumentException(
+                    "baseUrl must be an absolute HTTP URL without user-info, query or fragment");
+        }
+        String normalizedScheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        return normalizedScheme + normalized.substring(uri.getScheme().length());
     }
 
     private CompletableFuture<WebSocketConnection> connect(
@@ -63,14 +115,15 @@ public class ComfyUIWebSocket {
         String wsBaseUrl = baseUrl.startsWith("https://")
                 ? "wss://" + baseUrl.substring("https://".length())
                 : "ws://" + baseUrl.substring("http://".length());
+        String encodedClientId = URLEncoder.encode(clientId, StandardCharsets.UTF_8).replace("+", "%20");
         String wsUrl = wsBaseUrl + ComfyUIConstants.ApiPaths.WS
-                + "?" + ComfyUIConstants.UrlParams.CLIENT_ID + "=" + clientId;
+                + "?" + ComfyUIConstants.UrlParams.CLIENT_ID + "=" + encodedClientId;
         URI uri = URI.create(wsUrl);
 
         log.info("Connecting to ComfyUI WebSocket: {}", wsUrl);
 
         Map<String, String> headers = null;
-        if (apiKey != null && !apiKey.isEmpty()) {
+        if (apiKey != null && !apiKey.isBlank()) {
             headers = new HashMap<>();
             headers.put(ComfyUIConstants.HttpHeaders.AUTHORIZATION,
                     ComfyUIConstants.HttpHeaders.BEARER_PREFIX + apiKey);
@@ -126,12 +179,14 @@ public class ComfyUIWebSocket {
         log.debug("Received WebSocket message: {}", message);
         try {
             JsonNode root = JacksonUtils.readTree(message);
-            if (root == null) {
+            if (root == null || !root.isObject()) {
+                handleProtocolError("ComfyUI WebSocket message must be a JSON object", null);
                 return;
             }
 
             String typeStr = root.path(ComfyUIConstants.JsonFields.TYPE).asText(null);
             if (typeStr == null) {
+                handleProtocolError("ComfyUI WebSocket message is missing type", null);
                 return;
             }
 
@@ -156,15 +211,17 @@ public class ComfyUIWebSocket {
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to handle WebSocket message: {}", message, e);
+            handleProtocolError("Failed to decode ComfyUI WebSocket message", e);
         }
     }
 
     private void handleExecutionStart(JsonNode data) {
         String promptId = promptId(data);
-        if (promptId != null) {
-            emit(promptId, new ExecutionEvent.Started(promptId));
+        if (promptId == null) {
+            handleProtocolError("ComfyUI execution_start message is missing prompt_id", null);
+            return;
         }
+        emit(promptId, new ExecutionEvent.Started(promptId));
     }
 
     private void handleExecuting(JsonNode data) {
@@ -221,9 +278,11 @@ public class ComfyUIWebSocket {
 
     private void handleExecutionSuccess(JsonNode data) {
         String promptId = promptId(data);
-        if (promptId != null) {
-            emit(promptId, new ExecutionEvent.ExecutionSucceeded(promptId));
+        if (promptId == null) {
+            handleProtocolError("ComfyUI execution_success message is missing prompt_id", null);
+            return;
         }
+        emit(promptId, new ExecutionEvent.ExecutionSucceeded(promptId));
     }
 
     private String promptId(JsonNode data) {
@@ -238,15 +297,36 @@ public class ComfyUIWebSocket {
         return nodeId == null ? "" : " at node " + nodeId;
     }
 
+    private void handleProtocolError(String message, Throwable cause) {
+        if (closed.get() || !connectionTerminated.compareAndSet(false, true)) {
+            return;
+        }
+        ComfyUIException exception = cause == null
+                ? new ComfyUIException(message)
+                : new ComfyUIException(message, cause);
+        log.error("{} for client {}", message, clientId, cause);
+        readySink.tryEmitError(exception);
+        emit(null, new ExecutionEvent.Error(message, exception));
+        completeEvents();
+        WebSocketConnection current = connection;
+        if (current != null && current.isOpen()) {
+            current.close();
+        }
+    }
+
     private void handleConnectionError(Throwable error) {
         if (closed.get() || !connectionTerminated.compareAndSet(false, true)) {
             return;
         }
         log.error("WebSocket error for client {}", clientId, error);
-        Exception exception = error instanceof Exception ? (Exception) error : new RuntimeException(error);
-        readySink.tryEmitError(new ComfyUIException("Failed to connect ComfyUI WebSocket", exception));
+        ComfyUIException exception = new ComfyUIException("ComfyUI WebSocket transport failed", error);
+        readySink.tryEmitError(exception);
         emit(null, new ExecutionEvent.Error("WebSocket error: " + error.getMessage(), exception));
         completeEvents();
+        WebSocketConnection current = connection;
+        if (current != null && current.isOpen()) {
+            current.close();
+        }
     }
 
     private void handleUnexpectedClose(int statusCode, String reason) {
@@ -281,6 +361,9 @@ public class ComfyUIWebSocket {
      * 获取指定prompt的执行事件。连接级事件始终会传递。
      */
     public Flux<ExecutionEvent> getEvents(String promptId) {
+        if (promptId == null || promptId.isBlank()) {
+            return Flux.error(new IllegalArgumentException("promptId must not be blank"));
+        }
         return eventSink.asFlux()
                 .filter(envelope -> envelope.promptId() == null || envelope.promptId().equals(promptId))
                 .map(EventEnvelope::event);
@@ -295,6 +378,13 @@ public class ComfyUIWebSocket {
 
     public boolean isClosed() {
         return closed.get();
+    }
+
+    /**
+     * 连接是否已因远端关闭、传输错误或协议错误而不可继续使用。
+     */
+    public boolean isConnectionTerminated() {
+        return connectionTerminated.get();
     }
 
     /**

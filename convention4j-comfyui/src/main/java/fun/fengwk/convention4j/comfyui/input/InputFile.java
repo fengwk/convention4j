@@ -2,6 +2,8 @@ package fun.fengwk.convention4j.comfyui.input;
 
 import lombok.Getter;
 
+import java.util.Locale;
+
 /**
  * 输入文件
  *
@@ -57,13 +59,14 @@ public class InputFile {
         if (mimeType == null) {
             return InputType.IMAGE; // 默认
         }
-        if (mimeType.startsWith("image/")) {
+        String normalizedMimeType = mimeType.trim().toLowerCase(Locale.ROOT);
+        if (normalizedMimeType.startsWith("image/")) {
             return InputType.IMAGE;
         }
-        if (mimeType.startsWith("audio/")) {
+        if (normalizedMimeType.startsWith("audio/")) {
             return InputType.AUDIO;
         }
-        if (mimeType.startsWith("video/")) {
+        if (normalizedMimeType.startsWith("video/")) {
             return InputType.VIDEO;
         }
         return InputType.IMAGE;

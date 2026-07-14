@@ -5,6 +5,7 @@ import fun.fengwk.convention4j.comfyui.execution.ExecutionOptions;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionResult;
 import fun.fengwk.convention4j.comfyui.history.HistoryResult;
 import fun.fengwk.convention4j.comfyui.input.InputFile;
+import fun.fengwk.convention4j.comfyui.input.InputType;
 import fun.fengwk.convention4j.comfyui.input.UploadResult;
 import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
@@ -12,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,17 +28,23 @@ public interface ComfyUIClient extends Closeable {
     /**
      * 提交工作流，不等待执行完成
      */
-    Mono<PromptSubmission> submit(Workflow workflow);
+    default Mono<PromptSubmission> submit(Workflow workflow) {
+        return Mono.error(new UnsupportedOperationException("submit is not supported by this client"));
+    }
 
     /**
      * 获取任务详情
      */
-    Mono<ComfyUIJob> getJob(String jobId);
+    default Mono<ComfyUIJob> getJob(String jobId) {
+        return Mono.error(new UnsupportedOperationException("getJob is not supported by this client"));
+    }
 
     /**
      * 取消任务
      */
-    Mono<Boolean> cancelJob(String jobId);
+    default Mono<Boolean> cancelJob(String jobId) {
+        return Mono.error(new UnsupportedOperationException("cancelJob is not supported by this client"));
+    }
 
     // ==================== 工作流执行 ====================
 
@@ -85,6 +93,9 @@ public interface ComfyUIClient extends Closeable {
      * @return 包含文件数据的Mono
      */
     default Mono<byte[]> getFile(OutputFile outputFile) {
+        if (outputFile == null) {
+            return Mono.error(new IllegalArgumentException("outputFile must not be null"));
+        }
         return getFile(outputFile.getFilename(), outputFile.getSubfolder(), outputFile.getFolderType());
     }
 
@@ -101,10 +112,14 @@ public interface ComfyUIClient extends Closeable {
      * @return 更新后的工作流
      */
     default Mono<Workflow> uploadAndSetFile(Workflow workflow, String nodeId, String filename, byte[] data, String mimeType) {
-        if (workflow == null) {
-            return Mono.error(new IllegalArgumentException("workflow must not be null"));
+        try {
+            validateWorkflowFileBinding(workflow, nodeId, null);
+            validateUploadArguments(filename, data, mimeType);
+        } catch (IllegalArgumentException e) {
+            return Mono.error(e);
         }
-        return uploadFile(filename, data, mimeType)
+        byte[] dataSnapshot = data.clone();
+        return uploadFile(filename, dataSnapshot, mimeType)
                 .map(result -> workflow.setFileInput(nodeId, uploadedFilePath(result)));
     }
     
@@ -117,21 +132,89 @@ public interface ComfyUIClient extends Closeable {
      * @return 更新后的工作流
      */
     default Mono<Workflow> uploadAndSetFiles(Workflow workflow, List<InputFile> files, List<String> nodeIds) {
-        if (workflow == null) {
-            return Mono.error(new IllegalArgumentException("workflow must not be null"));
-        }
         if (files == null || nodeIds == null || files.size() != nodeIds.size()) {
             return Mono.error(new IllegalArgumentException("files and nodeIds must be non-null and have the same size"));
         }
 
-        return Flux.range(0, files.size())
+        List<InputFile> inputFileSnapshot = new ArrayList<>(files.size());
+        for (InputFile file : files) {
+            if (file == null) {
+                inputFileSnapshot.add(null);
+            } else {
+                byte[] data = file.getData();
+                inputFileSnapshot.add(new InputFile(
+                        file.getFilename(),
+                        data == null ? null : data.clone(),
+                        file.getMimeType(),
+                        file.getType()));
+            }
+        }
+        List<String> fileNodeIdSnapshot = new ArrayList<>(nodeIds);
+        try {
+            if (workflow == null) {
+                throw new IllegalArgumentException("workflow must not be null");
+            }
+            for (int i = 0; i < inputFileSnapshot.size(); i++) {
+                InputFile file = inputFileSnapshot.get(i);
+                if (file == null) {
+                    throw new IllegalArgumentException("input file at index " + i + " must not be null");
+                }
+                if (file.getType() == null) {
+                    throw new IllegalArgumentException("input file type at index " + i + " must not be null");
+                }
+                validateWorkflowFileBinding(workflow, fileNodeIdSnapshot.get(i), file.getType());
+                validateUploadArguments(file.getFilename(), file.getData(), file.getMimeType());
+            }
+        } catch (IllegalArgumentException e) {
+            return Mono.error(e);
+        }
+
+        return Flux.range(0, inputFileSnapshot.size())
                 .concatMap(i -> {
-                    InputFile file = files.get(i);
-                    String nodeId = nodeIds.get(i);
+                    InputFile file = inputFileSnapshot.get(i);
+                    String nodeId = fileNodeIdSnapshot.get(i);
                     return uploadFile(file.getFilename(), file.getData(), file.getMimeType())
                             .doOnNext(result -> workflow.setFileInput(nodeId, uploadedFilePath(result)));
                 })
                 .then(Mono.just(workflow));
+    }
+
+    private static void validateWorkflowFileBinding(Workflow workflow, String nodeId, InputType inputType) {
+        if (workflow == null) {
+            throw new IllegalArgumentException("workflow must not be null");
+        }
+        workflow.validateFileInputBinding(nodeId, inputType);
+    }
+
+    private static void validateUploadArguments(String filename, byte[] data, String mimeType) {
+        if (filename == null || filename.isBlank()) {
+            throw new IllegalArgumentException("filename must not be blank");
+        }
+        if (containsInvalidFilenameCharacter(filename)) {
+            throw new IllegalArgumentException("filename contains invalid multipart header characters");
+        }
+        if (data == null) {
+            throw new IllegalArgumentException("data must not be null");
+        }
+        if (mimeType == null || mimeType.isBlank()) {
+            throw new IllegalArgumentException("mimeType must not be blank");
+        }
+        if (containsControlCharacter(mimeType)) {
+            throw new IllegalArgumentException("mimeType contains invalid header characters");
+        }
+    }
+
+    private static boolean containsInvalidFilenameCharacter(String filename) {
+        return filename.indexOf('"') >= 0 || containsControlCharacter(filename);
+    }
+
+    private static boolean containsControlCharacter(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isISOControl(value.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String uploadedFilePath(UploadResult result) {

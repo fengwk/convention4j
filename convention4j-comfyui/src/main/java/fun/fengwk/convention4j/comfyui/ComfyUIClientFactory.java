@@ -1,7 +1,6 @@
 package fun.fengwk.convention4j.comfyui;
 
 import fun.fengwk.convention4j.comfyui.internal.DefaultComfyUIClient;
-import fun.fengwk.convention4j.common.http.client.HttpClientFactory;
 
 import java.net.http.HttpClient;
 
@@ -16,16 +15,19 @@ public class ComfyUIClientFactory {
     private final HttpClient httpClient;
 
     /**
-     * 使用默认HttpClient创建工厂
+     * 创建默认工厂；客户端会按 ComfyUIClientOptions 构建 HttpClient。
      */
     public ComfyUIClientFactory() {
-        this(HttpClientFactory.getDefaultHttpClient());
+        this.httpClient = null;
     }
 
     /**
      * 使用自定义HttpClient创建工厂
      */
     public ComfyUIClientFactory(HttpClient httpClient) {
+        if (httpClient == null) {
+            throw new IllegalArgumentException("httpClient must not be null");
+        }
         this.httpClient = httpClient;
     }
 
@@ -33,6 +35,9 @@ public class ComfyUIClientFactory {
      * 创建客户端
      */
     public ComfyUIClient create(ComfyUIClientOptions options) {
+        if (options == null) {
+            throw new IllegalArgumentException("options must not be null");
+        }
         if (options.getHttpClient() == null && httpClient != null) {
             // 如果options中没有指定httpClient，则使用工厂的
             options = ComfyUIClientOptions.builder()

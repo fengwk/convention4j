@@ -9,6 +9,7 @@ import fun.fengwk.convention4j.comfyui.ComfyUIConstants;
 import fun.fengwk.convention4j.comfyui.ComfyUIJob;
 import fun.fengwk.convention4j.comfyui.PromptSubmission;
 import fun.fengwk.convention4j.comfyui.exception.ComfyUIException;
+import fun.fengwk.convention4j.comfyui.exception.ExecutionException;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionEvent;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionListener;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionOptions;
@@ -21,20 +22,27 @@ import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import fun.fengwk.convention4j.comfyui.output.OutputType;
 import fun.fengwk.convention4j.comfyui.websocket.ComfyUIWebSocket;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
-import fun.fengwk.convention4j.common.http.client.ReactiveHttpClientUtils;
+import fun.fengwk.convention4j.common.http.HttpUtils;
+import fun.fengwk.convention4j.common.http.client.HttpClientFactory;
+import fun.fengwk.convention4j.common.http.client.ProxySelectorAdapter;
 import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
+import java.util.zip.GZIPInputStream;
 
 /**
  * 默认ComfyUI客户端实现
@@ -55,13 +63,35 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     private volatile boolean closed;
 
     public DefaultComfyUIClient(ComfyUIClientOptions options) {
-        if (options == null) {
-            throw new IllegalArgumentException("options must not be null");
-        }
+        validateOptions(options);
         this.options = options;
         this.baseUrl = normalizeBaseUrl(options.getBaseUrl());
         this.httpClient = createHttpClient(options);
         this.clientId = UUID.randomUUID().toString();
+    }
+
+    private void validateOptions(ComfyUIClientOptions options) {
+        if (options == null) {
+            throw new IllegalArgumentException("options must not be null");
+        }
+        validateRequiredPositiveTimeout("connectTimeout", options.getConnectTimeout());
+        validateRequiredPositiveTimeout("readTimeout", options.getReadTimeout());
+        validateOptionalPositiveTimeout("websocketTimeout", options.getWebsocketTimeout());
+        if (options.getApiKey() != null && containsControlCharacter(options.getApiKey())) {
+            throw new IllegalArgumentException("apiKey contains invalid header characters");
+        }
+    }
+
+    private void validateRequiredPositiveTimeout(String name, Duration timeout) {
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException(name + " must be positive");
+        }
+    }
+
+    private void validateOptionalPositiveTimeout(String name, Duration timeout) {
+        if (timeout != null && (timeout.isZero() || timeout.isNegative())) {
+            throw new IllegalArgumentException(name + " must be positive when specified");
+        }
     }
 
     /**
@@ -73,7 +103,9 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         }
         
         return HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .connectTimeout(options.getConnectTimeout())
+                .proxy(new ProxySelectorAdapter(HttpClientFactory.getDefaultConfigurableListableProxies()))
                 .build();
     }
 
@@ -83,7 +115,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     private HttpRequest.Builder buildHttpRequest() {
         HttpRequest.Builder builder = HttpRequest.newBuilder();
         
-        if (options.getApiKey() != null && !options.getApiKey().isEmpty()) {
+        if (options.getApiKey() != null && !options.getApiKey().isBlank()) {
             builder.header(ComfyUIConstants.HttpHeaders.AUTHORIZATION,
                           ComfyUIConstants.HttpHeaders.BEARER_PREFIX + options.getApiKey());
         }
@@ -107,9 +139,13 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         }
         if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
                 || uri.getHost() == null
+                || uri.getPort() == 0
+                || uri.getPort() > 65535
+                || uri.getRawUserInfo() != null
                 || uri.getRawQuery() != null
                 || uri.getRawFragment() != null) {
-            throw new IllegalArgumentException("baseUrl must be an absolute HTTP URL without query or fragment");
+            throw new IllegalArgumentException(
+                    "baseUrl must be an absolute HTTP URL without user-info, query or fragment");
         }
         String normalizedScheme = uri.getScheme().toLowerCase(Locale.ROOT);
         return normalizedScheme + normalized.substring(uri.getScheme().length());
@@ -161,7 +197,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .map(response -> new PromptSubmission(
                         requiredText(response, ComfyUIConstants.JsonFields.PROMPT_ID, operation),
                         requiredNumber(response, ComfyUIConstants.JsonFields.NUMBER, operation),
-                        requiredField(response, ComfyUIConstants.JsonFields.NODE_ERRORS, operation)));
+                        requiredObject(response, ComfyUIConstants.JsonFields.NODE_ERRORS, operation)));
     }
 
     @Override
@@ -217,37 +253,45 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     }
 
     private Mono<JsonNode> sendJson(HttpRequest request, String operation) {
+        return sendBytes(request, operation)
+                .flatMap(responseBytes -> {
+                    String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
+                    try {
+                        JsonNode response = JacksonUtils.readTree(responseBody);
+                        if (response == null || !response.isObject()) {
+                            return Mono.error(malformedResponse(
+                                    operation, "expected a JSON object", responseBody));
+                        }
+                        return Mono.just(response);
+                    } catch (Exception e) {
+                        return Mono.error(new ComfyUIException(
+                                operation + " returned malformed JSON: " + responseBody, e));
+                    }
+                });
+    }
+
+    private Mono<byte[]> sendBytes(HttpRequest request, String operation) {
         return Mono.defer(() -> {
                     ensureOpen();
-                    return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                            .send()
-                            .flatMap(result -> ReactiveHttpClientUtils.bodyToString(result)
-                                    .defaultIfEmpty("")
-                                    .flatMap(responseBody -> {
-                                        if (!result.is2xx()) {
-                                            return Mono.error(new ComfyUIException(
-                                                    operation + " failed with HTTP " + result.getStatusCode()
-                                                            + ": " + responseBody));
-                                        }
-                                        try {
-                                            JsonNode response = JacksonUtils.readTree(responseBody);
-                                            if (response == null || !response.isObject()) {
-                                                return Mono.error(malformedResponse(
-                                                        operation, "expected a JSON object", responseBody));
-                                            }
-                                            return Mono.just(response);
-                                        } catch (Exception e) {
-                                            return Mono.error(new ComfyUIException(
-                                                    operation + " returned malformed JSON: " + responseBody, e));
-                                        }
-                                    }));
+                    return Mono.fromFuture(httpClient.sendAsync(
+                                    request, HttpResponse.BodyHandlers.ofByteArray()))
+                            .flatMap(response -> {
+                                byte[] responseBody;
+                                try {
+                                    responseBody = decodeResponseBody(response);
+                                } catch (IOException e) {
+                                    return Mono.error(new ComfyUIException(
+                                            operation + " failed to decode response body", e));
+                                }
+                                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                                    return Mono.just(responseBody);
+                                }
+                                return Mono.error(new ComfyUIException(
+                                        operation + " failed with HTTP " + response.statusCode()
+                                                + ": " + new String(responseBody, StandardCharsets.UTF_8)));
+                            });
                 })
-                .onErrorMap(e -> {
-                    if (e instanceof ComfyUIException) {
-                        return e;
-                    }
-                    return new ComfyUIException(operation + " failed", e);
-                });
+                .onErrorMap(e -> e instanceof ComfyUIException ? e : new ComfyUIException(operation + " failed", e));
     }
 
     private void ensureOpen() {
@@ -324,6 +368,14 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         return field.asInt();
     }
 
+    private JsonNode requiredObject(JsonNode response, String fieldName, String operation) {
+        JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isObject()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be an object", response.toString());
+        }
+        return field;
+    }
+
     private JsonNode requiredField(JsonNode response, String fieldName, String operation) {
         JsonNode field = response.get(fieldName);
         if (field == null || field.isNull()) {
@@ -356,12 +408,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .filter(event -> event instanceof ExecutionEvent.Completed
                               || event instanceof ExecutionEvent.Error
                               || event instanceof ExecutionEvent.ConnectionClosed)
-                .last()
-                .onErrorMap(NoSuchElementException.class, e ->
-                    new ComfyUIException(
+                .next()
+                .switchIfEmpty(Mono.error(new ComfyUIException(
                         "Workflow execution failed: No completion event received from ComfyUI. " +
                         "Possible causes: ComfyUI server not running, WebSocket connection failed, " +
-                        "or workflow terminated unexpectedly."))
+                        "or workflow terminated unexpectedly.")))
                 .flatMap(event -> {
                     if (event instanceof ExecutionEvent.Completed completed) {
                         return Mono.just(completed.result());
@@ -389,13 +440,18 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             return Flux.error(new IllegalArgumentException("options must not be null"));
         }
 
-        List<InputFile> inputFiles = options.getInputFiles() == null
-                ? Collections.emptyList() : options.getInputFiles();
-        List<String> fileNodeIds = options.getFileNodeIds() == null
-                ? Collections.emptyList() : options.getFileNodeIds();
-        if (inputFiles.size() != fileNodeIds.size()) {
-            return Flux.error(new IllegalArgumentException(
-                    "inputFiles and fileNodeIds must have the same size"));
+        List<InputFile> inputFiles;
+        List<String> fileNodeIds;
+        Workflow workflowSnapshot;
+        try {
+            inputFiles = snapshotInputFiles(options.getInputFiles());
+            fileNodeIds = options.getFileNodeIds() == null
+                    ? List.of() : Collections.unmodifiableList(new ArrayList<>(options.getFileNodeIds()));
+            workflowSnapshot = workflow.copy();
+            validateExecutionOptions(options);
+            validateFileBindings(workflowSnapshot, inputFiles, fileNodeIds);
+        } catch (RuntimeException e) {
+            return Flux.error(e);
         }
 
         Flux<ExecutionEvent> eventFlux = Flux.defer(() -> {
@@ -408,13 +464,9 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             }
 
             return executionWebSocket.awaitReady()
-                    .then(prepareWorkflow(workflow, options, inputFiles, fileNodeIds))
-                    .flatMap(finalWorkflow -> Mono.defer(() -> {
-                        if (closed || executionWebSocket.isClosed()) {
-                            return Mono.error(new ComfyUIException("ComfyUI client is closed"));
-                        }
-                        return submit(finalWorkflow, executionClientId);
-                    }))
+                    .then(prepareWorkflow(workflowSnapshot, options, inputFiles, fileNodeIds))
+                    .flatMap(finalWorkflow -> submitPreparedWorkflow(
+                            finalWorkflow, executionClientId, executionWebSocket))
                     .flatMapMany(submission -> {
                         String promptId = submission.getPromptId();
                         return executionWebSocket.getEvents(promptId)
@@ -446,12 +498,71 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
         if (options.getTimeout() != null) {
             eventFlux = eventFlux.timeout(options.getTimeout())
-                    .onErrorMap(java.util.concurrent.TimeoutException.class,
-                            e -> new fun.fengwk.convention4j.comfyui.exception.ExecutionException(
+                    .onErrorMap(TimeoutException.class,
+                            e -> new ExecutionException(
                                     "Workflow execution timeout after " + options.getTimeout()));
         }
 
         return eventFlux;
+    }
+
+    private static List<InputFile> snapshotInputFiles(List<InputFile> requestedInputFiles) {
+        if (requestedInputFiles == null) {
+            return List.of();
+        }
+        List<InputFile> snapshots = new ArrayList<>(requestedInputFiles.size());
+        for (InputFile inputFile : requestedInputFiles) {
+            if (inputFile == null) {
+                snapshots.add(null);
+                continue;
+            }
+            byte[] data = inputFile.getData();
+            snapshots.add(new InputFile(
+                    inputFile.getFilename(),
+                    data == null ? null : data.clone(),
+                    inputFile.getMimeType(),
+                    inputFile.getType()));
+        }
+        return Collections.unmodifiableList(snapshots);
+    }
+
+    private void validateExecutionOptions(ExecutionOptions options) {
+        Duration timeout = options.getTimeout();
+        if (timeout != null && (timeout.isZero() || timeout.isNegative())) {
+            throw new IllegalArgumentException("execution timeout must be positive");
+        }
+    }
+
+    private void validateFileBindings(
+            Workflow workflow, List<InputFile> inputFiles, List<String> fileNodeIds) {
+        if (inputFiles.size() != fileNodeIds.size()) {
+            throw new IllegalArgumentException("inputFiles and fileNodeIds must have the same size");
+        }
+        for (int i = 0; i < inputFiles.size(); i++) {
+            InputFile inputFile = inputFiles.get(i);
+            if (inputFile == null) {
+                throw new IllegalArgumentException("input file at index " + i + " must not be null");
+            }
+            if (inputFile.getType() == null) {
+                throw new IllegalArgumentException("input file type at index " + i + " must not be null");
+            }
+            workflow.validateFileInputBinding(fileNodeIds.get(i), inputFile.getType());
+            validateUploadArguments(inputFile.getFilename(), inputFile.getData(), inputFile.getMimeType());
+        }
+    }
+
+    private Mono<PromptSubmission> submitPreparedWorkflow(
+            Workflow workflow, String executionClientId, ComfyUIWebSocket executionWebSocket) {
+        return Mono.defer(() -> {
+            if (closed || executionWebSocket.isClosed()) {
+                return Mono.error(new ComfyUIException("ComfyUI client is closed"));
+            }
+            if (executionWebSocket.isConnectionTerminated()) {
+                return Mono.error(new ComfyUIException(
+                        "ComfyUI WebSocket connection terminated before workflow submission"));
+            }
+            return submit(workflow, executionClientId);
+        });
     }
 
     private Mono<Workflow> prepareWorkflow(
@@ -506,7 +617,9 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (promptId == null || promptId.isBlank()) {
             return Mono.error(new IllegalArgumentException("promptId must not be blank"));
         }
-        return getHistoryInternal(promptId);
+        return getHistoryInternal(promptId)
+                .onErrorMap(HistoryNotReadyException.class,
+                        error -> new ComfyUIException(error.getMessage(), error));
     }
 
     private Mono<HistoryResult> getHistoryAfterExecutionSuccess(String promptId) {
@@ -548,6 +661,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                         return Mono.error(malformedResponse(
                                 operation, "prompt entry must be a JSON object", historyNode.toString()));
                     }
+                    JsonNode outputsNode = historyNode.get(ComfyUIConstants.JsonFields.OUTPUTS);
+                    if (outputsNode == null || !outputsNode.isObject()) {
+                        return Mono.error(malformedResponse(
+                                operation, "field 'outputs' must be a JSON object", historyNode.toString()));
+                    }
                     try {
                         HistoryResult history = JacksonUtils.readValue(historyNode.toString(), HistoryResult.class);
                         if (history == null) {
@@ -564,79 +682,79 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     
     private ExecutionResult createExecutionResult(String promptId, HistoryResult history) {
         List<OutputFile> outputFiles = new ArrayList<>();
-        Map<String, NodeOutput> nodeOutputs = new HashMap<>();
-        
+        Map<String, NodeOutput> nodeOutputs = new LinkedHashMap<>();
+
         if (history != null && history.getOutputs() != null) {
             for (Map.Entry<String, JsonNode> entry : history.getOutputs().entrySet()) {
                 String nodeId = entry.getKey();
                 JsonNode outputData = entry.getValue();
-                
                 List<OutputFile> nodeFiles = new ArrayList<>();
-                
-                // Process images
-                if (outputData.has(ComfyUIConstants.JsonFields.IMAGES)) {
-                    for (JsonNode img : outputData.get(ComfyUIConstants.JsonFields.IMAGES)) {
-                        OutputFile outputFile = createOutputFile(img, OutputType.IMAGE);
-                        nodeFiles.add(outputFile);
-                        outputFiles.add(outputFile);
-                    }
-                }
-                
-                // Process video
-                if (outputData.has(ComfyUIConstants.JsonFields.VIDEO)) {
-                    for (JsonNode video : outputData.get(ComfyUIConstants.JsonFields.VIDEO)) {
-                        OutputFile outputFile = createOutputFile(video, OutputType.VIDEO);
-                        nodeFiles.add(outputFile);
-                        outputFiles.add(outputFile);
-                    }
-                }
 
-                // Process audio
-                if (outputData.has(ComfyUIConstants.JsonFields.AUDIO)) {
-                    for (JsonNode audio : outputData.get(ComfyUIConstants.JsonFields.AUDIO)) {
-                        OutputFile outputFile = createOutputFile(audio, OutputType.AUDIO);
-                        nodeFiles.add(outputFile);
-                        outputFiles.add(outputFile);
-                    }
+                if (outputData != null && outputData.isObject()) {
+                    addOutputFiles(outputData, ComfyUIConstants.JsonFields.IMAGES, OutputType.IMAGE,
+                            nodeFiles, outputFiles);
+                    addOutputFiles(outputData, ComfyUIConstants.JsonFields.VIDEO, OutputType.VIDEO,
+                            nodeFiles, outputFiles);
+                    addOutputFiles(outputData, ComfyUIConstants.JsonFields.VIDEOS, OutputType.VIDEO,
+                            nodeFiles, outputFiles);
+                    addOutputFiles(outputData, ComfyUIConstants.JsonFields.AUDIO, OutputType.AUDIO,
+                            nodeFiles, outputFiles);
                 }
-                
                 nodeOutputs.put(nodeId, new NodeOutput(nodeId, nodeFiles, outputData));
             }
         }
-        
+
         return new ExecutionResult(promptId, true, null, null, outputFiles, nodeOutputs);
     }
-    
+
+    private void addOutputFiles(
+            JsonNode outputData,
+            String fieldName,
+            OutputType outputType,
+            List<OutputFile> nodeFiles,
+            List<OutputFile> outputFiles) {
+        JsonNode mediaEntries = outputData.get(fieldName);
+        if (mediaEntries == null || !mediaEntries.isArray()) {
+            return;
+        }
+        for (JsonNode mediaEntry : mediaEntries) {
+            OutputFile outputFile = createOutputFile(mediaEntry, outputType);
+            if (outputFile != null) {
+                nodeFiles.add(outputFile);
+                outputFiles.add(outputFile);
+            }
+        }
+    }
+
     private OutputFile createOutputFile(JsonNode fileNode, OutputType type) {
-        String filename = fileNode.has(ComfyUIConstants.JsonFields.FILENAME) ? fileNode.get(ComfyUIConstants.JsonFields.FILENAME).asText() : null;
-        String subfolder = fileNode.has(ComfyUIConstants.JsonFields.SUBFOLDER) ? fileNode.get(ComfyUIConstants.JsonFields.SUBFOLDER).asText() : "";
-        String fileType = fileNode.has(ComfyUIConstants.JsonFields.TYPE) ? fileNode.get(ComfyUIConstants.JsonFields.TYPE).asText() : "output";
-        
-        return new OutputFile(
-                filename,
-                subfolder,
-                fileType,
-                type,
-                null // MIME type needs to be inferred or fetched
-        );
+        if (fileNode == null || !fileNode.isObject()) {
+            return null;
+        }
+        JsonNode filenameNode = fileNode.get(ComfyUIConstants.JsonFields.FILENAME);
+        if (filenameNode == null || !filenameNode.isTextual() || filenameNode.asText().isBlank()) {
+            return null;
+        }
+        JsonNode subfolderNode = fileNode.get(ComfyUIConstants.JsonFields.SUBFOLDER);
+        if (subfolderNode != null && !subfolderNode.isNull() && !subfolderNode.isTextual()) {
+            return null;
+        }
+        JsonNode typeNode = fileNode.get(ComfyUIConstants.JsonFields.TYPE);
+        if (typeNode != null && !typeNode.isNull()
+                && (!typeNode.isTextual() || typeNode.asText().isBlank())) {
+            return null;
+        }
+        String subfolder = subfolderNode == null || subfolderNode.isNull() ? "" : subfolderNode.asText();
+        String fileType = typeNode == null || typeNode.isNull() ? "output" : typeNode.asText();
+
+        return new OutputFile(filenameNode.asText(), subfolder, fileType, type, null);
     }
 
     @Override
     public Mono<UploadResult> uploadFile(String filename, byte[] data, String mimeType) {
-        if (filename == null || filename.isBlank()) {
-            return Mono.error(new IllegalArgumentException("filename must not be blank"));
-        }
-        if (containsInvalidFilenameCharacter(filename)) {
-            return Mono.error(new IllegalArgumentException("filename contains invalid multipart header characters"));
-        }
-        if (data == null) {
-            return Mono.error(new IllegalArgumentException("data must not be null"));
-        }
-        if (mimeType == null || mimeType.isBlank()) {
-            return Mono.error(new IllegalArgumentException("mimeType must not be blank"));
-        }
-        if (containsControlCharacter(mimeType)) {
-            return Mono.error(new IllegalArgumentException("mimeType contains invalid header characters"));
+        try {
+            validateUploadArguments(filename, data, mimeType);
+        } catch (IllegalArgumentException e) {
+            return Mono.error(e);
         }
 
         String boundary = "----WebKitFormBoundary" + UUID.randomUUID().toString().replace("-", "");
@@ -654,6 +772,24 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                 .map(response -> new UploadResult(
                         requiredText(response, ComfyUIConstants.JsonFields.NAME, operation),
                         optionalText(response, ComfyUIConstants.JsonFields.SUBFOLDER, operation)));
+    }
+
+    private void validateUploadArguments(String filename, byte[] data, String mimeType) {
+        if (filename == null || filename.isBlank()) {
+            throw new IllegalArgumentException("filename must not be blank");
+        }
+        if (containsInvalidFilenameCharacter(filename)) {
+            throw new IllegalArgumentException("filename contains invalid multipart header characters");
+        }
+        if (data == null) {
+            throw new IllegalArgumentException("data must not be null");
+        }
+        if (mimeType == null || mimeType.isBlank()) {
+            throw new IllegalArgumentException("mimeType must not be blank");
+        }
+        if (containsControlCharacter(mimeType)) {
+            throw new IllegalArgumentException("mimeType contains invalid header characters");
+        }
     }
 
     private boolean containsInvalidFilenameCharacter(String filename) {
@@ -692,36 +828,44 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (filename == null || filename.isBlank()) {
             return Mono.error(new IllegalArgumentException("filename must not be blank"));
         }
+        String operation = "Get file " + filename;
         return Mono.defer(() -> {
-            ensureOpen();
-            try {
-                String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
-                StringBuilder url = new StringBuilder(baseUrl + ComfyUIConstants.ApiPaths.VIEW + "?" + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
-                if (subfolder != null && !subfolder.isEmpty()) {
-                    url.append("&").append(ComfyUIConstants.UrlParams.SUBFOLDER).append("=").append(URLEncoder.encode(subfolder, StandardCharsets.UTF_8));
-                }
-                if (type != null && !type.isEmpty()) {
-                    url.append("&").append(ComfyUIConstants.UrlParams.TYPE).append("=").append(URLEncoder.encode(type, StandardCharsets.UTF_8));
-                }
+                    ensureOpen();
+                    try {
+                        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+                        StringBuilder url = new StringBuilder(baseUrl + ComfyUIConstants.ApiPaths.VIEW + "?"
+                                + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
+                        if (subfolder != null && !subfolder.isEmpty()) {
+                            url.append("&").append(ComfyUIConstants.UrlParams.SUBFOLDER).append("=")
+                                    .append(URLEncoder.encode(subfolder, StandardCharsets.UTF_8));
+                        }
+                        if (type != null && !type.isEmpty()) {
+                            url.append("&").append(ComfyUIConstants.UrlParams.TYPE).append("=")
+                                    .append(URLEncoder.encode(type, StandardCharsets.UTF_8));
+                        }
 
-                HttpRequest request = buildHttpRequest()
-                        .uri(URI.create(url.toString()))
-                        .GET()
-                        .timeout(options.getReadTimeout())
-                        .build();
+                        HttpRequest request = buildHttpRequest()
+                                .uri(URI.create(url.toString()))
+                                .GET()
+                                .timeout(options.getReadTimeout())
+                                .build();
 
-                return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                        .send()
-                        .flatMap(result -> {
-                            if (!result.is2xx()) {
-                                return Mono.error(new ComfyUIException("Failed to get file: " + result.getStatusCode()));
-                            }
-                            return ReactiveHttpClientUtils.bodyToBytes(result);
-                        });
-            } catch (Exception e) {
-                return Mono.error(new ComfyUIException("Failed to encode URL parameters", e));
-            }
-        });
+                        return sendBytes(request, operation);
+                    } catch (Exception e) {
+                        return Mono.error(new ComfyUIException(operation + " failed to build request", e));
+                    }
+                })
+                .onErrorMap(e -> e instanceof ComfyUIException ? e : new ComfyUIException(operation + " failed", e));
+    }
+
+    private static byte[] decodeResponseBody(HttpResponse<byte[]> response) throws IOException {
+        String contentEncoding = response.headers().firstValue("Content-Encoding").orElse(null);
+        if (!HttpUtils.gzip(contentEncoding == null ? null : contentEncoding.toLowerCase(Locale.ROOT))) {
+            return response.body();
+        }
+        try (GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(response.body()))) {
+            return input.readAllBytes();
+        }
     }
 
     @Override

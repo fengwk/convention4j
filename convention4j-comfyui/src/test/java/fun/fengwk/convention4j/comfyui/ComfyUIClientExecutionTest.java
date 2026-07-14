@@ -17,6 +17,7 @@ import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Mono;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -34,6 +35,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -205,8 +208,8 @@ public class ComfyUIClientExecutionTest {
                     () -> resultFuture.get(5, TimeUnit.SECONDS));
             Assertions.assertInstanceOf(ComfyUIException.class, failure.getCause());
             Assertions.assertTrue(failure.getCause().getMessage().contains("malformed response"));
-            Assertions.assertTrue(failure.getCause().getMessage().contains("could not be mapped"));
-            // 映射错误不是历史尚未就绪，必须在第一次响应后立即失败。
+            Assertions.assertTrue(failure.getCause().getMessage().contains("field 'outputs'"));
+            // 结构错误不是历史尚未就绪，必须在第一次响应后立即失败。
             Assertions.assertEquals(1, historyRequests.get());
         }
     }
@@ -249,6 +252,41 @@ public class ComfyUIClientExecutionTest {
     }
 
     @Test
+    public void testWebSocketValidatesAndEncodesConnectionUrl() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        // 底层 WebSocket 也是公开 API，必须先拒绝无效配置，并对 query 参数做严格编码。
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new ComfyUIWebSocket(null, "http://127.0.0.1", "client", null, null));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new ComfyUIWebSocket(httpClient, "http://127.0.0.1", " ", null, null));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new ComfyUIWebSocket(
+                        httpClient, "http://127.0.0.1", "client", null, Duration.ZERO));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new ComfyUIWebSocket(
+                        httpClient, "http://user:password@127.0.0.1", "client", null, null));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new ComfyUIWebSocket(
+                        httpClient, "http://127.0.0.1", "client", "bad\nkey", null));
+
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, " HTTPS://example.com/base/// ", "client id+&=", " ", null);
+        httpClient.awaitSocketCount(1);
+        URI uri = httpClient.getSocket(0).getUri();
+        Assertions.assertEquals("wss", uri.getScheme());
+        Assertions.assertEquals("example.com", uri.getHost());
+        Assertions.assertEquals("/base/ws", uri.getPath());
+        Assertions.assertEquals("clientId=client%20id%2B%26%3D", uri.getRawQuery());
+        httpClient.getSocket(0).open();
+        webSocket.awaitReady().block(Duration.ofSeconds(5));
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> webSocket.getEvents(" ").blockLast(Duration.ofSeconds(5)));
+        webSocket.close();
+        httpClient.getSocket(0).awaitClose();
+    }
+
+    @Test
     public void testWebSocketReplaysBufferedEventsToMultipleObservers() throws Exception {
         ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
         ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
@@ -271,6 +309,52 @@ public class ComfyUIClientExecutionTest {
         Assertions.assertInstanceOf(ExecutionEvent.Started.class, first.get(0));
         Assertions.assertInstanceOf(ExecutionEvent.NodeProgress.class, first.get(1));
         Assertions.assertInstanceOf(ExecutionEvent.ExecutionSucceeded.class, first.get(2));
+    }
+
+    @Test
+    public void testMalformedKnownWebSocketMessageIsTerminal() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "protocol-client", null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        httpClient.getSocket(0).open();
+
+        // 已知终态消息缺少必需prompt_id属于协议错误，必须终止事件流而不是无限等待。
+        httpClient.getSocket(0).receive(event("execution_success", "{}"));
+        List<ExecutionEvent> events = webSocket.getEvents("protocol-prompt")
+                .collectList()
+                .block(Duration.ofSeconds(5));
+
+        Assertions.assertNotNull(events);
+        Assertions.assertEquals(1, events.size());
+        Assertions.assertInstanceOf(ExecutionEvent.Error.class, events.get(0));
+        Assertions.assertTrue(((ExecutionEvent.Error) events.get(0)).message().contains("missing prompt_id"));
+        Assertions.assertTrue(webSocket.isConnectionTerminated());
+        httpClient.getSocket(0).awaitClose();
+        webSocket.close();
+    }
+
+    @Test
+    public void testWebSocketTransportFailureIsWrapped() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "transport-client", null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        httpClient.getSocket(0).open();
+
+        // 握手后的底层异常也必须通过 SDK 异常边界交付，不能泄漏裸 IOException。
+        CompletableFuture<List<ExecutionEvent>> eventsFuture = webSocket.getEvents("prompt").collectList().toFuture();
+        IOException transportFailure = new IOException("connection reset");
+        httpClient.getSocket(0).fail(transportFailure);
+        List<ExecutionEvent> events = eventsFuture.get(5, TimeUnit.SECONDS);
+
+        Assertions.assertEquals(1, events.size());
+        ExecutionEvent.Error event = Assertions.assertInstanceOf(ExecutionEvent.Error.class, events.get(0));
+        ComfyUIException failure = Assertions.assertInstanceOf(ComfyUIException.class, event.exception());
+        Assertions.assertSame(transportFailure, failure.getCause());
+        Assertions.assertTrue(webSocket.isConnectionTerminated());
+        httpClient.getSocket(0).awaitClose();
+        webSocket.close();
     }
 
     @Test
@@ -326,11 +410,13 @@ public class ComfyUIClientExecutionTest {
     public void testExecutionUploadsSequentiallyAndSubmitsReturnedFilePaths() throws Exception {
         AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
         AtomicInteger uploadResponses = new AtomicInteger();
+        List<byte[]> uploadedBodies = Collections.synchronizedList(new ArrayList<>());
         AtomicReference<JsonNode> submittedPrompt = new AtomicReference<>();
         AtomicReference<ExecutionResult> listenerResult = new AtomicReference<>();
         startServer(exchange -> {
             String path = exchange.getRequestURI().getRawPath();
             if ("/upload/image".equals(path)) {
+                uploadedBodies.add(exchange.getRequestBody().readAllBytes());
                 int number = uploadResponses.incrementAndGet();
                 String subfolder = number == 1 ? "nested" : "";
                 respondJson(exchange, 200,
@@ -358,11 +444,14 @@ public class ComfyUIClientExecutionTest {
                   "2": {"class_type": "LoadImage", "inputs": {}}
                 }
                 """);
+        byte[] firstData = "first-original".getBytes(StandardCharsets.UTF_8);
+        List<InputFile> inputFiles = new ArrayList<>(List.of(
+                InputFile.image("first.png", firstData, "image/png"),
+                InputFile.image("second.png", new byte[]{2}, "image/png")));
+        List<String> fileNodeIds = new ArrayList<>(List.of("1", "2"));
         ExecutionOptions options = ExecutionOptions.builder()
-                .inputFiles(List.of(
-                        InputFile.image("first.png", new byte[]{1}, "image/png"),
-                        InputFile.image("second.png", new byte[]{2}, "image/png")))
-                .fileNodeIds(List.of("1", "2"))
+                .inputFiles(inputFiles)
+                .fileNodeIds(fileNodeIds)
                 .listener(new ExecutionListener() {
                     @Override
                     public void onComplete(ExecutionResult result) {
@@ -372,7 +461,13 @@ public class ComfyUIClientExecutionTest {
                 .build();
 
         try (ComfyUIClient client = createClient(httpClient)) {
-            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow, options).toFuture();
+            Mono<ExecutionResult> execution = client.execute(workflow, options);
+            // execute组装后修改调用方数据，证明订阅时仍使用已验证的深快照。
+            Arrays.fill(firstData, (byte) 'x');
+            workflow.setProperty("2", "caller_mutation", true);
+            inputFiles.clear();
+            fileNodeIds.clear();
+            CompletableFuture<ExecutionResult> resultFuture = execution.toFuture();
             httpClient.awaitSocketCount(1);
             httpClient.getSocket(0).open();
             httpClient.awaitUploadRequestCount(1);
@@ -389,6 +484,52 @@ public class ComfyUIClientExecutionTest {
             Assertions.assertEquals(
                     "renamed-2.png",
                     submittedPrompt.get().path("2").path("inputs").path("image").asText());
+            Assertions.assertFalse(
+                    submittedPrompt.get().path("2").path("inputs").has("caller_mutation"));
+            Assertions.assertEquals(2, uploadedBodies.size());
+            Assertions.assertTrue(
+                    new String(uploadedBodies.get(0), StandardCharsets.UTF_8).contains("first-original"));
+        }
+    }
+
+    @Test
+    public void testSocketTerminationDuringPreparationPreventsPromptSubmission() throws Exception {
+        AtomicInteger promptRequests = new AtomicInteger();
+        startServer(exchange -> {
+            if ("/upload/image".equals(exchange.getRequestURI().getRawPath())) {
+                respondJson(exchange, 200, "{\"name\":\"input.png\",\"subfolder\":\"\"}");
+            } else if ("/prompt".equals(exchange.getRequestURI().getRawPath())) {
+                promptRequests.incrementAndGet();
+                respondJson(exchange, 500, "{\"error\":\"prompt must not be submitted\"}");
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClient.gateFirstUpload();
+        Workflow workflow = Workflow.fromApiJson("""
+                {"1":{"class_type":"LoadImage","inputs":{}}}
+                """);
+        ExecutionOptions options = ExecutionOptions.builder()
+                .inputFiles(List.of(InputFile.image("input.png", new byte[]{1}, "image/png")))
+                .fileNodeIds(List.of("1"))
+                .build();
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow, options).toFuture();
+            httpClient.awaitSocketCount(1);
+            httpClient.getSocket(0).open();
+            httpClient.awaitUploadRequestCount(1);
+            // 上传准备被门控时关闭连接；释放上传后，执行必须本地失败而非提交/prompt。
+            httpClient.getSocket(0).serverClose(1011, "connection lost during preparation");
+            httpClient.releaseFirstUpload();
+
+            java.util.concurrent.ExecutionException failure = Assertions.assertThrows(
+                    java.util.concurrent.ExecutionException.class,
+                    () -> resultFuture.get(5, TimeUnit.SECONDS));
+            Assertions.assertInstanceOf(ComfyUIException.class, failure.getCause());
+            Assertions.assertTrue(failure.getCause().getMessage().contains("terminated before workflow submission"));
+            Assertions.assertEquals(0, promptRequests.get());
         }
     }
 
@@ -406,6 +547,83 @@ public class ComfyUIClientExecutionTest {
                     IllegalArgumentException.class,
                     () -> client.executeWithEvents(workflow(), options).collectList().block(Duration.ofSeconds(5)));
             Assertions.assertEquals(0, httpClient.getSocketCount());
+        }
+    }
+
+    @Test
+    public void testExecutionMapsPluralVideosAndSkipsMalformedMediaEntries() throws Exception {
+        AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                String clientId = JacksonUtils.readTree(readBody(exchange)).path("client_id").asText();
+                httpClientRef.get().socketForClientId(clientId)
+                        .receive(event("execution_success", "{\"prompt_id\":\"video-prompt\"}"));
+                respondJson(exchange, 200, "{\"prompt_id\":\"video-prompt\",\"number\":1,\"node_errors\":{}}");
+            } else if ("/history/video-prompt".equals(path)) {
+                respondJson(exchange, 200, """
+                        {"video-prompt":{"outputs":{"1":{"video":[{"filename":"legacy.mp4"}],
+                        "videos":[null,"invalid",{}, {"filename":""},
+                        {"filename":"bad-subfolder.mp4","subfolder":[]},
+                        {"filename":"bad-type.mp4","type":{}},
+                        {"filename":"blank-type.mp4","type":" "},
+                        {"filename":"current.mp4","subfolder":"clips"}]}}}}
+                        """);
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClientRef.set(httpClient);
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow()).toFuture();
+            httpClient.awaitSocketCount(1);
+            httpClient.getSocket(0).open();
+
+            // 新旧视频字段均映射为视频；畸形、非对象或缺少文件名的条目不得生成OutputFile。
+            ExecutionResult result = resultFuture.get(5, TimeUnit.SECONDS);
+            Assertions.assertEquals(List.of("legacy.mp4", "current.mp4"),
+                    result.getVideos().stream().map(output -> output.getFilename()).toList());
+            var nodeOutput = result.getNodeOutput("1").orElseThrow();
+            Assertions.assertTrue(nodeOutput.hasVideos());
+            Assertions.assertEquals(2, nodeOutput.getVideos().size());
+            Assertions.assertEquals(8, nodeOutput.getData().path("videos").size());
+        }
+    }
+
+    @Test
+    public void testInvalidExecutionBindingsAndTimeoutFailBeforeTransportSetup() throws IOException {
+        startServer(exchange -> respondJson(exchange, 500, "{\"error\":\"unexpected request\"}"));
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        Workflow imageWorkflow = Workflow.fromApiJson("""
+                {"1":{"class_type":"LoadImage","inputs":{}}}
+                """);
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            // 无效文件、节点绑定和执行超时必须在创建WebSocket或上传HTTP请求前失败。
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.executeWithEvents(imageWorkflow, ExecutionOptions.builder()
+                            .inputFiles(Collections.singletonList(null))
+                            .fileNodeIds(List.of("1"))
+                            .build()).collectList().block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.executeWithEvents(imageWorkflow, ExecutionOptions.builder()
+                            .inputFiles(List.of(InputFile.audio("input.wav", new byte[]{1}, "audio/wav")))
+                            .fileNodeIds(List.of("1"))
+                            .build()).collectList().block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.executeWithEvents(imageWorkflow, ExecutionOptions.builder()
+                            .inputFiles(List.of(InputFile.image("input.png", new byte[]{1}, "image/png")))
+                            .fileNodeIds(List.of(" "))
+                            .build()).collectList().block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.executeWithEvents(workflow(), ExecutionOptions.builder()
+                            .timeout(Duration.ZERO)
+                            .build()).collectList().block(Duration.ofSeconds(5)));
+
+            Assertions.assertEquals(0, httpClient.getSocketCount());
+            Assertions.assertEquals(0, httpClient.getUploadRequests());
         }
     }
 
@@ -639,6 +857,10 @@ public class ComfyUIClientExecutionTest {
             this.listener = listener;
         }
 
+        public URI getUri() {
+            return uri;
+        }
+
         public String getClientId() {
             String query = uri.getRawQuery();
             return query.substring(query.indexOf('=') + 1);
@@ -667,6 +889,10 @@ public class ComfyUIClientExecutionTest {
             inputClosed = true;
             outputClosed = true;
             listener.onClose(this, statusCode, reason);
+        }
+
+        public void fail(Throwable failure) {
+            listener.onError(this, failure);
         }
 
         @Override

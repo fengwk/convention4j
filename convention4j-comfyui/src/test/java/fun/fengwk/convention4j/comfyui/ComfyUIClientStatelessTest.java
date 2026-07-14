@@ -6,6 +6,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import fun.fengwk.convention4j.comfyui.exception.ComfyUIException;
 import fun.fengwk.convention4j.comfyui.input.UploadResult;
+import fun.fengwk.convention4j.comfyui.internal.DefaultComfyUIClient;
+import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
 import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -33,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * 无状态客户端API测试
@@ -86,6 +90,21 @@ public class ComfyUIClientStatelessTest {
         }
 
         Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+    }
+
+    @Test
+    public void testSubmitRejectsMalformedNodeErrors() throws IOException {
+        startServer(exchange -> respondJson(exchange, 200,
+                "{\"prompt_id\":\"prompt-1\",\"number\":1,\"node_errors\":[]}"));
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // node_errors 是协议对象；错误类型不能静默透传给上层。
+            ComfyUIException failure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.submit(workflow()).block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(failure.getMessage().contains("field 'node_errors' must be an object"));
+        }
     }
 
     @Test
@@ -228,6 +247,8 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertThrows(IllegalArgumentException.class,
                     () -> client.getFile(" ", null, null).block());
             Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.getFile((OutputFile) null).block());
+            Assertions.assertThrows(IllegalArgumentException.class,
                     () -> client.uploadFile("bad\"name.png", new byte[0], "image/png").block());
             Assertions.assertThrows(IllegalArgumentException.class,
                     () -> client.uploadFile("name.png", null, "image/png").block());
@@ -235,6 +256,115 @@ public class ComfyUIClientStatelessTest {
                     () -> client.uploadFile("name.png", new byte[0], null).block());
             Assertions.assertEquals(requestsBeforeValidation, requestCount.get());
             Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testGetFileErrorIncludesConsumedResponseBody() throws IOException {
+        startServer(exchange -> respondJson(exchange, 404, "{\"error\":\"Output file not found\"}"));
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // 非2xx文件响应也必须读取服务端正文，避免连接未消费且丢失诊断信息。
+            ComfyUIException failure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getFile("missing.png", null, "output").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(failure.getMessage().contains("HTTP 404"));
+            Assertions.assertTrue(failure.getMessage().contains("Output file not found"));
+            Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testGetFileDecodesGzipResponse() throws IOException {
+        // 统一字节响应 helper 必须保留 convention4j HTTP 层原有的 gzip 响应兼容性。
+        byte[] expected = "compressed-output".getBytes(StandardCharsets.UTF_8);
+        byte[] compressed = gzip(expected);
+        startServer(exchange -> {
+            exchange.getResponseHeaders().set("Content-Encoding", "GZip");
+            respond(exchange, 200, compressed, "application/octet-stream");
+        });
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            Assertions.assertArrayEquals(
+                    expected,
+                    client.getFile("output.bin", null, "output").block(Duration.ofSeconds(5)));
+            Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testRequestsWrapAsynchronousTransportFailure() throws IOException {
+        startServer(exchange -> respondJson(exchange, 500, "{\"error\":\"unexpected request\"}"));
+        AsyncFailingHttpClient httpClient = new AsyncFailingHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // sendAsync失败必须沿响应式边界包装，不能悬挂或暴露底层传输异常。
+            ComfyUIException jsonFailure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getJob("job-1").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(jsonFailure.getMessage().contains("Get job job-1 failed"));
+
+            ComfyUIException fileFailure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getFile("output.png", null, "output").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(fileFailure.getMessage().contains("Get file output.png failed"));
+            Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testFactoryRejectsInvalidOptions() throws Exception {
+        ComfyUIClientFactory factory = new ComfyUIClientFactory(HttpClient.newHttpClient());
+
+        // 工厂和客户端构造器统一验证依赖、URL 和必需超时，并允许省略 WebSocket 握手超时。
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new ComfyUIClientFactory(null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create((ComfyUIClientOptions) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new DefaultComfyUIClient(
+                ComfyUIClientOptions.builder().baseUrl("http://127.0.0.1:8188")
+                        .connectTimeout(Duration.ZERO).build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .connectTimeout(Duration.ZERO)
+                .build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .readTimeout(Duration.ofSeconds(-1))
+                .build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .websocketTimeout(Duration.ZERO)
+                .build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://user:password@127.0.0.1:8188")
+                .build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:70000")
+                .build()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .apiKey("bad\nkey")
+                .build()));
+        try (ComfyUIClient client = factory.create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .websocketTimeout(null)
+                .build())) {
+            Assertions.assertNotNull(client);
+        }
+
+        // 默认工厂必须将 connectTimeout 应用到实际 HttpClient，而不是静默使用全局固定值。
+        Duration configuredConnectTimeout = Duration.ofSeconds(3);
+        try (ComfyUIClient client = new ComfyUIClientFactory().create(ComfyUIClientOptions.builder()
+                .baseUrl("http://127.0.0.1:8188")
+                .connectTimeout(configuredConnectTimeout)
+                .build())) {
+            var httpClientField = DefaultComfyUIClient.class.getDeclaredField("httpClient");
+            Assertions.assertTrue(httpClientField.trySetAccessible());
+            HttpClient configuredHttpClient = (HttpClient) httpClientField.get(client);
+            Assertions.assertEquals(
+                    configuredConnectTimeout,
+                    configuredHttpClient.connectTimeout().orElseThrow());
         }
     }
 
@@ -250,6 +380,8 @@ public class ComfyUIClientStatelessTest {
             } else if (path.endsWith("missing-entry")) {
                 missingEntryRequests.incrementAndGet();
                 respondJson(exchange, 200, "{}");
+            } else if (path.endsWith("missing-outputs")) {
+                respondJson(exchange, 200, "{\"missing-outputs\":{}}");
             } else {
                 respondJson(exchange, 200, "{\"prompt/id\":{\"outputs\":{\"1\":{\"text\":[\"ok\"]}}}}");
             }
@@ -266,8 +398,14 @@ public class ComfyUIClientStatelessTest {
             ComfyUIException missing = Assertions.assertThrows(
                     ComfyUIException.class,
                     () -> client.getHistory("missing-entry").block(Duration.ofSeconds(5)));
+            Assertions.assertEquals(ComfyUIException.class, missing.getClass());
             Assertions.assertTrue(missing.getMessage().contains("did not contain the prompt entry"));
             Assertions.assertEquals(1, missingEntryRequests.get());
+
+            ComfyUIException missingOutputs = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getHistory("missing-outputs").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(missingOutputs.getMessage().contains("field 'outputs'"));
 
             Assertions.assertNotNull(client.getHistory("prompt/id").block(Duration.ofSeconds(5)));
             Assertions.assertEquals("/history/prompt%2Fid", captured.get().rawPath());
@@ -364,6 +502,15 @@ public class ComfyUIClientStatelessTest {
                 body);
     }
 
+    private byte[] gzip(byte[] body) throws IOException {
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+                GZIPOutputStream gzip = new GZIPOutputStream(output)) {
+            gzip.write(body);
+            gzip.finish();
+            return output.toByteArray();
+        }
+    }
+
     private void respondJson(HttpExchange exchange, int status, String body) throws IOException {
         respond(exchange, status, body.getBytes(StandardCharsets.UTF_8), "application/json; charset=UTF-8");
     }
@@ -381,6 +528,15 @@ public class ComfyUIClientStatelessTest {
             String rawQuery,
             String authorization,
             String body) {
+    }
+
+    private static class AsyncFailingHttpClient extends NoWebSocketHttpClient {
+
+        @Override
+        public <T> CompletableFuture<HttpResponse<T>> sendAsync(
+                HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            return CompletableFuture.failedFuture(new IOException("simulated asynchronous transport failure"));
+        }
     }
 
     private static class NoWebSocketHttpClient extends HttpClient {

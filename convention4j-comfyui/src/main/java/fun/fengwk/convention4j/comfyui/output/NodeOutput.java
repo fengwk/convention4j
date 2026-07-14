@@ -47,7 +47,13 @@ public class NodeOutput {
      * @return 是否有视频
      */
     public boolean hasVideos() {
-        return data != null && data.has(ComfyUIConstants.JsonFields.VIDEO) && data.get(ComfyUIConstants.JsonFields.VIDEO).isArray() && !data.get(ComfyUIConstants.JsonFields.VIDEO).isEmpty();
+        return hasMediaEntries(ComfyUIConstants.JsonFields.VIDEO)
+                || hasMediaEntries(ComfyUIConstants.JsonFields.VIDEOS);
+    }
+
+    private boolean hasMediaEntries(String fieldName) {
+        return data != null && data.has(fieldName) && data.get(fieldName).isArray()
+                && !data.get(fieldName).isEmpty();
     }
 
     /**
