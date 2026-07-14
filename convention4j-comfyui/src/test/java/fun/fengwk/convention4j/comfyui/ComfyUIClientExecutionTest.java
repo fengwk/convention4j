@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import fun.fengwk.convention4j.comfyui.exception.ComfyUIException;
 import fun.fengwk.convention4j.comfyui.exception.ExecutionException;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionEvent;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionListener;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionOptions;
 import fun.fengwk.convention4j.comfyui.execution.ExecutionResult;
 import fun.fengwk.convention4j.comfyui.input.InputFile;
+import fun.fengwk.convention4j.comfyui.websocket.ComfyUIWebSocket;
 import fun.fengwk.convention4j.comfyui.workflow.Workflow;
 import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -135,6 +137,140 @@ public class ComfyUIClientExecutionTest {
             httpClient.getSocket(0).awaitClose();
             httpClient.getSocket(1).awaitClose();
         }
+    }
+
+    @Test
+    public void testExecutionRetriesOnlyUntilHistoryEntryAppears() throws Exception {
+        AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
+        AtomicInteger historyRequests = new AtomicInteger();
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                String clientId = JacksonUtils.readTree(readBody(exchange)).path("client_id").asText();
+                httpClientRef.get().socketForClientId(clientId)
+                        .receive(event("execution_success", "{\"prompt_id\":\"history-race\"}"));
+                respondJson(exchange, 200,
+                        "{\"prompt_id\":\"history-race\",\"number\":1,\"node_errors\":{}}");
+            } else if ("/history/history-race".equals(path)) {
+                int request = historyRequests.incrementAndGet();
+                respondJson(exchange, 200, request < 3 ? "{}" : "{\"history-race\":{\"outputs\":{}}}");
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClientRef.set(httpClient);
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow()).toFuture();
+            httpClient.awaitSocketCount(1);
+            httpClient.getSocket(0).open();
+
+            // execution_success先于历史持久化时，仅缺失prompt条目会被短暂重试。
+            ExecutionResult result = resultFuture.get(5, TimeUnit.SECONDS);
+            Assertions.assertEquals("history-race", result.getPromptId());
+            Assertions.assertEquals(3, historyRequests.get());
+        }
+    }
+
+    @Test
+    public void testExecutionHistoryMalformedResponseIsNotRetried() throws Exception {
+        AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
+        AtomicInteger historyRequests = new AtomicInteger();
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                String clientId = JacksonUtils.readTree(readBody(exchange)).path("client_id").asText();
+                httpClientRef.get().socketForClientId(clientId)
+                        .receive(event("execution_success", "{\"prompt_id\":\"malformed-history\"}"));
+                respondJson(exchange, 200,
+                        "{\"prompt_id\":\"malformed-history\",\"number\":1,\"node_errors\":{}}");
+            } else if ("/history/malformed-history".equals(path)) {
+                historyRequests.incrementAndGet();
+                respondJson(exchange, 200, "{\"malformed-history\":{\"outputs\":[]}}");
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClientRef.set(httpClient);
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow()).toFuture();
+            httpClient.awaitSocketCount(1);
+            httpClient.getSocket(0).open();
+
+            java.util.concurrent.ExecutionException failure = Assertions.assertThrows(
+                    java.util.concurrent.ExecutionException.class,
+                    () -> resultFuture.get(5, TimeUnit.SECONDS));
+            Assertions.assertInstanceOf(ComfyUIException.class, failure.getCause());
+            Assertions.assertTrue(failure.getCause().getMessage().contains("malformed response"));
+            Assertions.assertTrue(failure.getCause().getMessage().contains("could not be mapped"));
+            // 映射错误不是历史尚未就绪，必须在第一次响应后立即失败。
+            Assertions.assertEquals(1, historyRequests.get());
+        }
+    }
+
+    @Test
+    public void testExecutionHistoryRetryExhaustionIsClearAndBounded() throws Exception {
+        AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
+        AtomicInteger historyRequests = new AtomicInteger();
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                String clientId = JacksonUtils.readTree(readBody(exchange)).path("client_id").asText();
+                httpClientRef.get().socketForClientId(clientId)
+                        .receive(event("execution_success", "{\"prompt_id\":\"missing-history\"}"));
+                respondJson(exchange, 200,
+                        "{\"prompt_id\":\"missing-history\",\"number\":1,\"node_errors\":{}}");
+            } else if ("/history/missing-history".equals(path)) {
+                historyRequests.incrementAndGet();
+                respondJson(exchange, 200, "{}");
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClientRef.set(httpClient);
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow()).toFuture();
+            httpClient.awaitSocketCount(1);
+            httpClient.getSocket(0).open();
+
+            java.util.concurrent.ExecutionException failure = Assertions.assertThrows(
+                    java.util.concurrent.ExecutionException.class,
+                    () -> resultFuture.get(5, TimeUnit.SECONDS));
+            Assertions.assertInstanceOf(ComfyUIException.class, failure.getCause());
+            Assertions.assertTrue(failure.getCause().getMessage().contains("still unavailable"));
+            Assertions.assertTrue(failure.getCause().getMessage().contains("10 lookup attempts"));
+            Assertions.assertEquals(10, historyRequests.get());
+        }
+    }
+
+    @Test
+    public void testWebSocketReplaysBufferedEventsToMultipleObservers() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "observer-client", null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        httpClient.getSocket(0).open();
+        httpClient.getSocket(0).receive(event("execution_start", "{\"prompt_id\":\"observer-prompt\"}"));
+        httpClient.getSocket(0).receive(event(
+                "progress", "{\"prompt_id\":\"observer-prompt\",\"node\":\"1\",\"value\":1,\"max\":2}"));
+        httpClient.getSocket(0).receive(event("execution_success", "{\"prompt_id\":\"observer-prompt\"}"));
+        webSocket.close();
+
+        // 两个晚订阅观察者都必须收到连接期间缓存的完整事件序列。
+        List<ExecutionEvent> first = webSocket.getEvents("observer-prompt").collectList().block(Duration.ofSeconds(5));
+        List<ExecutionEvent> second = webSocket.getEvents("observer-prompt").collectList().block(Duration.ofSeconds(5));
+        Assertions.assertNotNull(first);
+        Assertions.assertNotNull(second);
+        Assertions.assertEquals(3, first.size());
+        Assertions.assertEquals(first, second);
+        Assertions.assertInstanceOf(ExecutionEvent.Started.class, first.get(0));
+        Assertions.assertInstanceOf(ExecutionEvent.NodeProgress.class, first.get(1));
+        Assertions.assertInstanceOf(ExecutionEvent.ExecutionSucceeded.class, first.get(2));
     }
 
     @Test

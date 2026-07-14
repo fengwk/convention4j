@@ -152,7 +152,7 @@ public interface ComfyUIClient extends Closeable {
     // ==================== 生命周期 ====================
 
     /**
-     * 关闭客户端，释放资源
+     * 关闭客户端，释放资源。关闭后新的响应式订阅会在本地失败；已经开始的HTTP请求不会被强制取消。
      */
     @Override
     void close();

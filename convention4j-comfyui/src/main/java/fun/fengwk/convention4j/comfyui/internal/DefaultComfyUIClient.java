@@ -32,6 +32,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,6 +43,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class DefaultComfyUIClient implements ComfyUIClient {
+
+    private static final int HISTORY_READY_MAX_ATTEMPTS = 10;
+    private static final Duration HISTORY_READY_RETRY_DELAY = Duration.ofMillis(200);
 
     private final HttpClient httpClient;
     private final ComfyUIClientOptions options;
@@ -213,33 +217,43 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     }
 
     private Mono<JsonNode> sendJson(HttpRequest request, String operation) {
-        return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                .send()
-                .flatMap(result -> ReactiveHttpClientUtils.bodyToString(result)
-                        .defaultIfEmpty("")
-                        .flatMap(responseBody -> {
-                            if (!result.is2xx()) {
-                                return Mono.error(new ComfyUIException(
-                                        operation + " failed with HTTP " + result.getStatusCode()
-                                                + ": " + responseBody));
-                            }
-                            try {
-                                JsonNode response = JacksonUtils.readTree(responseBody);
-                                if (response == null || !response.isObject()) {
-                                    return Mono.error(malformedResponse(operation, "expected a JSON object", responseBody));
-                                }
-                                return Mono.just(response);
-                            } catch (Exception e) {
-                                return Mono.error(new ComfyUIException(
-                                        operation + " returned malformed JSON: " + responseBody, e));
-                            }
-                        }))
+        return Mono.defer(() -> {
+                    ensureOpen();
+                    return ReactiveHttpClientUtils.buildSpec(httpClient, request)
+                            .send()
+                            .flatMap(result -> ReactiveHttpClientUtils.bodyToString(result)
+                                    .defaultIfEmpty("")
+                                    .flatMap(responseBody -> {
+                                        if (!result.is2xx()) {
+                                            return Mono.error(new ComfyUIException(
+                                                    operation + " failed with HTTP " + result.getStatusCode()
+                                                            + ": " + responseBody));
+                                        }
+                                        try {
+                                            JsonNode response = JacksonUtils.readTree(responseBody);
+                                            if (response == null || !response.isObject()) {
+                                                return Mono.error(malformedResponse(
+                                                        operation, "expected a JSON object", responseBody));
+                                            }
+                                            return Mono.just(response);
+                                        } catch (Exception e) {
+                                            return Mono.error(new ComfyUIException(
+                                                    operation + " returned malformed JSON: " + responseBody, e));
+                                        }
+                                    }));
+                })
                 .onErrorMap(e -> {
                     if (e instanceof ComfyUIException) {
                         return e;
                     }
                     return new ComfyUIException(operation + " failed", e);
                 });
+    }
+
+    private void ensureOpen() {
+        if (closed) {
+            throw new ComfyUIException("ComfyUI client is closed");
+        }
     }
 
     private String requiredText(JsonNode response, String fieldName, String operation) {
@@ -407,7 +421,7 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                                 .takeUntil(this::isTerminalExecutionEvent)
                                 .concatMap(event -> {
                                     if (event instanceof ExecutionEvent.ExecutionSucceeded) {
-                                        return getHistory(promptId)
+                                        return getHistoryAfterExecutionSuccess(promptId)
                                                 .map(history -> createExecutionResult(promptId, history))
                                                 .map(ExecutionEvent.Completed::new);
                                     }
@@ -492,6 +506,29 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (promptId == null || promptId.isBlank()) {
             return Mono.error(new IllegalArgumentException("promptId must not be blank"));
         }
+        return getHistoryInternal(promptId);
+    }
+
+    private Mono<HistoryResult> getHistoryAfterExecutionSuccess(String promptId) {
+        return getHistoryAfterExecutionSuccess(promptId, 1);
+    }
+
+    private Mono<HistoryResult> getHistoryAfterExecutionSuccess(String promptId, int attempt) {
+        return getHistoryInternal(promptId)
+                .onErrorResume(HistoryNotReadyException.class, error -> {
+                    if (attempt >= HISTORY_READY_MAX_ATTEMPTS) {
+                        return Mono.error(new ComfyUIException(
+                                "History for prompt " + promptId
+                                        + " was still unavailable after execution succeeded and "
+                                        + HISTORY_READY_MAX_ATTEMPTS + " lookup attempts",
+                                error));
+                    }
+                    return Mono.delay(HISTORY_READY_RETRY_DELAY)
+                            .then(getHistoryAfterExecutionSuccess(promptId, attempt + 1));
+                });
+    }
+
+    private Mono<HistoryResult> getHistoryInternal(String promptId) {
         String url = baseUrl + ComfyUIConstants.ApiPaths.HISTORY + encodePathSegment(promptId);
         HttpRequest request = buildHttpRequest()
                 .uri(URI.create(url))
@@ -503,9 +540,13 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         return sendJson(request, operation)
                 .flatMap(response -> {
                     JsonNode historyNode = response.get(promptId);
-                    if (historyNode == null || !historyNode.isObject()) {
-                        return Mono.error(new ComfyUIException(
+                    if (historyNode == null) {
+                        return Mono.error(new HistoryNotReadyException(
                                 operation + " response did not contain the prompt entry: " + response));
+                    }
+                    if (!historyNode.isObject()) {
+                        return Mono.error(malformedResponse(
+                                operation, "prompt entry must be a JSON object", historyNode.toString()));
                     }
                     try {
                         HistoryResult history = JacksonUtils.readValue(historyNode.toString(), HistoryResult.class);
@@ -648,33 +689,39 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     @Override
     public Mono<byte[]> getFile(String filename, String subfolder, String type) {
-        try {
-            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
-            StringBuilder url = new StringBuilder(baseUrl + ComfyUIConstants.ApiPaths.VIEW + "?" + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
-            if (subfolder != null && !subfolder.isEmpty()) {
-                url.append("&").append(ComfyUIConstants.UrlParams.SUBFOLDER).append("=").append(URLEncoder.encode(subfolder, StandardCharsets.UTF_8));
-            }
-            if (type != null && !type.isEmpty()) {
-                url.append("&").append(ComfyUIConstants.UrlParams.TYPE).append("=").append(URLEncoder.encode(type, StandardCharsets.UTF_8));
-            }
-            
-            HttpRequest request = buildHttpRequest()
-                    .uri(URI.create(url.toString()))
-                    .GET()
-                    .timeout(options.getReadTimeout())
-                    .build();
-            
-            return ReactiveHttpClientUtils.buildSpec(httpClient, request)
-                    .send()
-                    .flatMap(result -> {
-                        if (!result.is2xx()) {
-                            return Mono.error(new ComfyUIException("Failed to get file: " + result.getStatusCode()));
-                        }
-                        return ReactiveHttpClientUtils.bodyToBytes(result);
-                    });
-        } catch (Exception e) {
-            return Mono.error(new ComfyUIException("Failed to encode URL parameters", e));
+        if (filename == null || filename.isBlank()) {
+            return Mono.error(new IllegalArgumentException("filename must not be blank"));
         }
+        return Mono.defer(() -> {
+            ensureOpen();
+            try {
+                String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+                StringBuilder url = new StringBuilder(baseUrl + ComfyUIConstants.ApiPaths.VIEW + "?" + ComfyUIConstants.UrlParams.FILENAME + "=" + encodedFilename);
+                if (subfolder != null && !subfolder.isEmpty()) {
+                    url.append("&").append(ComfyUIConstants.UrlParams.SUBFOLDER).append("=").append(URLEncoder.encode(subfolder, StandardCharsets.UTF_8));
+                }
+                if (type != null && !type.isEmpty()) {
+                    url.append("&").append(ComfyUIConstants.UrlParams.TYPE).append("=").append(URLEncoder.encode(type, StandardCharsets.UTF_8));
+                }
+
+                HttpRequest request = buildHttpRequest()
+                        .uri(URI.create(url.toString()))
+                        .GET()
+                        .timeout(options.getReadTimeout())
+                        .build();
+
+                return ReactiveHttpClientUtils.buildSpec(httpClient, request)
+                        .send()
+                        .flatMap(result -> {
+                            if (!result.is2xx()) {
+                                return Mono.error(new ComfyUIException("Failed to get file: " + result.getStatusCode()));
+                            }
+                            return ReactiveHttpClientUtils.bodyToBytes(result);
+                        });
+            } catch (Exception e) {
+                return Mono.error(new ComfyUIException("Failed to encode URL parameters", e));
+            }
+        });
     }
 
     @Override
@@ -684,5 +731,12 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         List<ComfyUIWebSocket> sockets = new ArrayList<>(activeExecutionSockets);
         activeExecutionSockets.clear();
         sockets.forEach(ComfyUIWebSocket::close);
+    }
+
+    private static class HistoryNotReadyException extends ComfyUIException {
+
+        private HistoryNotReadyException(String message) {
+            super(message);
+        }
     }
 }

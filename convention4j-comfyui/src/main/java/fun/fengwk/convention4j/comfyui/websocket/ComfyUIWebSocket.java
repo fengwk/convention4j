@@ -34,7 +34,8 @@ public class ComfyUIWebSocket {
 
     private final String clientId;
     private final Sinks.One<Void> readySink = Sinks.one();
-    private final Sinks.Many<EventEnvelope> eventSink = Sinks.many().unicast().onBackpressureBuffer();
+    // Each execution owns one socket; closing it completes this replay buffer and stops further growth.
+    private final Sinks.Many<EventEnvelope> eventSink = Sinks.many().replay().all();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean connectionTerminated = new AtomicBoolean();
     private volatile WebSocketConnection connection;

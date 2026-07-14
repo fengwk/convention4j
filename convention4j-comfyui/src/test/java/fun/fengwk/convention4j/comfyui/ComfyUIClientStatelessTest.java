@@ -11,6 +11,7 @@ import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Mono;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -26,6 +27,7 @@ import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -224,6 +226,8 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertThrows(IllegalArgumentException.class, () -> client.cancelJob(null).block());
             Assertions.assertThrows(IllegalArgumentException.class, () -> client.getHistory(" ").block());
             Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.getFile(" ", null, null).block());
+            Assertions.assertThrows(IllegalArgumentException.class,
                     () -> client.uploadFile("bad\"name.png", new byte[0], "image/png").block());
             Assertions.assertThrows(IllegalArgumentException.class,
                     () -> client.uploadFile("name.png", null, "image/png").block());
@@ -237,12 +241,14 @@ public class ComfyUIClientStatelessTest {
     @Test
     public void testHistoryStatusMissingEntryAndEncodedPath() throws IOException {
         AtomicReference<CapturedRequest> captured = new AtomicReference<>();
+        AtomicInteger missingEntryRequests = new AtomicInteger();
         startServer(exchange -> {
             captured.set(capture(exchange));
             String path = exchange.getRequestURI().getRawPath();
             if (path.endsWith("not-found")) {
                 respondJson(exchange, 404, "{\"error\":\"History unavailable\"}");
             } else if (path.endsWith("missing-entry")) {
+                missingEntryRequests.incrementAndGet();
                 respondJson(exchange, 200, "{}");
             } else {
                 respondJson(exchange, 200, "{\"prompt/id\":{\"outputs\":{\"1\":{\"text\":[\"ok\"]}}}}");
@@ -261,10 +267,41 @@ public class ComfyUIClientStatelessTest {
                     ComfyUIException.class,
                     () -> client.getHistory("missing-entry").block(Duration.ofSeconds(5)));
             Assertions.assertTrue(missing.getMessage().contains("did not contain the prompt entry"));
+            Assertions.assertEquals(1, missingEntryRequests.get());
 
             Assertions.assertNotNull(client.getHistory("prompt/id").block(Duration.ofSeconds(5)));
             Assertions.assertEquals("/history/prompt%2Fid", captured.get().rawPath());
         }
+    }
+
+    @Test
+    public void testStatelessOperationsCreatedBeforeCloseFailOnNewSubscriptionWithoutNetwork() throws IOException {
+        AtomicInteger serverRequests = new AtomicInteger();
+        startServer(exchange -> {
+            serverRequests.incrementAndGet();
+            respondJson(exchange, 500, "{\"error\":\"unexpected request\"}");
+        });
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+        ComfyUIClient client = createClient(httpClient, null);
+        List<Mono<?>> operations = List.of(
+                client.submit(workflow()),
+                client.getJob("job-1"),
+                client.cancelJob("job-1"),
+                client.getHistory("prompt-1"),
+                client.uploadFile("input.png", new byte[]{1}, "image/png"),
+                client.getFile("output.png", "", "output"));
+
+        client.close();
+        for (Mono<?> operation : operations) {
+            // close前组装、close后首次订阅属于新订阅，必须由本地生命周期门禁拒绝。
+            ComfyUIException failure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> operation.block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(failure.getMessage().contains("client is closed"));
+        }
+        Assertions.assertEquals(0, httpClient.getHttpAttempts());
+        Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        Assertions.assertEquals(0, serverRequests.get());
     }
 
     @Test
@@ -349,7 +386,12 @@ public class ComfyUIClientStatelessTest {
     private static class NoWebSocketHttpClient extends HttpClient {
 
         private final HttpClient delegate = HttpClient.newHttpClient();
+        private final AtomicInteger httpAttempts = new AtomicInteger();
         private final AtomicInteger webSocketAttempts = new AtomicInteger();
+
+        public int getHttpAttempts() {
+            return httpAttempts.get();
+        }
 
         public int getWebSocketAttempts() {
             return webSocketAttempts.get();
@@ -410,6 +452,7 @@ public class ComfyUIClientStatelessTest {
         @Override
         public <T> CompletableFuture<HttpResponse<T>> sendAsync(
                 HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            httpAttempts.incrementAndGet();
             return delegate.sendAsync(request, responseBodyHandler);
         }
 
@@ -418,6 +461,7 @@ public class ComfyUIClientStatelessTest {
                 HttpRequest request,
                 HttpResponse.BodyHandler<T> responseBodyHandler,
                 HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
+            httpAttempts.incrementAndGet();
             return delegate.sendAsync(request, responseBodyHandler, pushPromiseHandler);
         }
 
