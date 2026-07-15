@@ -49,7 +49,17 @@ public class HttpUtils {
      * @return 是否包含gzip标识
      */
     public static boolean gzip(String contentEncoding) {
-        return contentEncoding != null && contentEncoding.contains("gzip");
+        if (contentEncoding == null) {
+            return false;
+        }
+
+        for (String encoding : contentEncoding.split(",")) {
+            String normalized = encoding.trim();
+            if ("gzip".equalsIgnoreCase(normalized) || "x-gzip".equalsIgnoreCase(normalized)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

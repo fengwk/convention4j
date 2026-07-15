@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * 响应式 WebSocket 客户端工具类
@@ -47,7 +48,7 @@ public class ReactiveWebSocketClientUtils {
      * @param uri            WebSocket URI
      * @param headers        自定义请求头（可选）
      * @param connectTimeout 连接超时时间（可选）
-     * @return 文本消息 Flux
+     * @return 文本消息 Flux；取消或释放订阅会取消握手或关闭已建立的连接
      */
     public static Flux<String> connectText(
             HttpClient httpClient,
@@ -76,14 +77,8 @@ public class ReactiveWebSocketClientUtils {
                     sink.error(error);
                 }
             });
-            
-            sink.onDispose(() -> {
-                connectFuture.thenAccept(connection -> {
-                    if (connection.isOpen()) {
-                        connection.close();
-                    }
-                });
-            });
+            propagateConnectFailure(connectFuture, sink::error);
+            sink.onDispose(() -> disposeConnection(connectFuture));
         });
     }
 
@@ -115,7 +110,7 @@ public class ReactiveWebSocketClientUtils {
      * @param uri            WebSocket URI
      * @param headers        自定义请求头（可选）
      * @param connectTimeout 连接超时时间（可选）
-     * @return 二进制消息 Flux
+     * @return 二进制消息 Flux；取消或释放订阅会取消握手或关闭已建立的连接
      */
     public static Flux<ByteBuffer> connectBinary(
             HttpClient httpClient,
@@ -144,14 +139,36 @@ public class ReactiveWebSocketClientUtils {
                     sink.error(error);
                 }
             });
-
-            sink.onDispose(() -> {
-                connectFuture.thenAccept(connection -> {
-                    if (connection.isOpen()) {
-                        connection.close();
-                    }
-                });
-            });
+            propagateConnectFailure(connectFuture, sink::error);
+            sink.onDispose(() -> disposeConnection(connectFuture));
         });
+    }
+
+    private static void propagateConnectFailure(
+            CompletableFuture<WebSocketConnection> connectFuture,
+            java.util.function.Consumer<Throwable> errorConsumer) {
+        connectFuture.whenComplete((connection, error) -> {
+            if (error != null && !connectFuture.isCancelled()) {
+                errorConsumer.accept(unwrapCompletionError(error));
+            }
+        });
+    }
+
+    private static Throwable unwrapCompletionError(Throwable error) {
+        Throwable current = error;
+        while (current instanceof CompletionException && current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current;
+    }
+
+    private static void disposeConnection(CompletableFuture<WebSocketConnection> connectFuture) {
+        if (!connectFuture.cancel(true)) {
+            connectFuture.thenAccept(connection -> {
+                if (connection.isOpen()) {
+                    connection.close();
+                }
+            });
+        }
     }
 }

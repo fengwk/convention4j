@@ -24,7 +24,16 @@ public class ReactiveHttpSendMonoSpec<T> extends AbstractReactiveHttpSendSpec<Mo
     }
 
     public Mono<T> send() {
-        return send0().flatMap(mapper);
+        return send0().flatMap(res -> {
+            Mono<T> mapped;
+            try {
+                mapped = Objects.requireNonNull(mapper.apply(res), "mapper result must not be null");
+            } catch (Throwable error) {
+                res.cleanupBody();
+                return Mono.error(error);
+            }
+            return mapped.doFinally(signalType -> res.cleanupBody());
+        });
     }
 
     public <R> ReactiveHttpSendMonoSpec<R> flatMap(Function<T, R> mapper) {

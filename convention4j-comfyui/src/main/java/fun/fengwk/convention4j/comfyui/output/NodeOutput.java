@@ -3,7 +3,6 @@ package fun.fengwk.convention4j.comfyui.output;
 import com.fasterxml.jackson.databind.JsonNode;
 import fun.fengwk.convention4j.comfyui.ComfyUIConstants;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +14,6 @@ import java.util.List;
  * @author fengwk
  */
 @Getter
-@RequiredArgsConstructor
 public class NodeOutput {
     /**
      * 节点ID
@@ -31,6 +29,17 @@ public class NodeOutput {
      * 原始输出数据
      */
     private final JsonNode data;
+
+    public NodeOutput(String nodeId, List<OutputFile> outputs, JsonNode data) {
+        this.nodeId = nodeId;
+        this.outputs = outputs == null
+                ? List.of() : Collections.unmodifiableList(new ArrayList<>(outputs));
+        this.data = data == null ? null : data.deepCopy();
+    }
+
+    public JsonNode getData() {
+        return data == null ? null : data.deepCopy();
+    }
 
     /**
      * 判断是否有图片输出
@@ -96,7 +105,7 @@ public class NodeOutput {
     }
 
     public List<OutputFile> getFiles() {
-        return Collections.unmodifiableList(outputs);
+        return outputs;
     }
 
     /**

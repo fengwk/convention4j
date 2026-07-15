@@ -9,12 +9,14 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -39,105 +41,170 @@ public abstract class AbstractReactiveHttpSendSpec<T> {
     public abstract T send();
 
     /**
-     * 异步发送http请求，注意使用当前方法后，必须主动消费 body，否则将导致底层 TCP 变为僵尸状态
+     * 异步发送http请求。响应 body 只允许一个订阅者，且必须被消费或取消；取消响应头 Mono
+     * 或 body Flux 会向底层 HTTP future 和 body subscription 传播取消。
      */
     protected Mono<ReactiveHttpSendResult<Flux<ByteBuffer>>> send0() {
         return Mono.create(emitter -> {
             AtomicReference<CompletableFuture<HttpResponse<Void>>> sendAsyncFutureRef = new AtomicReference<>();
-            CompletableFuture<HttpResponse<Void>> sendAsyncFuture = httpClient.sendAsync(httpRequest,
-                responseInfo -> {
-                    ReactiveHttpSendResult<Flux<ByteBuffer>> result = new ReactiveHttpSendResult<>();
-                    result.setStatusCode(responseInfo.statusCode());
-                    HttpHeaders headers = responseInfo.headers();
-                    if (headers != null) {
-                        result.setHeaders(Collections.unmodifiableMap(headers.map()));
-                    } else {
-                        result.setHeaders(Collections.emptyMap());
-                    }
-
-                    LinkedList<Consumer<FluxSink<ByteBuffer>>> signalQueue = new LinkedList<>();
-                    AtomicReference<FluxSink<ByteBuffer>> bodyEmitterRef = new AtomicReference<>();
-                    Flux<ByteBuffer> body = Flux.<ByteBuffer>create(sink -> {
-                            synchronized (bodyEmitterRef) {
-                                bodyEmitterRef.set(sink);
-                                while (!signalQueue.isEmpty()) {
-                                    signalQueue.poll().accept(sink);
-                                }
-                            }
-                        })
-                        .doOnCancel(() -> {
-                            CompletableFuture<HttpResponse<Void>> future = sendAsyncFutureRef.get();
-                            if (future != null) {
-                                future.cancel(true);
-                            }
-                        });
-                    result.setBody(body);
-
-                    HttpResponse.BodySubscriber<Void> subscriber = new GzipSupportBodySubscriber(responseInfo,
-                        new AbstractSubscriber<>() {
-                            @Override
-                            protected void onSubscribe0(Flow.Subscription subscription) {
-                                synchronized (bodyEmitterRef) {
-                                    FluxSink<ByteBuffer> bodyEmitter = bodyEmitterRef.get();
-                                    if (bodyEmitter != null) {
-                                        bodyEmitter.onRequest(subscription::request);
-                                    } else {
-                                        signalQueue.offer(sink -> sink.onRequest(subscription::request));
-                                    }
-                                }
-                            }
-
-                            @Override
-                            protected void onNext0(List<ByteBuffer> chunks) {
-                                FluxSink<ByteBuffer> bodyEmitter = bodyEmitterRef.get();
-                                for (ByteBuffer chunk : chunks) {
-                                    bodyEmitter.next(chunk);
-                                }
-                            }
-
-                            @Override
-                            protected void onComplete0() {
-                                synchronized (bodyEmitterRef) {
-                                    FluxSink<ByteBuffer> bodyEmitter = bodyEmitterRef.get();
-                                    if (bodyEmitter != null) {
-                                        if (!bodyEmitter.isCancelled()) {
-                                            bodyEmitter.complete();
-                                        }
-                                    } else {
-                                        signalQueue.offer(sink -> {
-                                            if (!sink.isCancelled()) {
-                                                sink.complete();
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-
-                            @Override
-                            protected void onError0(Throwable throwable) {
-                                synchronized (bodyEmitterRef) {
-                                    FluxSink<ByteBuffer> bodyEmitter = bodyEmitterRef.get();
-                                    if (bodyEmitter != null) {
-                                        bodyEmitter.error(throwable);
-                                    } else {
-                                        signalQueue.offer(sink -> sink.error(throwable));
-                                    }
-                                }
-                            }
-                        });
-
-                    emitter.success(result);
-
-                    return subscriber;
-                });
-
-            sendAsyncFutureRef.set(sendAsyncFuture);
-            emitter.onCancel(() -> {
+            AtomicReference<Flow.Subscription> bodySubscriptionRef = new AtomicReference<>();
+            AtomicBoolean cancellationRequested = new AtomicBoolean();
+            AtomicBoolean headersDelivered = new AtomicBoolean();
+            Runnable cancelRequest = () -> {
+                if (!cancellationRequested.compareAndSet(false, true)) {
+                    return;
+                }
+                Flow.Subscription subscription = bodySubscriptionRef.get();
+                if (subscription != null) {
+                    subscription.cancel();
+                }
                 CompletableFuture<HttpResponse<Void>> future = sendAsyncFutureRef.get();
                 if (future != null) {
                     future.cancel(true);
                 }
-            });
+            };
+            emitter.onCancel(cancelRequest::run);
+
+            if (cancellationRequested.get()) {
+                return;
+            }
+
+            try {
+                CompletableFuture<HttpResponse<Void>> sendAsyncFuture = httpClient.sendAsync(httpRequest,
+                    responseInfo -> {
+                        ReactiveHttpSendResult<Flux<ByteBuffer>> result = new ReactiveHttpSendResult<>();
+                        result.setStatusCode(responseInfo.statusCode());
+                        HttpHeaders headers = responseInfo.headers();
+                        if (headers != null) {
+                            result.setHeaders(Collections.unmodifiableMap(headers.map()));
+                        } else {
+                            result.setHeaders(Collections.emptyMap());
+                        }
+
+                        LinkedList<Consumer<FluxSink<ByteBuffer>>> signalQueue = new LinkedList<>();
+                        AtomicReference<FluxSink<ByteBuffer>> bodyEmitterRef = new AtomicReference<>();
+                        AtomicBoolean bodySubscribed = new AtomicBoolean();
+                        AtomicBoolean bodyTerminated = new AtomicBoolean();
+                        Flux<ByteBuffer> body = Flux.<ByteBuffer>defer(() -> {
+                                if (!bodySubscribed.compareAndSet(false, true)) {
+                                    return Flux.error(new IllegalStateException("response body supports only one subscriber"));
+                                }
+                                return Flux.create(sink -> {
+                                    List<Consumer<FluxSink<ByteBuffer>>> pendingSignals;
+                                    synchronized (bodyEmitterRef) {
+                                        bodyEmitterRef.set(sink);
+                                        pendingSignals = new ArrayList<>(signalQueue);
+                                        signalQueue.clear();
+                                    }
+                                    for (Consumer<FluxSink<ByteBuffer>> signal : pendingSignals) {
+                                        signal.accept(sink);
+                                    }
+                                });
+                            })
+                            .doOnCancel(cancelRequest);
+                        result.setBody(body);
+                        result.setBodyCleanup(() -> {
+                            if (!bodyTerminated.get()) {
+                                cancelRequest.run();
+                            }
+                        });
+
+                        HttpResponse.BodySubscriber<Void> subscriber = new GzipSupportBodySubscriber(responseInfo,
+                            new AbstractSubscriber<>() {
+                                @Override
+                                protected void onSubscribe0(Flow.Subscription subscription) {
+                                    bodySubscriptionRef.set(subscription);
+                                    if (cancellationRequested.get()) {
+                                        subscription.cancel();
+                                        return;
+                                    }
+                                    Consumer<FluxSink<ByteBuffer>> signal =
+                                        sink -> sink.onRequest(subscription::request);
+                                    FluxSink<ByteBuffer> bodyEmitter;
+                                    synchronized (bodyEmitterRef) {
+                                        bodyEmitter = bodyEmitterRef.get();
+                                        if (bodyEmitter == null) {
+                                            signalQueue.offer(signal);
+                                        }
+                                    }
+                                    if (bodyEmitter != null) {
+                                        signal.accept(bodyEmitter);
+                                    }
+                                }
+
+                                @Override
+                                protected void onNext0(List<ByteBuffer> chunks) {
+                                    Consumer<FluxSink<ByteBuffer>> signal = sink -> {
+                                        for (ByteBuffer chunk : chunks) {
+                                            sink.next(chunk);
+                                        }
+                                    };
+                                    FluxSink<ByteBuffer> bodyEmitter;
+                                    synchronized (bodyEmitterRef) {
+                                        bodyEmitter = bodyEmitterRef.get();
+                                        if (bodyEmitter == null) {
+                                            signalQueue.offer(signal);
+                                        }
+                                    }
+                                    if (bodyEmitter != null) {
+                                        signal.accept(bodyEmitter);
+                                    }
+                                }
+
+                                @Override
+                                protected void onComplete0() {
+                                    bodyTerminated.set(true);
+                                    Consumer<FluxSink<ByteBuffer>> signal = sink -> {
+                                        if (!sink.isCancelled()) {
+                                            sink.complete();
+                                        }
+                                    };
+                                    FluxSink<ByteBuffer> bodyEmitter;
+                                    synchronized (bodyEmitterRef) {
+                                        bodyEmitter = bodyEmitterRef.get();
+                                        if (bodyEmitter == null) {
+                                            signalQueue.offer(signal);
+                                        }
+                                    }
+                                    if (bodyEmitter != null) {
+                                        signal.accept(bodyEmitter);
+                                    }
+                                }
+
+                                @Override
+                                protected void onError0(Throwable throwable) {
+                                    bodyTerminated.set(true);
+                                    Consumer<FluxSink<ByteBuffer>> signal = sink -> sink.error(throwable);
+                                    FluxSink<ByteBuffer> bodyEmitter;
+                                    synchronized (bodyEmitterRef) {
+                                        bodyEmitter = bodyEmitterRef.get();
+                                        if (bodyEmitter == null) {
+                                            signalQueue.offer(signal);
+                                        }
+                                    }
+                                    if (bodyEmitter != null) {
+                                        signal.accept(bodyEmitter);
+                                    }
+                                }
+                            });
+
+                        headersDelivered.set(true);
+                        emitter.success(result);
+                        return subscriber;
+                    });
+
+                sendAsyncFutureRef.set(sendAsyncFuture);
+                if (cancellationRequested.get()) {
+                    sendAsyncFuture.cancel(true);
+                }
+                sendAsyncFuture.whenComplete((response, throwable) -> {
+                    if (throwable != null && !headersDelivered.get()) {
+                        emitter.error(throwable);
+                    }
+                });
+            } catch (Throwable throwable) {
+                emitter.error(throwable);
+            }
         });
     }
 

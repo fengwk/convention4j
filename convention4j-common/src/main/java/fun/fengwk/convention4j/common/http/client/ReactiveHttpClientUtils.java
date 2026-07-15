@@ -103,19 +103,8 @@ public class ReactiveHttpClientUtils {
         Charset charset = HttpUtils.parseContentTypeCharset(contentType, HttpUtils.DEFAULT_CHARSET);
         LineStreamBodyDecoder lineDecoder = new LineStreamBodyDecoder(charset);
         return bodyToFlux(res)
-            .flatMap(chunk -> {
-                try {
-                    lineDecoder.appendChunk(chunk);
-                    List<String> lines = new ArrayList<>();
-                    String line;
-                    while ((line = lineDecoder.nextLine()) != null) {
-                        lines.add(line);
-                    }
-                    return Flux.fromIterable(lines);
-                } catch (CharacterCodingException ex) {
-                    return Flux.error(new HttpResponseException(ex, res));
-                }
-            });
+            .concatMap(chunk -> decodeLines(lineDecoder, chunk, res))
+            .concatWith(Flux.defer(() -> finishLines(lineDecoder, res)));
     }
 
     public static Flux<SSEEvent> bodyToSSE(ReactiveHttpSendResult<Flux<ByteBuffer>> res) {
@@ -124,24 +113,70 @@ public class ReactiveHttpClientUtils {
         LineStreamBodyDecoder lineDecoder = new LineStreamBodyDecoder(charset);
         SSEDecoder sseDecoder = new SSEDecoder();
         return bodyToFlux(res)
-            .flatMap(chunk -> {
-                try {
-                    lineDecoder.appendChunk(chunk);
-                    String line;
-                    while ((line = lineDecoder.nextLine()) != null) {
-                        sseDecoder.appendLine(line);
-                    }
+            .concatMap(chunk -> decodeSSE(lineDecoder, sseDecoder, chunk, res))
+            .concatWith(Flux.defer(() -> finishSSE(lineDecoder, sseDecoder, res)));
+    }
 
-                    List<SSEEvent> sseEvents = new ArrayList<>();
-                    SSEEvent sseEvent;
-                    while ((sseEvent = sseDecoder.nextEvent()) != null) {
-                        sseEvents.add(sseEvent);
-                    }
-                    return Flux.fromIterable(sseEvents);
-                } catch (CharacterCodingException ex) {
-                    return Flux.error(new HttpResponseException(ex, res));
-                }
-            });
+    private static Flux<String> decodeLines(LineStreamBodyDecoder lineDecoder, ByteBuffer chunk,
+            ReactiveHttpSendResult<Flux<ByteBuffer>> res) {
+        try {
+            lineDecoder.appendChunk(chunk);
+            return Flux.fromIterable(drainLines(lineDecoder));
+        } catch (CharacterCodingException ex) {
+            return Flux.error(new HttpResponseException(ex, res));
+        }
+    }
+
+    private static Flux<String> finishLines(LineStreamBodyDecoder lineDecoder,
+            ReactiveHttpSendResult<Flux<ByteBuffer>> res) {
+        try {
+            return Flux.fromIterable(lineDecoder.finish());
+        } catch (CharacterCodingException ex) {
+            return Flux.error(new HttpResponseException(ex, res));
+        }
+    }
+
+    private static Flux<SSEEvent> decodeSSE(LineStreamBodyDecoder lineDecoder, SSEDecoder sseDecoder,
+            ByteBuffer chunk, ReactiveHttpSendResult<Flux<ByteBuffer>> res) {
+        try {
+            lineDecoder.appendChunk(chunk);
+            for (String line : drainLines(lineDecoder)) {
+                sseDecoder.appendLine(line);
+            }
+            return Flux.fromIterable(drainEvents(sseDecoder));
+        } catch (CharacterCodingException ex) {
+            return Flux.error(new HttpResponseException(ex, res));
+        }
+    }
+
+    private static Flux<SSEEvent> finishSSE(LineStreamBodyDecoder lineDecoder, SSEDecoder sseDecoder,
+            ReactiveHttpSendResult<Flux<ByteBuffer>> res) {
+        try {
+            for (String line : lineDecoder.finish()) {
+                sseDecoder.appendLine(line);
+            }
+            return Flux.fromIterable(sseDecoder.finish());
+        } catch (CharacterCodingException ex) {
+            return Flux.error(new HttpResponseException(ex, res));
+        }
+    }
+
+    private static List<String> drainLines(LineStreamBodyDecoder lineDecoder) {
+        List<String> lines = new ArrayList<>();
+        String line;
+        while ((line = lineDecoder.nextLine()) != null) {
+            lines.add(line);
+        }
+        return lines;
+    }
+
+    private static List<SSEEvent> drainEvents(SSEDecoder sseDecoder) {
+        List<SSEEvent> sseEvents = new ArrayList<>();
+        SSEEvent sseEvent;
+        while ((sseEvent = sseDecoder.nextEvent()) != null) {
+            sseEvents.add(sseEvent);
+        }
+        return sseEvents;
     }
 
 }

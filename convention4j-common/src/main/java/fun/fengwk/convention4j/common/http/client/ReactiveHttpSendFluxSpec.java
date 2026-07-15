@@ -23,7 +23,16 @@ public class ReactiveHttpSendFluxSpec<T> extends AbstractReactiveHttpSendSpec<Fl
     }
 
     public Flux<T> send() {
-        return send0().flatMapMany(mapper);
+        return send0().flatMapMany(res -> {
+            Flux<T> mapped;
+            try {
+                mapped = Objects.requireNonNull(mapper.apply(res), "mapper result must not be null");
+            } catch (Throwable error) {
+                res.cleanupBody();
+                return Flux.error(error);
+            }
+            return mapped.doFinally(signalType -> res.cleanupBody());
+        });
     }
 
     public <R> ReactiveHttpSendFluxSpec<R> flatMap(Function<T, R> mapper) {

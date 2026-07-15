@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_ENCODING;
 
@@ -27,6 +28,8 @@ public class GzipSupportBodySubscriber
     private final NonblockingGzipDecoder gzipDecoder;
     private final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
     private final BodyCollector bodyCollector;
+    private final AtomicBoolean cancelled = new AtomicBoolean();
+    private boolean gzipDecoderDestroyed;
 
     public GzipSupportBodySubscriber(HttpResponse.ResponseInfo responseInfo,
                                      Flow.Subscriber<? super List<ByteBuffer>> userSubscriber) {
@@ -37,8 +40,8 @@ public class GzipSupportBodySubscriber
             Flow.Subscriber<? super List<ByteBuffer>> userSubscriber, BodyCollector bodyCollector) {
         this.userSubscriber = Objects.requireNonNull(userSubscriber);
         this.bodyCollector = bodyCollector;
-        String contentEncoding = responseInfo.headers().firstValue(CONTENT_ENCODING).orElse(null);
-        if (HttpUtils.gzip(contentEncoding)) {
+        boolean gzip = responseInfo.headers().allValues(CONTENT_ENCODING).stream().anyMatch(HttpUtils::gzip);
+        if (gzip) {
             this.gzipDecoder = new NonblockingGzipDecoder();
         } else {
             this.gzipDecoder = null;
@@ -52,17 +55,39 @@ public class GzipSupportBodySubscriber
 
     @Override
     protected void onSubscribe0(Subscription subscription) {
-        userSubscriber.onSubscribe(subscription);
+        userSubscriber.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                subscription.request(n);
+            }
+
+            @Override
+            public void cancel() {
+                if (cancelled.compareAndSet(false, true)) {
+                    try {
+                        subscription.cancel();
+                    } finally {
+                        cancelBody();
+                    }
+                }
+            }
+        });
     }
 
     @Override
     protected void onNext0(List<ByteBuffer> byteBufferList) {
+        if (cancelled.get()) {
+            return;
+        }
         List<ByteBuffer> processedList;
         if (gzipDecoder == null) {
             processedList = byteBufferList;
         } else {
             processedList = new ArrayList<>();
             synchronized (gzipDecoder) {
+                if (cancelled.get()) {
+                    return;
+                }
                 for (ByteBuffer byteBuffer : byteBufferList) {
                     ByteBuffer decodedByteBuffer = gzipDecoder.decode(byteBuffer);
                     processedList.add(decodedByteBuffer);
@@ -70,40 +95,77 @@ public class GzipSupportBodySubscriber
             }
         }
 
+        if (cancelled.get()) {
+            return;
+        }
         if (bodyCollector != null) {
             bodyCollector.collect(processedList);
         }
 
+        if (cancelled.get()) {
+            return;
+        }
         userSubscriber.onNext(processedList);
     }
 
     @Override
     protected void onComplete0() throws IOException {
+        if (cancelled.get()) {
+            return;
+        }
         if (gzipDecoder != null) {
             synchronized (gzipDecoder) {
+                if (cancelled.get()) {
+                    return;
+                }
                 if (!gzipDecoder.isFinished()) {
                     throw new IOException("gzip data is incomplete");
                 }
-                gzipDecoder.destroy();
+                destroyGzipDecoder();
             }
         }
 
+        if (cancelled.get()) {
+            return;
+        }
         userSubscriber.onComplete();
-
         resultFuture.complete(null);
     }
 
     @Override
     protected void onError0(Throwable throwable) {
-        if (gzipDecoder != null) {
-            synchronized (gzipDecoder) {
-                gzipDecoder.destroy();
+        if (cancelled.get()) {
+            return;
+        }
+        try {
+            if (gzipDecoder != null) {
+                synchronized (gzipDecoder) {
+                    destroyGzipDecoder();
+                }
             }
+        } finally {
+            resultFuture.completeExceptionally(throwable);
         }
 
-        userSubscriber.onError(throwable);
+        if (!cancelled.get()) {
+            userSubscriber.onError(throwable);
+        }
+    }
 
-        resultFuture.completeExceptionally(throwable);
+    private void destroyGzipDecoder() {
+        if (!gzipDecoderDestroyed) {
+            gzipDecoder.destroy();
+            gzipDecoderDestroyed = true;
+        }
+    }
+
+    private void cancelBody() {
+        if (gzipDecoder != null) {
+            synchronized (gzipDecoder) {
+                destroyGzipDecoder();
+            }
+        }
+        resultFuture.cancel(false);
     }
 
 }

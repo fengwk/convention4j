@@ -17,6 +17,7 @@ import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import reactor.core.publisher.Mono;
 
 import javax.net.ssl.SSLContext;
@@ -39,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -312,6 +315,45 @@ public class ComfyUIClientExecutionTest {
     }
 
     @Test
+    public void testWebSocketFiltersMalformedProgressAndCachedNodeEntries() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "strict-events-client", null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        ControlledWebSocket socket = httpClient.getSocket(0);
+        socket.open();
+        CompletableFuture<List<ExecutionEvent>> eventsFuture = webSocket.getEvents("strict-prompt")
+                .take(2)
+                .collectList()
+                .toFuture();
+
+        socket.receive(event("progress",
+                "{\"prompt_id\":\"strict-prompt\",\"node\":\"1\",\"value\":1.5,\"max\":2}"));
+        socket.receive(event("progress",
+                "{\"prompt_id\":\"strict-prompt\",\"node\":7,\"value\":1,\"max\":2}"));
+        socket.receive(event("progress",
+                "{\"prompt_id\":\"strict-prompt\",\"node\":\"1\",\"value\":1,"
+                        + "\"max\":2147483648}"));
+        socket.receive(event("execution_cached",
+                "{\"prompt_id\":\"strict-prompt\",\"nodes\":[null,\"\",7,\"1\"]}"));
+        socket.receive(event("progress",
+                "{\"prompt_id\":\"strict-prompt\",\"node\":\"1\",\"value\":1,\"max\":2}"));
+
+        List<ExecutionEvent> events = eventsFuture.get(5, TimeUnit.SECONDS);
+        Assertions.assertEquals(2, events.size());
+        ExecutionEvent.NodesCached cached = Assertions.assertInstanceOf(
+                ExecutionEvent.NodesCached.class, events.get(0));
+        Assertions.assertEquals(List.of("1"), cached.nodeIds());
+        ExecutionEvent.NodeProgress progress = Assertions.assertInstanceOf(
+                ExecutionEvent.NodeProgress.class, events.get(1));
+        Assertions.assertEquals("1", progress.nodeId());
+        Assertions.assertEquals(1, progress.current());
+        Assertions.assertEquals(2, progress.total());
+        webSocket.close();
+        socket.awaitClose();
+    }
+
+    @Test
     public void testMalformedKnownWebSocketMessageIsTerminal() throws Exception {
         ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
         ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
@@ -331,6 +373,29 @@ public class ComfyUIClientExecutionTest {
         Assertions.assertTrue(((ExecutionEvent.Error) events.get(0)).message().contains("missing prompt_id"));
         Assertions.assertTrue(webSocket.isConnectionTerminated());
         httpClient.getSocket(0).awaitClose();
+        webSocket.close();
+    }
+
+    @Test
+    public void testNonterminalExecutionMessageWithoutPromptIdIsTerminal() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "progress-protocol-client", null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        ControlledWebSocket socket = httpClient.getSocket(0);
+        socket.open();
+
+        socket.receive(event("progress", "{\"node\":\"1\",\"value\":1,\"max\":2}"));
+        List<ExecutionEvent> events = webSocket.getEvents("protocol-prompt")
+                .collectList()
+                .block(Duration.ofSeconds(5));
+
+        Assertions.assertNotNull(events);
+        Assertions.assertEquals(1, events.size());
+        ExecutionEvent.Error error = Assertions.assertInstanceOf(ExecutionEvent.Error.class, events.get(0));
+        Assertions.assertTrue(error.message().contains("progress message is missing prompt_id"));
+        Assertions.assertTrue(webSocket.isConnectionTerminated());
+        socket.awaitClose();
         webSocket.close();
     }
 
@@ -385,6 +450,7 @@ public class ComfyUIClientExecutionTest {
     }
 
     @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
     public void testClientCloseTerminatesSocketWaitingForReadiness() throws Exception {
         AtomicInteger promptRequests = new AtomicInteger();
         startServer(exchange -> {
@@ -395,15 +461,19 @@ public class ComfyUIClientExecutionTest {
         ComfyUIClient client = createClient(httpClient);
         CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow()).toFuture();
         httpClient.awaitSocketCount(1);
+        ControlledWebSocket socket = httpClient.getSocket(0);
 
-        // close需要让等待ready的执行失败，且之后连接完成时立即物理关闭。
+        // close需要让等待ready的执行失败，且迟到open必须直接abort而不是继续握手。
         client.close();
         Assertions.assertThrows(
                 java.util.concurrent.ExecutionException.class,
                 () -> resultFuture.get(5, TimeUnit.SECONDS));
-        httpClient.getSocket(0).open();
+        socket.open();
         Assertions.assertEquals(0, promptRequests.get());
-        httpClient.getSocket(0).awaitClose();
+        Assertions.assertTrue(socket.awaitAbort(Duration.ofSeconds(2)));
+        Assertions.assertEquals(1, socket.getAbortCalls());
+        Assertions.assertEquals(0, socket.getCloseCalls());
+        Assertions.assertTrue(socket.isInputClosed() && socket.isOutputClosed());
     }
 
     @Test
@@ -489,6 +559,56 @@ public class ComfyUIClientExecutionTest {
             Assertions.assertEquals(2, uploadedBodies.size());
             Assertions.assertTrue(
                     new String(uploadedBodies.get(0), StandardCharsets.UTF_8).contains("first-original"));
+        }
+    }
+
+    @Test
+    public void testListenerFailurePropagatesWithoutReenteringErrorCallback() throws Exception {
+        AtomicReference<ControlledWebSocketHttpClient> httpClientRef = new AtomicReference<>();
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                String clientId = JacksonUtils.readTree(readBody(exchange)).path("client_id").asText();
+                httpClientRef.get().socketForClientId(clientId)
+                        .receive(event("execution_success", "{\"prompt_id\":\"listener-prompt\"}"));
+                respondJson(exchange, 200,
+                        "{\"prompt_id\":\"listener-prompt\",\"number\":1,\"node_errors\":{}}");
+            } else if ("/history/listener-prompt".equals(path)) {
+                respondJson(exchange, 200, "{\"listener-prompt\":{\"outputs\":{}}}");
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClientRef.set(httpClient);
+        NoSuchElementException expected = new NoSuchElementException("listener failed");
+        AtomicInteger errorCallbacks = new AtomicInteger();
+        ExecutionOptions options = ExecutionOptions.builder()
+                .listener(new ExecutionListener() {
+                    @Override
+                    public void onComplete(ExecutionResult result) {
+                        throw expected;
+                    }
+
+                    @Override
+                    public void onError(String message, Exception exception) {
+                        errorCallbacks.incrementAndGet();
+                    }
+                })
+                .build();
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            CompletableFuture<ExecutionResult> resultFuture = client.execute(workflow(), options).toFuture();
+            httpClient.awaitSocketCount(1);
+            ControlledWebSocket socket = httpClient.getSocket(0);
+            socket.open();
+
+            java.util.concurrent.ExecutionException failure = Assertions.assertThrows(
+                    java.util.concurrent.ExecutionException.class,
+                    () -> resultFuture.get(5, TimeUnit.SECONDS));
+            Assertions.assertSame(expected, failure.getCause());
+            Assertions.assertEquals(0, errorCallbacks.get());
+            socket.awaitClose();
         }
     }
 
@@ -627,6 +747,200 @@ public class ComfyUIClientExecutionTest {
         }
     }
 
+    /**
+     * 验证 ExecutionOptions.timeout 是从订阅起算的绝对执行期限，而不是相邻事件空闲超时：
+     * 当服务端持续以小于 timeout 的间隔发送进度事件时，总历时超过 timeout 后
+     * 执行必须以 ExecutionException 终止；错误信息必须包含 timeout；
+     * 同时 ExecutionListener.onError 必须收到同一执行超时异常实例。
+     */
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    public void testExecutionTimeoutIsAbsoluteNotEventIdle() throws Exception {
+        AtomicInteger promptRequests = new AtomicInteger();
+        CountDownLatch promptSubmitted = new CountDownLatch(1);
+        startServer(exchange -> {
+            String path = exchange.getRequestURI().getRawPath();
+            if ("/prompt".equals(path)) {
+                promptRequests.incrementAndGet();
+                respondJson(exchange, 200,
+                        "{\"prompt_id\":\"timeout-prompt\",\"number\":1,\"node_errors\":{}}");
+                promptSubmitted.countDown();
+            } else {
+                respondJson(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+
+        Duration timeout = Duration.ofMillis(1500);
+        // 进度事件间隔必须远小于 timeout；否则会被误判为事件空闲超时而无法证明绝对期限。
+        Duration progressInterval = Duration.ofMillis(50);
+        CountDownLatch firstProgressObserved = new CountDownLatch(1);
+        AtomicInteger progressEvents = new AtomicInteger();
+        AtomicLong previousProgressNanos = new AtomicLong();
+        AtomicLong maxProgressGapNanos = new AtomicLong();
+        AtomicLong lastProgressNanos = new AtomicLong();
+        AtomicInteger listenerErrorCount = new AtomicInteger();
+        AtomicReference<String> listenerMessage = new AtomicReference<>();
+        AtomicReference<Exception> listenerException = new AtomicReference<>();
+        ExecutionListener listener = new ExecutionListener() {
+            @Override
+            public void onNodeProgress(String nodeId, int current, int total) {
+                progressEvents.incrementAndGet();
+                long now = System.nanoTime();
+                long previous = previousProgressNanos.getAndSet(now);
+                if (previous != 0) {
+                    maxProgressGapNanos.accumulateAndGet(now - previous, Math::max);
+                }
+                lastProgressNanos.set(now);
+                firstProgressObserved.countDown();
+            }
+
+            @Override
+            public void onError(String message, Exception exception) {
+                listenerErrorCount.incrementAndGet();
+                listenerMessage.set(message);
+                listenerException.set(exception);
+            }
+        };
+        ExecutionOptions options = ExecutionOptions.builder()
+                .timeout(timeout)
+                .listener(listener)
+                .build();
+
+        try (ComfyUIClient client = createClient(httpClient)) {
+            long subscriptionStartNanos = System.nanoTime();
+            CompletableFuture<ExecutionResult> resultFuture =
+                    client.execute(workflow(), options).toFuture();
+            httpClient.awaitSocketCount(1);
+            ControlledWebSocket socket = httpClient.getSocket(0);
+            socket.open();
+            Assertions.assertTrue(promptSubmitted.await(5, TimeUnit.SECONDS),
+                    "prompt submission did not complete before the bounded wait expired");
+            Assertions.assertEquals(1, promptRequests.get());
+
+            CountDownLatch stopProducer = new CountDownLatch(1);
+            Thread producer = new Thread(() -> {
+                int step = 0;
+                while (stopProducer.getCount() != 0) {
+                    step++;
+                    socket.receive(event(
+                            "progress",
+                            "{\"prompt_id\":\"timeout-prompt\",\"node\":\"1\","
+                                    + "\"value\":" + step + ",\"max\":1000000}"));
+                    try {
+                        if (stopProducer.await(progressInterval.toMillis(), TimeUnit.MILLISECONDS)) {
+                            return;
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            }, "timeout-progress-producer");
+            producer.setDaemon(true);
+            producer.start();
+
+            Assertions.assertTrue(firstProgressObserved.await(2, TimeUnit.SECONDS),
+                    "no progress event reached the execution listener before timeout");
+
+            java.util.concurrent.ExecutionException failure;
+            long failureObservedNanos;
+            try {
+                failure = Assertions.assertThrows(
+                        java.util.concurrent.ExecutionException.class,
+                        () -> resultFuture.get(5, TimeUnit.SECONDS));
+                failureObservedNanos = System.nanoTime();
+            } finally {
+                stopProducer.countDown();
+                producer.interrupt();
+                producer.join(2000);
+            }
+            Assertions.assertFalse(producer.isAlive(),
+                    "progress producer did not stop within the bounded join");
+
+            long elapsedNanos = failureObservedNanos - subscriptionStartNanos;
+
+            // 1) 必须以 ExecutionException 终止，而不是空闲超时。
+            ExecutionException timeoutFailure = Assertions.assertInstanceOf(
+                    ExecutionException.class, failure.getCause());
+            String errorMessage = timeoutFailure.getMessage();
+            Assertions.assertNotNull(errorMessage);
+            Assertions.assertTrue(errorMessage.contains("timeout"),
+                    "expected timeout-related message but got: " + errorMessage);
+            Assertions.assertTrue(elapsedNanos >= timeout.toNanos(),
+                    "execution ended before the subscription-relative deadline: "
+                            + TimeUnit.NANOSECONDS.toMillis(elapsedNanos) + "ms");
+
+            // 2) 超时前持续收到进度，且最后一个进度距错误远小于 timeout，排除事件空闲超时。
+            Assertions.assertTrue(progressEvents.get() >= 5,
+                    "too few progress events to prove a continuously active stream: "
+                            + progressEvents.get());
+            Assertions.assertTrue(maxProgressGapNanos.get() < timeout.toNanos(),
+                    "observed progress gap reached the configured timeout: gap="
+                            + TimeUnit.NANOSECONDS.toMillis(maxProgressGapNanos.get()) + "ms");
+            long finalIdleNanos = failureObservedNanos - lastProgressNanos.get();
+            Assertions.assertTrue(finalIdleNanos >= 0 && finalIdleNanos < timeout.toNanos(),
+                    "execution timed out only after an idle gap: idle="
+                            + TimeUnit.NANOSECONDS.toMillis(finalIdleNanos) + "ms");
+
+            // 3) ExecutionListener.onError 必须收到同一执行超时异常。
+            Assertions.assertEquals(1, listenerErrorCount.get(),
+                    "ExecutionListener.onError must be invoked exactly once");
+            Assertions.assertEquals(errorMessage, listenerMessage.get());
+            Assertions.assertSame(timeoutFailure, listenerException.get(),
+                    "listener and subscriber must receive the same timeout exception instance");
+            Assertions.assertTrue(resultFuture.isCompletedExceptionally());
+        }
+    }
+
+    /**
+     * 验证 ComfyUIWebSocket.close() 在握手 future 尚未完成时必须取消底层握手：
+     * WebSocketClientUtils.connect 在 connectFuture 被取消时必须将底层握手 future 标记为
+     * cancelled（命中 whenComplete 回调）；若连接在取消之后迟到打开，
+     * wsListener.onOpen 必须命中 future.isCancelled() 分支并 abort 底层 socket，
+     * 不得让连接泄漏到应用代码。
+     */
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void testWebSocketCloseCancelsPendingHandshake() throws Exception {
+        ControlledWebSocketHttpClient httpClient = new ControlledWebSocketHttpClient();
+        httpClient.usePendingHandshake();
+        ComfyUIWebSocket webSocket = new ComfyUIWebSocket(
+                httpClient, "http://127.0.0.1", "pending-handshake-client",
+                null, Duration.ofSeconds(1));
+        httpClient.awaitSocketCount(1);
+        ControlledWebSocket pendingSocket = httpClient.getSocket(0);
+        CompletableFuture<WebSocket> handshakeFuture = pendingSocket.getHandshakeFuture();
+        Assertions.assertNotNull(handshakeFuture,
+                "pending handshake mode must expose the handshake future");
+        Assertions.assertFalse(handshakeFuture.isDone(),
+                "handshake future should be pending before close()");
+
+        // 握手尚未完成时 close，必须命中 connectFuture.cancel(true) -> 握手取消 的路径。
+        webSocket.close();
+
+        Assertions.assertTrue(webSocket.isClosed(),
+                "ComfyUIWebSocket.close() must mark itself closed");
+        Assertions.assertTrue(pendingSocket.awaitHandshakeCancelled(Duration.ofSeconds(2)),
+                "underlying handshake future should be cancelled when connectFuture is cancelled");
+        Assertions.assertTrue(handshakeFuture.isCancelled());
+
+        // 连接迟到打开：底层 socket 必须被 abort 而非泄漏。
+        Assertions.assertEquals(0, pendingSocket.getAbortCalls());
+        pendingSocket.completeHandshake();
+        Assertions.assertTrue(pendingSocket.awaitAbort(Duration.ofSeconds(2)),
+                "late-opened socket must be aborted by the close path");
+        Assertions.assertEquals(1, pendingSocket.getAbortCalls(),
+                "abort() must be called exactly once on the late-opened socket");
+        Assertions.assertEquals(0, pendingSocket.getCloseCalls(),
+                "a cancelled late open must use abort(), not a graceful close handshake");
+        Assertions.assertTrue(pendingSocket.isInputClosed() && pendingSocket.isOutputClosed(),
+                "underlying socket must be fully closed after abort");
+        // 已关闭的 ComfyUIWebSocket 不得因迟到事件被标记为可用。
+        Assertions.assertFalse(webSocket.isConnectionTerminated(),
+                "late handshake must not leak events into ComfyUIWebSocket after close()");
+    }
+
     private void startServer(HttpHandler handler) throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         serverExecutor = Executors.newCachedThreadPool();
@@ -678,10 +992,20 @@ public class ComfyUIClientExecutionTest {
         private final Map<String, ControlledWebSocket> socketsByClientId = new ConcurrentHashMap<>();
         private final CompletableFuture<Void> firstUploadRelease = new CompletableFuture<>();
         private boolean gateFirstUpload;
+        private boolean pendingHandshakeMode;
         private int uploadRequests;
 
         public synchronized void gateFirstUpload() {
             gateFirstUpload = true;
+        }
+
+        /**
+         * 让后续 buildAsync 返回尚未完成的握手 future，由测试主动调用
+         * {@link ControlledWebSocket#completeHandshake()} 完成握手。
+         * 用于验证 connectFuture 取消路径与迟到打开的 abort 行为。
+         */
+        public synchronized void usePendingHandshake() {
+            this.pendingHandshakeMode = true;
         }
 
         public void releaseFirstUpload() {
@@ -760,6 +1084,9 @@ public class ComfyUIClientExecutionTest {
                         sockets.add(socket);
                         socketsByClientId.put(socket.getClientId(), socket);
                         ControlledWebSocketHttpClient.this.notifyAll();
+                    }
+                    if (pendingHandshakeMode) {
+                        return socket.createPendingHandshake();
                     }
                     return CompletableFuture.completedFuture(socket);
                 }
@@ -849,8 +1176,10 @@ public class ComfyUIClientExecutionTest {
         private final URI uri;
         private final Listener listener;
         private final AtomicInteger closeCalls = new AtomicInteger();
+        private final AtomicInteger abortCalls = new AtomicInteger();
         private volatile boolean inputClosed;
         private volatile boolean outputClosed;
+        private volatile CompletableFuture<WebSocket> handshakeFuture;
 
         ControlledWebSocket(URI uri, Listener listener) {
             this.uri = uri;
@@ -875,6 +1204,80 @@ public class ComfyUIClientExecutionTest {
                 }
                 TimeUnit.NANOSECONDS.timedWait(this, remaining);
             }
+        }
+
+        /**
+         * 创建一个尚未完成的握手 future。该 future 仅在
+         * {@link #completeHandshake()} 被调用时才会完成，
+         * 以模拟尚未完成的 WebSocket 握手。
+         */
+        public synchronized CompletableFuture<WebSocket> createPendingHandshake() {
+            handshakeFuture = new CompletableFuture<>();
+            return handshakeFuture;
+        }
+
+        /**
+         * 在 pending 握手模式下模拟迟到的底层 open 回调。JDK 会先触发
+         * {@link WebSocket.Listener#onOpen(WebSocket)} 再完成 buildAsync future；
+         * 因此即使 future 已被取消，也必须独立交付迟到的 onOpen。
+         */
+        public synchronized void completeHandshake() {
+            CompletableFuture<WebSocket> future = handshakeFuture;
+            if (future == null) {
+                throw new IllegalStateException(
+                        "completeHandshake() requires createPendingHandshake() to be called first");
+            }
+            listener.onOpen(this);
+            future.complete(this);
+        }
+
+        public synchronized CompletableFuture<WebSocket> getHandshakeFuture() {
+            return handshakeFuture;
+        }
+
+        /**
+         * 等待握手 future 被取消，最多等待指定时长。
+         *
+         * @return true 当握手 future 在等待期内被取消
+         */
+        public synchronized boolean awaitHandshakeCancelled(Duration timeout)
+                throws InterruptedException {
+            long deadline = System.nanoTime() + timeout.toNanos();
+            while (handshakeFuture == null || !handshakeFuture.isCancelled()) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    return false;
+                }
+                TimeUnit.NANOSECONDS.timedWait(
+                        this, Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(5)));
+            }
+            return true;
+        }
+
+        /**
+         * 等待底层 socket 被 abort()，最多等待指定时长。
+         *
+         * @return true 当 abort() 在等待期内被调用
+         */
+        public synchronized boolean awaitAbort(Duration timeout) throws InterruptedException {
+            long deadline = System.nanoTime() + timeout.toNanos();
+            while (abortCalls.get() == 0) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    return false;
+                }
+                TimeUnit.NANOSECONDS.timedWait(
+                        this, Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(5)));
+            }
+            return true;
+        }
+
+        public int getAbortCalls() {
+            return abortCalls.get();
+        }
+
+        public int getCloseCalls() {
+            return closeCalls.get();
         }
 
         public void open() {
@@ -945,9 +1348,11 @@ public class ComfyUIClientExecutionTest {
         }
 
         @Override
-        public void abort() {
+        public synchronized void abort() {
+            abortCalls.incrementAndGet();
             outputClosed = true;
             inputClosed = true;
+            notifyAll();
         }
     }
 }

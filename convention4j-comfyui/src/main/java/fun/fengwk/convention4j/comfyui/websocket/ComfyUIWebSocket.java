@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -169,10 +170,11 @@ public class ComfyUIWebSocket {
     }
 
     private Throwable unwrapCompletionError(Throwable error) {
-        if (error.getCause() != null) {
-            return error.getCause();
+        Throwable current = error;
+        while (current instanceof CompletionException && current.getCause() != null) {
+            current = current.getCause();
         }
-        return error;
+        return current;
     }
 
     private void handleMessage(String message) {
@@ -184,7 +186,7 @@ public class ComfyUIWebSocket {
                 return;
             }
 
-            String typeStr = root.path(ComfyUIConstants.JsonFields.TYPE).asText(null);
+            String typeStr = textField(root, ComfyUIConstants.JsonFields.TYPE);
             if (typeStr == null) {
                 handleProtocolError("ComfyUI WebSocket message is missing type", null);
                 return;
@@ -216,77 +218,129 @@ public class ComfyUIWebSocket {
     }
 
     private void handleExecutionStart(JsonNode data) {
-        String promptId = promptId(data);
+        String promptId = requiredPromptId(data, "execution_start");
         if (promptId == null) {
-            handleProtocolError("ComfyUI execution_start message is missing prompt_id", null);
             return;
         }
         emit(promptId, new ExecutionEvent.Started(promptId));
     }
 
     private void handleExecuting(JsonNode data) {
-        String nodeId = data.path(ComfyUIConstants.JsonFields.NODE).asText(null);
+        String promptId = requiredPromptId(data, "executing");
+        if (promptId == null) {
+            return;
+        }
+        String nodeId = textField(data, ComfyUIConstants.JsonFields.NODE);
         if (nodeId != null) {
-            emit(promptId(data), new ExecutionEvent.NodeStarted(nodeId, "Unknown"));
+            emit(promptId, new ExecutionEvent.NodeStarted(nodeId, "Unknown"));
         }
     }
 
     private void handleProgress(JsonNode data) {
-        String nodeId = data.path(ComfyUIConstants.JsonFields.NODE).asText(null);
-        int value = data.path(ComfyUIConstants.JsonFields.VALUE).asInt(-1);
-        int max = data.path(ComfyUIConstants.JsonFields.MAX).asInt(-1);
-        if (nodeId != null && value >= 0 && max >= 0) {
-            emit(promptId(data), new ExecutionEvent.NodeProgress(nodeId, value, max));
+        String promptId = requiredPromptId(data, "progress");
+        if (promptId == null) {
+            return;
+        }
+        String nodeId = textField(data, ComfyUIConstants.JsonFields.NODE);
+        Integer value = nonNegativeIntegerField(data, ComfyUIConstants.JsonFields.VALUE);
+        Integer max = nonNegativeIntegerField(data, ComfyUIConstants.JsonFields.MAX);
+        if (nodeId != null && value != null && max != null) {
+            emit(promptId, new ExecutionEvent.NodeProgress(nodeId, value, max));
         }
     }
 
     private void handleExecuted(JsonNode data) {
-        String nodeId = data.path(ComfyUIConstants.JsonFields.NODE).asText(null);
+        String promptId = requiredPromptId(data, "executed");
+        if (promptId == null) {
+            return;
+        }
+        String nodeId = textField(data, ComfyUIConstants.JsonFields.NODE);
         if (nodeId != null) {
-            emit(promptId(data), new ExecutionEvent.NodeCompleted(nodeId));
+            emit(promptId, new ExecutionEvent.NodeCompleted(nodeId));
         }
     }
 
     private void handleExecutionCached(JsonNode data) {
+        String promptId = requiredPromptId(data, "execution_cached");
+        if (promptId == null) {
+            return;
+        }
         JsonNode nodesArray = data.path(ComfyUIConstants.JsonFields.NODES);
         if (nodesArray.isArray()) {
             List<String> nodes = new ArrayList<>();
             for (JsonNode node : nodesArray) {
-                nodes.add(node.asText());
+                if (node.isTextual() && !node.asText().isBlank()) {
+                    nodes.add(node.asText());
+                }
             }
             if (!nodes.isEmpty()) {
-                emit(promptId(data), new ExecutionEvent.NodesCached(nodes));
+                emit(promptId, new ExecutionEvent.NodesCached(nodes));
             }
         }
     }
 
     private void handleExecutionError(JsonNode data) {
-        String promptId = promptId(data);
-        String nodeId = data.path(ComfyUIConstants.JsonFields.NODE_ID).asText(null);
-        String exceptionMessage = data.path(ComfyUIConstants.JsonFields.EXCEPTION_MESSAGE).asText("Unknown error");
+        String promptId = requiredPromptId(data, "execution_error");
+        if (promptId == null) {
+            return;
+        }
+        String nodeId = textField(data, ComfyUIConstants.JsonFields.NODE_ID);
+        String exceptionMessage = textField(data, ComfyUIConstants.JsonFields.EXCEPTION_MESSAGE);
+        if (exceptionMessage == null) {
+            exceptionMessage = "Unknown error";
+        }
         String message = "Execution failed for prompt " + displayPromptId(promptId)
                 + displayNodeId(nodeId) + ": " + exceptionMessage;
         emit(promptId, new ExecutionEvent.Error(message, new ExecutionException(message)));
     }
 
     private void handleExecutionInterrupted(JsonNode data) {
-        String promptId = promptId(data);
-        String nodeId = data.path(ComfyUIConstants.JsonFields.NODE_ID).asText(null);
+        String promptId = requiredPromptId(data, "execution_interrupted");
+        if (promptId == null) {
+            return;
+        }
+        String nodeId = textField(data, ComfyUIConstants.JsonFields.NODE_ID);
         String message = "Execution interrupted for prompt " + displayPromptId(promptId) + displayNodeId(nodeId);
         emit(promptId, new ExecutionEvent.Error(message, new ExecutionException(message)));
     }
 
     private void handleExecutionSuccess(JsonNode data) {
-        String promptId = promptId(data);
+        String promptId = requiredPromptId(data, "execution_success");
         if (promptId == null) {
-            handleProtocolError("ComfyUI execution_success message is missing prompt_id", null);
             return;
         }
         emit(promptId, new ExecutionEvent.ExecutionSucceeded(promptId));
     }
 
-    private String promptId(JsonNode data) {
-        return data.path(ComfyUIConstants.JsonFields.PROMPT_ID).asText(null);
+    private String requiredPromptId(JsonNode data, String messageType) {
+        String promptId = textField(data, ComfyUIConstants.JsonFields.PROMPT_ID);
+        if (promptId == null) {
+            handleProtocolError("ComfyUI " + messageType + " message is missing prompt_id", null);
+        }
+        return promptId;
+    }
+
+    private String textField(JsonNode data, String fieldName) {
+        if (data == null || !data.isObject()) {
+            return null;
+        }
+        JsonNode field = data.get(fieldName);
+        if (field == null || !field.isTextual() || field.asText().isBlank()) {
+            return null;
+        }
+        return field.asText();
+    }
+
+    private Integer nonNegativeIntegerField(JsonNode data, String fieldName) {
+        if (data == null || !data.isObject()) {
+            return null;
+        }
+        JsonNode field = data.get(fieldName);
+        if (field == null || !field.isIntegralNumber() || !field.canConvertToInt()) {
+            return null;
+        }
+        int value = field.asInt();
+        return value < 0 ? null : value;
     }
 
     private String displayPromptId(String promptId) {
@@ -399,7 +453,7 @@ public class ComfyUIWebSocket {
         WebSocketConnection current = connection;
         if (current != null && current.isOpen()) {
             current.close();
-        } else {
+        } else if (!connectFuture.cancel(true)) {
             connectFuture.thenAccept(openedConnection -> {
                 if (openedConnection.isOpen()) {
                     openedConnection.close();

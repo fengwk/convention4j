@@ -47,15 +47,25 @@ public class Workflow {
                 Map.Entry<String, JsonNode> entry = fields.next();
                 String id = entry.getKey();
                 JsonNode data = entry.getValue();
-                
-                String classType = data.path(ComfyUIConstants.JsonFields.CLASS_TYPE).asText();
-                JsonNode inputsNode = data.path(ComfyUIConstants.JsonFields.INPUTS);
-                JsonNode metaNode = data.path(ComfyUIConstants.JsonFields.META);
-                
-                // 确保inputs是ObjectNode
-                ObjectNode inputs = inputsNode.isObject() ? (ObjectNode) inputsNode
-                    : JsonNodeFactory.instance.objectNode();
-                
+                if (id.isBlank()) {
+                    throw new WorkflowException("Workflow node ID must not be blank");
+                }
+                if (data == null || !data.isObject()) {
+                    throw new WorkflowException("Workflow node " + id + " must be a JSON object");
+                }
+
+                JsonNode classTypeNode = data.get(ComfyUIConstants.JsonFields.CLASS_TYPE);
+                if (classTypeNode == null || !classTypeNode.isTextual() || classTypeNode.asText().isBlank()) {
+                    throw new WorkflowException("Workflow node " + id + " must have a nonblank class_type");
+                }
+                JsonNode inputsNode = data.get(ComfyUIConstants.JsonFields.INPUTS);
+                if (inputsNode == null || !inputsNode.isObject()) {
+                    throw new WorkflowException("Workflow node " + id + " must have an object inputs field");
+                }
+
+                String classType = classTypeNode.asText();
+                ObjectNode inputs = (ObjectNode) inputsNode;
+                JsonNode metaNode = data.get(ComfyUIConstants.JsonFields.META);
                 workflow.nodes.put(id, new WorkflowNode(id, classType, inputs, metaNode));
             }
         } catch (WorkflowException e) {

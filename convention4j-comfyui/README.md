@@ -172,6 +172,8 @@ ExecutionOptions options = ExecutionOptions.builder()
 ExecutionResult result = client.execute(workflow, options).block();
 ```
 
+`timeout` 是从订阅开始计算的绝对执行期限，包含 WebSocket 就绪、输入上传、工作流提交、事件等待和 history 查询；持续到达的进度事件不会重置该期限。监听器的事件回调与事件流同步执行，回调抛出的异常会原样终止客户端执行流，且不会递归进入同一个监听器的 `onError`；当 SDK 已在传播超时或传输错误时，额外的 `onError` 回调异常只记录日志，原始错误保持不变。
+
 ### 4. 实时事件流
 
 使用事件流可以实时获取执行进度：
@@ -297,6 +299,8 @@ sequenceDiagram
 ComfyUI 可能先发送 `execution_success`，随后才持久化 history。SDK 只在 HTTP 2xx JSON 对象缺少当前 prompt entry 时按 200ms 固定间隔重试，最多查询 10 次；认证失败、非 2xx、非法 JSON 和非法 history 结构不会重试。
 
 `execute` 和 `executeWithEvents` 返回冷流，每次订阅都会创建独立 clientId、WebSocket 并提交一次新的工作流。工作流、文件绑定和文件字节会在调用方法时建立防御性快照，因此调用方之后的修改不会改变已组装的执行；多次订阅仍会基于该快照发起多次独立执行。需要共享同一次执行事件时，应由调用方对返回流执行显式共享，而不是重复订阅原始流。
+
+执行结果会持有输出列表、节点输出映射和节点原始 JSON 的防御性快照。`ExecutionResult`/`NodeOutput` 返回的集合以及 `NodesCached.nodeIds()` 不可修改；`NodeOutput.getData()` 每次返回深拷贝，调用方修改导出的 JSON 不会污染其他观察者。
 
 ### WebSocket 事件映射
 
@@ -494,7 +498,7 @@ ExecutionOptions options = ExecutionOptions.builder()
     .build();
 ```
 
-执行超时只会终止客户端等待并关闭该次执行的 WebSocket，不会自动取消已经提交到 ComfyUI 的任务。需要服务端取消语义时，应使用 `submit/getJob/cancelJob` API 管理任务，或从执行事件中取得 `promptId` 后显式调用 `cancelJob`。
+执行超时从订阅时刻起按绝对期限计算，只会终止客户端等待并关闭该次执行的 WebSocket，不会自动取消已经提交到 ComfyUI 的任务。需要服务端取消语义时，应使用 `submit/getJob/cancelJob` API 管理任务，或从执行事件中取得 `promptId` 后显式调用 `cancelJob`。
 
 ### 2. 在组装执行前使用工作流副本
 

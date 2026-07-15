@@ -1,6 +1,7 @@
 package fun.fengwk.convention4j.common.compress;
 
 import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
@@ -13,6 +14,7 @@ import java.util.zip.ZipException;
 public class NonblockingGzipDecoder {
 
     private final Inflater _inflater;
+    private final CRC32 _crc = new CRC32();
     private final int _bufferSize;
     private State _state;
     private int _size;
@@ -25,6 +27,9 @@ public class NonblockingGzipDecoder {
     }
 
     public NonblockingGzipDecoder(int bufferSize) {
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("bufferSize must be positive");
+        }
         this._inflater = new Inflater(true);
         this._bufferSize = bufferSize;
         this.reset();
@@ -151,6 +156,7 @@ public class NonblockingGzipDecoder {
                             {
                                 ByteBuffer chunk = buffer;
                                 buffer = null;
+                                updateCrc(chunk);
                                 if (decodedChunk(chunk))
                                     return;
                             }
@@ -216,6 +222,8 @@ public class NonblockingGzipDecoder {
                     case FLG:
                     {
                         _flags = currByte;
+                        if ((_flags & 0xE0) != 0)
+                            throw new ZipException("Invalid gzip flags");
                         _state = State.MTIME;
                         _size = 0;
                         _value = 0;
@@ -246,7 +254,15 @@ public class NonblockingGzipDecoder {
                         _value += (currByte & 0xFF) << 8 * _size;
                         ++_size;
                         if (_size == 2)
-                            _state = State.EXTRA;
+                        {
+                            if (_value == 0)
+                            {
+                                _flags &= ~0x04;
+                                _state = State.FLAGS;
+                            }
+                            else
+                                _state = State.EXTRA;
+                        }
                         break;
                     }
                     case EXTRA:
@@ -301,7 +317,8 @@ public class NonblockingGzipDecoder {
                         ++_size;
                         if (_size == 4)
                         {
-                            // From RFC 1952, compliant decoders need not to verify the CRC
+                            if (Integer.toUnsignedLong(_value) != _crc.getValue())
+                                throw new ZipException("Invalid gzip checksum");
                             _state = State.ISIZE;
                             _size = 0;
                             _value = 0;
@@ -314,12 +331,16 @@ public class NonblockingGzipDecoder {
                         ++_size;
                         if (_size == 4)
                         {
-                            if (_value != _inflater.getBytesWritten())
+                            long expectedSize = Integer.toUnsignedLong(_value);
+                            long actualSize = _inflater.getBytesWritten() & 0xFFFFFFFFL;
+                            if (expectedSize != actualSize)
                                 throw new ZipException("Invalid input size");
 
-                            // TODO ByteBuffer result = output == null ? BufferUtil.EMPTY_BUFFER : ByteBuffer.wrap(output);
                             reset();
-                            return ;
+                            if (compressed.hasRemaining()) {
+                                continue;
+                            }
+                            return;
                         }
                         break;
                     }
@@ -341,6 +362,7 @@ public class NonblockingGzipDecoder {
         _size = 0;
         _value = 0;
         _flags = 0;
+        _crc.reset();
     }
 
     public void destroy() {
@@ -355,6 +377,20 @@ public class NonblockingGzipDecoder {
         ByteBuffer buf = ByteBuffer.allocate(capacity);
         buf.limit(0);
         return buf;
+    }
+
+    private void updateCrc(ByteBuffer chunk) {
+        ByteBuffer data = chunk.duplicate();
+        if (data.hasArray()) {
+            _crc.update(data.array(), data.arrayOffset() + data.position(), data.remaining());
+            return;
+        }
+        byte[] buffer = new byte[Math.min(data.remaining(), _bufferSize)];
+        while (data.hasRemaining()) {
+            int length = Math.min(data.remaining(), buffer.length);
+            data.get(buffer, 0, length);
+            _crc.update(buffer, 0, length);
+        }
     }
 
     private enum State {

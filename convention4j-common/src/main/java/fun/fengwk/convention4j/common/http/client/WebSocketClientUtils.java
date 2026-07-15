@@ -10,8 +10,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * WebSocket 客户端工具类
@@ -55,7 +57,7 @@ public class WebSocketClientUtils {
      * @param headers        自定义请求头（可选）
      * @param connectTimeout 连接超时时间（可选）
      * @param listener       WebSocket 监听器
-     * @return WebSocket 连接 Future
+     * @return WebSocket 连接 Future；取消该 Future 会取消尚未完成的握手，迟到打开的连接会被 abort
      */
     public static CompletableFuture<WebSocketConnection> connect(
             HttpClient httpClient,
@@ -63,7 +65,19 @@ public class WebSocketClientUtils {
             Map<String, String> headers,
             Duration connectTimeout,
             WebSocketListener listener) {
+        Objects.requireNonNull(httpClient, "httpClient must not be null");
+        Objects.requireNonNull(uri, "uri must not be null");
+        Objects.requireNonNull(listener, "listener must not be null");
         CompletableFuture<WebSocketConnection> future = new CompletableFuture<>();
+        AtomicReference<CompletableFuture<WebSocket>> handshakeFutureRef = new AtomicReference<>();
+        future.whenComplete((connection, throwable) -> {
+            if (future.isCancelled()) {
+                CompletableFuture<WebSocket> handshakeFuture = handshakeFutureRef.get();
+                if (handshakeFuture != null) {
+                    handshakeFuture.cancel(true);
+                }
+            }
+        });
 
         WebSocket.Listener wsListener = new WebSocket.Listener() {
             private volatile WebSocketConnection connection;
@@ -73,8 +87,27 @@ public class WebSocketClientUtils {
             @Override
             public void onOpen(WebSocket webSocket) {
                 this.connection = new DefaultWebSocketConnection(webSocket);
-                listener.onOpen(connection);
-                future.complete(connection);
+                if (future.isCancelled()) {
+                    webSocket.abort();
+                    return;
+                }
+                try {
+                    listener.onOpen(connection);
+                } catch (Throwable error) {
+                    webSocket.abort();
+                    future.completeExceptionally(error);
+                    if (error instanceof RuntimeException runtimeException) {
+                        throw runtimeException;
+                    }
+                    if (error instanceof Error fatalError) {
+                        throw fatalError;
+                    }
+                    throw new IllegalStateException(error);
+                }
+                if (!future.complete(connection)) {
+                    webSocket.abort();
+                    return;
+                }
                 WebSocket.Listener.super.onOpen(webSocket);
             }
 
@@ -141,11 +174,15 @@ public class WebSocketClientUtils {
             builder.connectTimeout(connectTimeout);
         }
         
-        builder.buildAsync(uri, wsListener)
-                .exceptionally(ex -> {
-                    future.completeExceptionally(ex);
-                    return null;
-                });
+        CompletableFuture<WebSocket> handshakeFuture = builder.buildAsync(uri, wsListener);
+        handshakeFutureRef.set(handshakeFuture);
+        if (future.isCancelled()) {
+            handshakeFuture.cancel(true);
+        }
+        handshakeFuture.exceptionally(ex -> {
+            future.completeExceptionally(ex);
+            return null;
+        });
 
         return future;
     }

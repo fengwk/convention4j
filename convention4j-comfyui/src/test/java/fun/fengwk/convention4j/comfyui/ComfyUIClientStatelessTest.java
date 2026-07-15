@@ -191,6 +191,59 @@ public class ComfyUIClientStatelessTest {
     }
 
     @Test
+    public void testGetJobRejectsMismatchedIdAndMalformedObjectFields() throws IOException {
+        AtomicReference<String> responseBody = new AtomicReference<>();
+        startServer(exchange -> respondJson(exchange, 200, responseBody.get()));
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            responseBody.set("{\"id\":\"other-job\",\"status\":\"pending\"}");
+            ComfyUIException mismatchedId = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getJob("job").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(mismatchedId.getMessage().contains("did not match the requested job ID"));
+
+            for (String field : List.of(
+                    "outputs", "execution_error", "execution_status", "workflow", "preview_output")) {
+                responseBody.set("{\"id\":\"job\",\"status\":\"completed\",\""
+                        + field + "\":[]}");
+                ComfyUIException malformedObject = Assertions.assertThrows(
+                        ComfyUIException.class,
+                        () -> client.getJob("job").block(Duration.ofSeconds(5)), field);
+                Assertions.assertTrue(
+                        malformedObject.getMessage().contains("field '" + field + "' must be an object"),
+                        malformedObject.getMessage());
+            }
+            Assertions.assertEquals(6, httpClient.getHttpAttempts());
+            Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
+    }
+
+    @Test
+    public void testProtocolNumbersMustBeFinite() throws IOException {
+        AtomicReference<String> responseBody = new AtomicReference<>();
+        startServer(exchange -> respondJson(exchange, 200, responseBody.get()));
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            responseBody.set("{\"prompt_id\":\"prompt-1\",\"number\":1e9999,\"node_errors\":{}}");
+            ComfyUIException submitFailure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.submit(workflow()).block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(submitFailure.getMessage().contains("field 'number' must be finite"),
+                    submitFailure.getMessage());
+
+            responseBody.set("{\"id\":\"job\",\"status\":\"pending\",\"priority\":1e9999}");
+            ComfyUIException jobFailure = Assertions.assertThrows(
+                    ComfyUIException.class,
+                    () -> client.getJob("job").block(Duration.ofSeconds(5)));
+            Assertions.assertTrue(jobFailure.getMessage().contains("field 'priority' must be finite"),
+                    jobFailure.getMessage());
+            Assertions.assertEquals(2, httpClient.getHttpAttempts());
+        }
+    }
+
+    @Test
     public void testCancelJobMapping() throws IOException {
         AtomicReference<CapturedRequest> captured = new AtomicReference<>();
         startServer(exchange -> {
@@ -240,20 +293,25 @@ public class ComfyUIClientStatelessTest {
             Assertions.assertTrue(malformed.getMessage().contains("cancelled"));
 
             int requestsBeforeValidation = requestCount.get();
-            Assertions.assertThrows(IllegalArgumentException.class, () -> client.submit(null).block());
-            Assertions.assertThrows(IllegalArgumentException.class, () -> client.getJob("  ").block());
-            Assertions.assertThrows(IllegalArgumentException.class, () -> client.cancelJob(null).block());
-            Assertions.assertThrows(IllegalArgumentException.class, () -> client.getHistory(" ").block());
             Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> client.getFile(" ", null, null).block());
+                    () -> client.submit(null).block(Duration.ofSeconds(5)));
             Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> client.getFile((OutputFile) null).block());
+                    () -> client.getJob("  ").block(Duration.ofSeconds(5)));
             Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> client.uploadFile("bad\"name.png", new byte[0], "image/png").block());
+                    () -> client.cancelJob(null).block(Duration.ofSeconds(5)));
             Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> client.uploadFile("name.png", null, "image/png").block());
+                    () -> client.getHistory(" ").block(Duration.ofSeconds(5)));
             Assertions.assertThrows(IllegalArgumentException.class,
-                    () -> client.uploadFile("name.png", new byte[0], null).block());
+                    () -> client.getFile(" ", null, null).block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.getFile((OutputFile) null).block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("bad\"name.png", new byte[0], "image/png")
+                            .block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("name.png", null, "image/png").block(Duration.ofSeconds(5)));
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> client.uploadFile("name.png", new byte[0], null).block(Duration.ofSeconds(5)));
             Assertions.assertEquals(requestsBeforeValidation, requestCount.get());
             Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
         }
@@ -440,6 +498,39 @@ public class ComfyUIClientStatelessTest {
         Assertions.assertEquals(0, httpClient.getHttpAttempts());
         Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
         Assertions.assertEquals(0, serverRequests.get());
+    }
+
+    @Test
+    public void testUploadFileRejectsPathSeparatorsBeforeNetwork() throws IOException {
+        AtomicInteger serverRequests = new AtomicInteger();
+        startServer(exchange -> {
+            serverRequests.incrementAndGet();
+            respondJson(exchange, 200, "{\"name\":\"x\"}");
+        });
+        NoWebSocketHttpClient httpClient = new NoWebSocketHttpClient();
+
+        try (ComfyUIClient client = createClient(httpClient, null)) {
+            // 文件名包含 / 或 \\ 必须被服务端拒绝前先抛 IllegalArgumentException，且不触发任何 HTTP 请求。
+            for (String bad : List.of("dir/file.png", "..\\file.png", "/abs.png", "sub\\dir/file.png")) {
+                int requestsBefore = serverRequests.get();
+                int attemptsBefore = httpClient.getHttpAttempts();
+                IllegalArgumentException ex = Assertions.assertThrows(
+                        IllegalArgumentException.class,
+                        () -> client.uploadFile(bad, new byte[]{1}, "image/png")
+                                .block(Duration.ofSeconds(5)));
+                Assertions.assertTrue(ex.getMessage().contains("path separators"), ex.getMessage());
+                Assertions.assertEquals(attemptsBefore, httpClient.getHttpAttempts(),
+                        "no HTTP send attempt is allowed for filename " + bad);
+                Assertions.assertEquals(requestsBefore, serverRequests.get(),
+                        "no HTTP request must be issued for filename " + bad);
+            }
+            // 合法文件名仍然正常工作，证明负面断言不会因网络层禁用而虚假绿。
+            Assertions.assertNotNull(client.uploadFile(
+                    "ok.png", new byte[]{1}, "image/png").block(Duration.ofSeconds(5)));
+            Assertions.assertEquals(1, httpClient.getHttpAttempts());
+            Assertions.assertEquals(1, serverRequests.get());
+            Assertions.assertEquals(0, httpClient.getWebSocketAttempts());
+        }
     }
 
     @Test

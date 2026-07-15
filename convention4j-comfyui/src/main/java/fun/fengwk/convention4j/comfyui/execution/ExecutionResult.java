@@ -3,8 +3,10 @@ package fun.fengwk.convention4j.comfyui.execution;
 import fun.fengwk.convention4j.comfyui.output.NodeOutput;
 import fun.fengwk.convention4j.comfyui.output.OutputFile;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +17,6 @@ import java.util.Optional;
  * @author fengwk
  */
 @Getter
-@RequiredArgsConstructor
 public class ExecutionResult {
     /**
      * 提示ID
@@ -46,6 +47,23 @@ public class ExecutionResult {
      * 按节点ID组织的输出
      */
     private final Map<String, NodeOutput> nodeOutputs;
+
+    public ExecutionResult(
+            String promptId,
+            boolean success,
+            String errorMessage,
+            Exception exception,
+            List<OutputFile> outputs,
+            Map<String, NodeOutput> nodeOutputs) {
+        this.promptId = promptId;
+        this.success = success;
+        this.errorMessage = errorMessage;
+        this.exception = exception;
+        this.outputs = outputs == null
+                ? List.of() : Collections.unmodifiableList(new ArrayList<>(outputs));
+        this.nodeOutputs = nodeOutputs == null
+                ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(nodeOutputs));
+    }
 
     // ==================== 便捷方法 ====================
 

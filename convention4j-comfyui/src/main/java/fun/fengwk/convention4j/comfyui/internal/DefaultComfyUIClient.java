@@ -29,6 +29,7 @@ import fun.fengwk.convention4j.common.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Signal;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,7 +42,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -215,21 +215,28 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
         String operation = "Get job " + jobId;
         return sendJson(request, operation)
-                .map(response -> new ComfyUIJob(
-                        requiredText(response, ComfyUIConstants.JsonFields.ID, operation),
-                        requiredText(response, ComfyUIConstants.JsonFields.STATUS, operation),
-                        optionalNumber(response, ComfyUIConstants.JsonFields.PRIORITY, operation),
-                        optionalLong(response, ComfyUIConstants.JsonFields.CREATE_TIME, operation),
-                        optionalLong(response, ComfyUIConstants.JsonFields.UPDATE_TIME, operation),
-                        optionalText(response, ComfyUIConstants.JsonFields.WORKFLOW_ID, operation),
-                        optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_START_TIME, operation),
-                        optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_END_TIME, operation),
-                        optionalInteger(response, ComfyUIConstants.JsonFields.OUTPUTS_COUNT, operation),
-                        optionalField(response, ComfyUIConstants.JsonFields.OUTPUTS),
-                        optionalField(response, ComfyUIConstants.JsonFields.EXECUTION_ERROR),
-                        optionalField(response, ComfyUIConstants.JsonFields.EXECUTION_STATUS),
-                        optionalField(response, ComfyUIConstants.JsonFields.WORKFLOW),
-                        optionalField(response, ComfyUIConstants.JsonFields.PREVIEW_OUTPUT)));
+                .map(response -> {
+                    String responseId = requiredText(response, ComfyUIConstants.JsonFields.ID, operation);
+                    if (!jobId.equals(responseId)) {
+                        throw malformedResponse(operation,
+                                "field 'id' did not match the requested job ID", response.toString());
+                    }
+                    return new ComfyUIJob(
+                            responseId,
+                            requiredText(response, ComfyUIConstants.JsonFields.STATUS, operation),
+                            optionalNumber(response, ComfyUIConstants.JsonFields.PRIORITY, operation),
+                            optionalLong(response, ComfyUIConstants.JsonFields.CREATE_TIME, operation),
+                            optionalLong(response, ComfyUIConstants.JsonFields.UPDATE_TIME, operation),
+                            optionalText(response, ComfyUIConstants.JsonFields.WORKFLOW_ID, operation),
+                            optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_START_TIME, operation),
+                            optionalLong(response, ComfyUIConstants.JsonFields.EXECUTION_END_TIME, operation),
+                            optionalInteger(response, ComfyUIConstants.JsonFields.OUTPUTS_COUNT, operation),
+                            optionalObject(response, ComfyUIConstants.JsonFields.OUTPUTS, operation),
+                            optionalObject(response, ComfyUIConstants.JsonFields.EXECUTION_ERROR, operation),
+                            optionalObject(response, ComfyUIConstants.JsonFields.EXECUTION_STATUS, operation),
+                            optionalObject(response, ComfyUIConstants.JsonFields.WORKFLOW, operation),
+                            optionalObject(response, ComfyUIConstants.JsonFields.PREVIEW_OUTPUT, operation));
+                });
     }
 
     @Override
@@ -313,7 +320,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (!field.isNumber()) {
             throw malformedResponse(operation, "field '" + fieldName + "' must be a number", response.toString());
         }
-        return field.asDouble();
+        double value = field.asDouble();
+        if (!Double.isFinite(value)) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be finite", response.toString());
+        }
+        return value;
     }
 
     private String optionalText(JsonNode response, String fieldName, String operation) {
@@ -335,7 +346,11 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         if (!field.isNumber()) {
             throw malformedResponse(operation, "field '" + fieldName + "' must be a number", response.toString());
         }
-        return field.asDouble();
+        double value = field.asDouble();
+        if (!Double.isFinite(value)) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be finite", response.toString());
+        }
+        return value;
     }
 
     private Long optionalLong(JsonNode response, String fieldName, String operation) {
@@ -370,6 +385,17 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
     private JsonNode requiredObject(JsonNode response, String fieldName, String operation) {
         JsonNode field = requiredField(response, fieldName, operation);
+        if (!field.isObject()) {
+            throw malformedResponse(operation, "field '" + fieldName + "' must be an object", response.toString());
+        }
+        return field;
+    }
+
+    private JsonNode optionalObject(JsonNode response, String fieldName, String operation) {
+        JsonNode field = optionalField(response, fieldName);
+        if (field == null) {
+            return null;
+        }
         if (!field.isObject()) {
             throw malformedResponse(operation, "field '" + fieldName + "' must be an object", response.toString());
         }
@@ -481,14 +507,13 @@ public class DefaultComfyUIClient implements ComfyUIClient {
                                 })
                                 .doOnNext(event -> {
                                     if (options.getListener() != null) {
-                                        handleListenerEvent(event, options.getListener());
+                                        try {
+                                            handleListenerEvent(event, options.getListener());
+                                        } catch (Throwable listenerError) {
+                                            throw new ExecutionListenerException(listenerError);
+                                        }
                                     }
                                 });
-                    })
-                    .doOnError(error -> {
-                        if (!closed) {
-                            log.error("Error during workflow execution", error);
-                        }
                     })
                     .doFinally(signalType -> {
                         activeExecutionSockets.remove(executionWebSocket);
@@ -497,13 +522,42 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         });
 
         if (options.getTimeout() != null) {
-            eventFlux = eventFlux.timeout(options.getTimeout())
-                    .onErrorMap(TimeoutException.class,
-                            e -> new ExecutionException(
-                                    "Workflow execution timeout after " + options.getTimeout()));
+            eventFlux = applyExecutionTimeout(eventFlux, options.getTimeout());
         }
 
-        return eventFlux;
+        ExecutionListener listener = options.getListener();
+        return eventFlux.doOnError(error -> {
+            Throwable reportedError = error instanceof ExecutionListenerException
+                    ? error.getCause() : error;
+            if (!closed) {
+                log.error("Error during workflow execution", reportedError);
+            }
+            if (listener != null && !(error instanceof ExecutionListenerException)) {
+                notifyListenerError(listener, reportedError);
+            }
+        }).onErrorMap(ExecutionListenerException.class, Throwable::getCause);
+    }
+
+    private Flux<ExecutionEvent> applyExecutionTimeout(Flux<ExecutionEvent> eventFlux, Duration timeout) {
+        return Flux.defer(() -> {
+            Mono<Signal<ExecutionEvent>> timeoutSignal = Mono.delay(timeout)
+                    .map(ignored -> Signal.error(new ExecutionException(
+                            "Workflow execution timeout after " + timeout)));
+            return Flux.merge(eventFlux.materialize(), timeoutSignal)
+                    .takeUntil(signal -> signal.isOnComplete() || signal.isOnError())
+                    .dematerialize();
+        });
+    }
+
+    private void notifyListenerError(ExecutionListener listener, Throwable error) {
+        Exception exception = error instanceof Exception
+                ? (Exception) error : new RuntimeException(error);
+        String message = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
+        try {
+            listener.onError(message, exception);
+        } catch (Throwable listenerError) {
+            log.warn("Execution listener failed while handling an error", listenerError);
+        }
     }
 
     private static List<InputFile> snapshotInputFiles(List<InputFile> requestedInputFiles) {
@@ -684,8 +738,9 @@ public class DefaultComfyUIClient implements ComfyUIClient {
         List<OutputFile> outputFiles = new ArrayList<>();
         Map<String, NodeOutput> nodeOutputs = new LinkedHashMap<>();
 
-        if (history != null && history.getOutputs() != null) {
-            for (Map.Entry<String, JsonNode> entry : history.getOutputs().entrySet()) {
+        Map<String, JsonNode> historyOutputs = history == null ? null : history.getOutputs();
+        if (historyOutputs != null) {
+            for (Map.Entry<String, JsonNode> entry : historyOutputs.entrySet()) {
                 String nodeId = entry.getKey();
                 JsonNode outputData = entry.getValue();
                 List<OutputFile> nodeFiles = new ArrayList<>();
@@ -779,7 +834,8 @@ public class DefaultComfyUIClient implements ComfyUIClient {
             throw new IllegalArgumentException("filename must not be blank");
         }
         if (containsInvalidFilenameCharacter(filename)) {
-            throw new IllegalArgumentException("filename contains invalid multipart header characters");
+            throw new IllegalArgumentException(
+                    "filename must not contain path separators or invalid multipart header characters");
         }
         if (data == null) {
             throw new IllegalArgumentException("data must not be null");
@@ -793,7 +849,10 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     }
 
     private boolean containsInvalidFilenameCharacter(String filename) {
-        return filename.indexOf('"') >= 0 || containsControlCharacter(filename);
+        return filename.indexOf('"') >= 0
+                || filename.indexOf('/') >= 0
+                || filename.indexOf('\\') >= 0
+                || containsControlCharacter(filename);
     }
 
     private boolean containsControlCharacter(String value) {
@@ -859,8 +918,8 @@ public class DefaultComfyUIClient implements ComfyUIClient {
     }
 
     private static byte[] decodeResponseBody(HttpResponse<byte[]> response) throws IOException {
-        String contentEncoding = response.headers().firstValue("Content-Encoding").orElse(null);
-        if (!HttpUtils.gzip(contentEncoding == null ? null : contentEncoding.toLowerCase(Locale.ROOT))) {
+        boolean gzip = response.headers().allValues("Content-Encoding").stream().anyMatch(HttpUtils::gzip);
+        if (!gzip) {
             return response.body();
         }
         try (GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(response.body()))) {
@@ -881,6 +940,13 @@ public class DefaultComfyUIClient implements ComfyUIClient {
 
         private HistoryNotReadyException(String message) {
             super(message);
+        }
+    }
+
+    private static class ExecutionListenerException extends RuntimeException {
+
+        private ExecutionListenerException(Throwable cause) {
+            super(cause);
         }
     }
 }

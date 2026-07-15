@@ -13,6 +13,15 @@ import java.nio.charset.StandardCharsets;
 public class HttpUtilsTest {
 
     @Test
+    public void testGzipTokenMatching() {
+        // Recognized gzip content-coding tokens are case-insensitive but must match a whole token.
+        Assertions.assertTrue(HttpUtils.gzip("br, GZip"));
+        Assertions.assertTrue(HttpUtils.gzip("X-GZip"));
+        Assertions.assertFalse(HttpUtils.gzip("xgzip, br"));
+        Assertions.assertFalse(HttpUtils.gzip("gzip2"));
+    }
+
+    @Test
     public void testParseContentTypeCharset() {
         Charset charset = HttpUtils.parseContentTypeCharset("application/json;charset=utf-8");
         Assertions.assertEquals(StandardCharsets.UTF_8, charset);

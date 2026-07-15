@@ -191,7 +191,8 @@ public interface ComfyUIClient extends Closeable {
             throw new IllegalArgumentException("filename must not be blank");
         }
         if (containsInvalidFilenameCharacter(filename)) {
-            throw new IllegalArgumentException("filename contains invalid multipart header characters");
+            throw new IllegalArgumentException(
+                    "filename must not contain path separators or invalid multipart header characters");
         }
         if (data == null) {
             throw new IllegalArgumentException("data must not be null");
@@ -205,7 +206,10 @@ public interface ComfyUIClient extends Closeable {
     }
 
     private static boolean containsInvalidFilenameCharacter(String filename) {
-        return filename.indexOf('"') >= 0 || containsControlCharacter(filename);
+        return filename.indexOf('"') >= 0
+                || filename.indexOf('/') >= 0
+                || filename.indexOf('\\') >= 0
+                || containsControlCharacter(filename);
     }
 
     private static boolean containsControlCharacter(String value) {

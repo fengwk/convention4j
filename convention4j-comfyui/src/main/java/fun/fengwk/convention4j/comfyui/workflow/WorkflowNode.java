@@ -84,8 +84,15 @@ public class WorkflowNode {
      */
     public boolean isLinkedInput(String name) {
         JsonNode value = inputs.path(name);
-        return value.isArray() && value.size() == 2
-            && value.get(0).isTextual() && value.get(1).isNumber();
+        if (!value.isArray() || value.size() != 2) {
+            return false;
+        }
+        JsonNode sourceNode = value.get(0);
+        JsonNode outputIndex = value.get(1);
+        return sourceNode.isTextual() && !sourceNode.asText().isBlank()
+            && outputIndex.isIntegralNumber()
+            && outputIndex.canConvertToInt()
+            && outputIndex.asInt() >= 0;
     }
 
     /**

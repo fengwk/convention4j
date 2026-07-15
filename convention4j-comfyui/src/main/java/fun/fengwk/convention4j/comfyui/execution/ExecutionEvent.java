@@ -1,5 +1,7 @@
 package fun.fengwk.convention4j.comfyui.execution;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,7 +34,12 @@ public sealed interface ExecutionEvent {
     /**
      * 节点使用缓存事件
      */
-    record NodesCached(List<String> nodeIds) implements ExecutionEvent {}
+    record NodesCached(List<String> nodeIds) implements ExecutionEvent {
+        public NodesCached {
+            nodeIds = nodeIds == null
+                    ? List.of() : Collections.unmodifiableList(new ArrayList<>(nodeIds));
+        }
+    }
 
     /**
      * 执行成功事件（WebSocket通知）
