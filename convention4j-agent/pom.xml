@@ -72,7 +72,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- 在clean阶段清理convention4j-archetype中的jar -->
+            <!-- 在clean阶段清理convention4j-archetype中的旧版本jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -84,18 +84,12 @@
                             <includes>
                                 <include>${project.artifactId}*.jar</include>
                             </includes>
+                            <excludes>
+                                <exclude>${project.build.finalName}.jar</exclude>
+                            </excludes>
                         </fileset>
                     </filesets>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>clean-old-agent</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <!-- 在package阶段拷贝agent到convention4j-archetype中 -->
             <plugin>
