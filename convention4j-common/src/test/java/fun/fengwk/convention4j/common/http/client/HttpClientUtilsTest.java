@@ -1,339 +1,212 @@
 package fun.fengwk.convention4j.common.http.client;
 
-import fun.fengwk.convention4j.common.http.HttpUtils;
-import org.junit.jupiter.api.Assertions;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import static fun.fengwk.convention4j.common.http.HttpHeaders.ACCEPT_ENCODING;
-import static fun.fengwk.convention4j.common.http.HttpHeaders.CONTENT_TYPE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author fengwk
  */
 public class HttpClientUtilsTest {
 
-    //    @Test
-    public void testAsyncWithSSE() throws IOException, ExecutionException, InterruptedException {
-        HttpRequest req = HttpRequest.newBuilder()
-            .uri(URI.create("https://api.deepseek.com/chat/completions"))
-            .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer " + System.getenv("DEEPSEEK_API_KEY"))
-            .POST(HttpRequest.BodyPublishers.ofString(
-                "{\n" +
-                    "  \"model\": \"deepseek-chat\",\n" +
-                    "  \"messages\": [\n" +
-                    "    {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
-                    "    {\"role\": \"user\", \"content\": \"Hello!\"}\n" +
-                    "  ],\n" +
-                    "  \"stream\": true\n" +
-                    "}", StandardCharsets.UTF_8))
-            .build();
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+    private static final String PLAIN_BODY = "plain-body";
+    private static final String GZIP_BODY = "gzip-body";
+    private static final String LINES_BODY = "first\nsecond\n";
+
+    private HttpServer server;
+    private ExecutorService executor;
+    private HttpClient httpClient;
+    private String baseUrl;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        executor = Executors.newFixedThreadPool(2);
+        server.setExecutor(executor);
+        server.createContext("/plain", exchange -> writeResponse(
+            exchange, PLAIN_BODY.getBytes(StandardCharsets.UTF_8), false, "text/plain;charset=utf-8"));
+        server.createContext("/gzip", exchange -> writeResponse(
+            exchange, GZIP_BODY.getBytes(StandardCharsets.UTF_8), true, "text/plain;charset=utf-8"));
+        server.createContext("/lines", exchange -> writeResponse(
+            exchange, LINES_BODY.getBytes(StandardCharsets.UTF_8), false, "text/plain;charset=utf-8"));
+        server.createContext("/gzip-lines", exchange -> writeResponse(
+            exchange, LINES_BODY.getBytes(StandardCharsets.UTF_8), true, "text/plain;charset=utf-8"));
+        server.createContext("/sse", exchange -> writeResponse(
+            exchange, "event: notice\ndata: first\n\ndata: second\n\n".getBytes(StandardCharsets.UTF_8), false,
+            "text/event-stream;charset=utf-8"));
+        server.start();
+        baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+        httpClient = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (server != null) {
+            server.stop(0);
+        }
+        if (executor != null) {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void shouldReceiveLocalSseEvents() throws Exception {
+        List<String> lines = new CopyOnWriteArrayList<>();
+        List<SSEEvent> events = new CopyOnWriteArrayList<>();
         CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsyncWithSSEListener(
-            req, new SSEListener() {
-                @Override
-                public void onInit(HttpResponse.ResponseInfo responseInfo) {
-                    System.out.println("[SSE] init");
-                }
-
-                @Override
-                public void onReceive(String line) {
-                    System.out.println("[SSE] line: " + line);
-                }
-
-                @Override
-                public void onReceiveEvent(SSEEvent sseEvent) {
-                    System.out.println("[SSE] sseEvent: " + sseEvent);
-                }
-
-                @Override
-                public void onComplete() {
-                    System.out.println("[SSE] complete");
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    System.out.println("[SSE] error" + throwable);
-                }
-            });
-        AsyncHttpSendResult result = future.get();
-        Assertions.assertTrue(result.is2xx());
-        Assertions.assertFalse(result.hasError());
-    }
-
-    @Test
-    public void testSendWithGzip() throws IOException {
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build();
-        try (HttpSendResult sendResult = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
-            System.out.println(sendResult);
-            System.out.println(sendResult.parseBodyString());
-            Assertions.assertTrue(sendResult.is2xx());
-            Assertions.assertFalse(sendResult.hasError());
-        }
-    }
-
-    @Test
-    public void testSendAsyncWithGzip() throws IOException, ExecutionException, InterruptedException {
-        HttpRequest.Builder httpRequestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET();
-
-        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(httpRequestBuilder.build(),
-            new StreamBodyListener<>() {
-
-                @Override
-                public void onInit(HttpResponse.ResponseInfo responseInfo) {
-                    System.out.println("init");
-                }
-
-                @Override
-                public void onReceive(List<ByteBuffer> chunk) {
-                    String value = readString(chunk, StandardCharsets.UTF_8);
-                    System.out.println(value);
-                }
-
-                @Override
-                public void onComplete() {
-                    System.out.println("onComplete");
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    Assertions.assertNull(throwable);
-                }
-
-            }, true);
-
-        AsyncHttpSendResult result = future.get();
-        String completedStr = result.getBodyCollector().parseBodyString();
-        System.out.println(completedStr);
-
-        try (HttpSendResult sendResult = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequestBuilder.build())) {
-            System.out.println(sendResult);
-            System.out.println(sendResult.parseBodyString());
-            Assertions.assertTrue(sendResult.is2xx());
-            Assertions.assertFalse(sendResult.hasError());
-            Assertions.assertEquals(sendResult.parseBodyString(), completedStr);
-        }
-    }
-
-    @Test
-    public void testSendAsync() throws IOException, ExecutionException, InterruptedException {
-        System.out.println("req https://www.baidu.com");
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .GET()
-            .build());
-
-        System.out.println("req https://www.baidu.com with gzip");
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
-
-        System.out.println("req https://www.runoob.com");
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.runoob.com"))
-            .GET()
-            .build());
-
-        System.out.println("req https://www.runoob.com with gzip");
-        doTestSendAsync(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.runoob.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
-
-        // System.out.println("req https://www.zdic.net");
-        // doTestSendAsync(HttpRequest.newBuilder()
-        //     .uri(URI.create("https://www.zdic.net"))
-        //     .GET()
-        //     .build());
-        //
-        // System.out.println("req https://www.zdic.net with gzip");
-        // doTestSendAsync(HttpRequest.newBuilder()
-        //     .uri(URI.create("https://www.zdic.net"))
-        //     .header(ACCEPT_ENCODING, "gzip")
-        //     .GET()
-        //     .build());
-    }
-
-    private void doTestSendAsync(HttpRequest httpRequest)
-        throws InterruptedException, ExecutionException, IOException {
-        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(httpRequest,
-            new StreamBodyListener<>() {
-
-                private volatile Charset charset;
-
-                @Override
-                public void onInit(HttpResponse.ResponseInfo responseInfo) {
-                    String contentType = responseInfo.headers().firstValue(CONTENT_TYPE).orElse(null);
-                    this.charset = HttpUtils.parseContentTypeCharset(contentType, HttpUtils.DEFAULT_CHARSET);
-                }
-
-                @Override
-                public void onReceive(List<ByteBuffer> chunk) {
-                    String str = readString(chunk, charset);
-                    System.out.println("=========================");
-                    System.out.println(str);
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    Assertions.assertNull(throwable);
-                }
-
-                @Override
-                public void onComplete() {
-                    System.out.println("onComplete");
-                }
-
-            }, true);
-
-        AsyncHttpSendResult sendResult = future.get();
-        Assertions.assertFalse(sendResult.hasError());
-        String str1 = sendResult.getBodyCollector().parseBodyString();
-        System.out.println(str1);
-
-        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
-            Assertions.assertTrue(sendResult2.is2xx());
-            Assertions.assertFalse(sendResult2.hasError());
-            Assertions.assertEquals(str1, sendResult2.parseBodyString());
-        }
-    }
-
-    @Test
-    public void testAsyncWithLine() throws IOException, ExecutionException, InterruptedException {
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .GET()
-            .build());
-
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
-
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.runoob.com"))
-            .GET()
-            .build());
-
-        doTestAsyncWithLine(HttpRequest.newBuilder()
-            .uri(URI.create("https://www.baidu.com"))
-            .header(ACCEPT_ENCODING, "gzip")
-            .GET()
-            .build());
-
-        // doTestAsyncWithLine(HttpRequest.newBuilder()
-        //     .uri(URI.create("https://www.zdic.net"))
-        //     .GET()
-        //     .build());
-        //
-        // doTestAsyncWithLine(HttpRequest.newBuilder()
-        //     .uri(URI.create("https://www.zdic.net"))
-        //     .header(ACCEPT_ENCODING, "gzip")
-        //     .GET()
-        //     .build());
-    }
-
-    private void doTestAsyncWithLine(HttpRequest httpRequest)
-        throws InterruptedException, ExecutionException, IOException {
-        List<String> lines = new ArrayList<>();
-        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsyncWithLineListener(httpRequest,
-            new StreamBodyListener<>() {
-
-                @Override
-                public void onInit(HttpResponse.ResponseInfo responseInfo) {
-                }
-
+            httpClient, request("/sse").build(), new SSEListener() {
                 @Override
                 public void onReceive(String line) {
                     lines.add(line);
                 }
 
                 @Override
-                public void onError(Throwable throwable) {
-                    Assertions.assertNull(throwable);
+                public void onReceiveEvent(SSEEvent event) {
+                    events.add(event);
                 }
-
-                @Override
-                public void onComplete() {
-                    System.out.println("onComplete");
-                }
-
             }, true);
 
-        AsyncHttpSendResult sendResult = future.get();
-        Assertions.assertFalse(sendResult.hasError());
+        AsyncHttpSendResult result = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertTrue(result.is2xx());
+        assertFalse(result.hasError());
+        assertEquals(List.of("event: notice", "data: first", "", "data: second", ""), lines);
+        assertEquals(List.of("first", "second"), events.stream().map(SSEEvent::getData).toList());
+    }
 
-        String ss = sendResult.getBodyCollector().parseBodyString();
-        List<String> lines2 = new ArrayList<>();
-        Scanner scanner = new Scanner(new StringReader(ss));
-        while (scanner.hasNextLine()) {
-            lines2.add(scanner.nextLine());
-        }
-        scanner.close();
-
-        diffLines(lines, lines2);
-        Assertions.assertEquals(lines, lines2);
-
-        try (HttpSendResult sendResult2 = HttpClientUtils.send(HttpClientFactory.getDefaultHttpClient(), httpRequest)) {
-            Assertions.assertTrue(sendResult2.is2xx());
-            Assertions.assertFalse(sendResult2.hasError());
-            Assertions.assertEquals(ss, sendResult2.parseBodyString());
+    @Test
+    public void shouldSendAndDecodeLocalGzipSynchronously() throws IOException {
+        try (HttpSendResult result = HttpClientUtils.send(httpClient, request("/gzip")
+                .header(ACCEPT_ENCODING, "gzip")
+                .build())) {
+            assertTrue(result.is2xx());
+            assertFalse(result.hasError());
+            assertEquals(GZIP_BODY, result.parseBodyString());
         }
     }
 
-    private void diffLines(List<String> lines1, List<String> lines2) {
-        int i = 0;
-        while (i < lines1.size() || i < lines2.size()) {
-            String s1 = lines1.get(i);
-            String s2 = lines2.get(i);
-            if (!Objects.equals(s1, s2)) {
-                System.out.println("===================================");
-                System.out.println(s1);
-                System.out.println("===================================");
-                System.out.println(s2);
-                System.out.println("===================================");
-                break;
-            }
-            i++;
-        }
-    }
-
-    private String readString(List<ByteBuffer> byteBufferList, Charset charset) {
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            for (ByteBuffer byteBuffer : byteBufferList) {
-                while (byteBuffer.hasRemaining()) {
-                    outputStream.write(byteBuffer.get() & 0xFF);
+    @Test
+    public void shouldCollectLocalGzipBodyAsynchronously() throws Exception {
+        List<String> received = new CopyOnWriteArrayList<>();
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(
+            httpClient, request("/gzip").header(ACCEPT_ENCODING, "gzip").build(),
+            new StreamBodyListener<>() {
+                @Override
+                public void onReceive(List<ByteBuffer> chunk) {
+                    received.add(new String(BufferUtils.toBytes(chunk), StandardCharsets.UTF_8));
                 }
+            }, true);
+
+        AsyncHttpSendResult result = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertTrue(result.is2xx());
+        assertFalse(result.hasError());
+        assertEquals(GZIP_BODY, result.getBodyCollector().parseBodyString());
+        assertEquals(GZIP_BODY, String.join("", received));
+    }
+
+    @Test
+    public void shouldMatchSynchronousAndAsynchronousLocalBodies() throws Exception {
+        assertAsyncBodyMatchesSync("/plain", PLAIN_BODY, false);
+        assertAsyncBodyMatchesSync("/gzip", GZIP_BODY, true);
+    }
+
+    @Test
+    public void shouldDeliverLocalPlainAndGzipLines() throws Exception {
+        assertLocalLines("/lines", false);
+        assertLocalLines("/gzip-lines", true);
+    }
+
+    private void assertAsyncBodyMatchesSync(String path, String expectedBody, boolean gzip) throws Exception {
+        HttpRequest.Builder builder = request(path);
+        if (gzip) {
+            builder.header(ACCEPT_ENCODING, "gzip");
+        }
+        HttpRequest request = builder.build();
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsync(httpClient, request,
+            new StreamBodyListener<>() {
+            }, true);
+
+        AsyncHttpSendResult asyncResult = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertFalse(asyncResult.hasError());
+        assertEquals(expectedBody, asyncResult.getBodyCollector().parseBodyString());
+        try (HttpSendResult syncResult = HttpClientUtils.send(httpClient, request)) {
+            assertTrue(syncResult.is2xx());
+            assertFalse(syncResult.hasError());
+            assertEquals(expectedBody, syncResult.parseBodyString());
+        }
+    }
+
+    private void assertLocalLines(String path, boolean gzip) throws Exception {
+        List<String> lines = new CopyOnWriteArrayList<>();
+        HttpRequest.Builder builder = request(path);
+        if (gzip) {
+            builder.header(ACCEPT_ENCODING, "gzip");
+        }
+        CompletableFuture<AsyncHttpSendResult> future = HttpClientUtils.sendAsyncWithLineListener(
+            httpClient, builder.build(), new StreamBodyListener<>() {
+                @Override
+                public void onReceive(String line) {
+                    lines.add(line);
+                }
+            }, true);
+
+        AsyncHttpSendResult result = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertFalse(result.hasError());
+        assertEquals(LINES_BODY, result.getBodyCollector().parseBodyString());
+        assertEquals(List.of("first", "second"), lines);
+    }
+
+    private HttpRequest.Builder request(String path) {
+        return HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + path))
+            .timeout(TIMEOUT)
+            .GET();
+    }
+
+    private static void writeResponse(HttpExchange exchange, byte[] body, boolean gzip, String contentType)
+            throws IOException {
+        byte[] responseBody = gzip ? gzip(body) : body;
+        exchange.getResponseHeaders().set("Content-Type", contentType);
+        if (gzip) {
+            exchange.getResponseHeaders().set("Content-Encoding", "gzip");
+        }
+        exchange.sendResponseHeaders(200, responseBody.length);
+        try (exchange; var output = exchange.getResponseBody()) {
+            output.write(responseBody);
+        }
+    }
+
+    private static byte[] gzip(byte[] body) throws IOException {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            try (GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
+                gzip.write(body);
+                gzip.finish();
             }
-            return outputStream.toString(charset);
-        } catch (IOException ignore) {
-            return null;
+            return outputStream.toByteArray();
         }
     }
 
