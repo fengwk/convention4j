@@ -59,7 +59,9 @@ class ReactiveHttpClientUtilsLocalTest {
             "ond".getBytes(StandardCharsets.UTF_8));
 
         // Completion must flush the final unterminated line after prior chunks in source order.
-        List<String> lines = ReactiveHttpClientUtils.bodyToLines(result).collectList().block();
+        List<String> lines = ReactiveHttpClientUtils.bodyToLines(result)
+            .collectList()
+            .block(Duration.ofSeconds(1));
 
         assertEquals(List.of("first", "second"), lines);
     }
@@ -71,7 +73,9 @@ class ReactiveHttpClientUtilsLocalTest {
             "ond".getBytes(StandardCharsets.UTF_8));
 
         // The SSE decoder must see the final line and dispatch its trailing event at source completion.
-        List<SSEEvent> events = ReactiveHttpClientUtils.bodyToSSE(result).collectList().block();
+        List<SSEEvent> events = ReactiveHttpClientUtils.bodyToSSE(result)
+            .collectList()
+            .block(Duration.ofSeconds(1));
 
         assertEquals(List.of("first", "second"), events.stream().map(SSEEvent::getData).toList());
     }
